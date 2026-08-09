@@ -50,7 +50,7 @@
     img { max-width: 100%; display: block; }
     h1, h2, h3, p { margin-top: 0; }
     .orange { color: var(--orange); }
-    .wrap { max-width: 1280px; margin: 0 auto; }
+    .wrap { max-width: 1280px; margin: 0 auto; min-width: 0; }
     section { padding: 84px 7vw; }
 
     .nav {
@@ -271,6 +271,7 @@
       border-radius: 20px;
       overflow: hidden;
       background: rgba(255,255,255,.03);
+      min-width: 0;
     }
 
     .cal-header-cell {
@@ -358,9 +359,10 @@
 
     .sidebar {
       display: grid;
-      grid-template-columns: 1fr 360px;
+      grid-template-columns: 1fr 340px;
       gap: 28px;
       margin-top: 28px;
+      min-width: 0;
     }
 
     .upcoming-panel {
@@ -370,6 +372,7 @@
       background: linear-gradient(145deg, rgba(28,28,28,.92), rgba(9,9,9,.92));
       max-height: 600px;
       overflow-y: auto;
+      min-width: 0;
     }
 
     .upcoming-panel h3 {
@@ -615,6 +618,21 @@
       .cal-header-cell { font-size: 10px; padding: 10px 4px; }
       .form-row { grid-template-columns: 1fr; }
       .detail-meta { grid-template-columns: 1fr; }
+      .upcoming-panel { max-height: 400px; }
+    }
+
+    @media (max-width: 680px) {
+      .calendar-grid { font-size: 0; }
+      .cal-header-cell { font-size: 9px; padding: 8px 2px; letter-spacing: 0; }
+      .cal-cell { min-height: 70px; padding: 4px; }
+      .day-num { width: 22px; height: 22px; font-size: 11px; border-radius: 6px; margin-bottom: 2px; }
+      .cal-event { font-size: 0; padding: 3px; gap: 0; justify-content: center; }
+      .cal-event .ev-dot { width: 6px; height: 6px; }
+      .more-events { font-size: 9px; padding: 1px 4px; }
+      .upcoming-item { flex-direction: column; gap: 10px; }
+      .upcoming-date { flex-direction: row; min-width: 0; gap: 6px; padding: 6px 10px; }
+      .upcoming-date .day { font-size: 18px; }
+      .upcoming-info .title { white-space: normal; }
     }
 
     @media (max-width: 560px) {
@@ -626,6 +644,8 @@
       .month-label { min-width: 0; font-size: 17px; }
       .view-toggle button { padding: 8px 10px; font-size: 11px; }
       .modal { padding: 24px; }
+      .upcoming-panel { padding: 16px; max-height: 320px; }
+      .upcoming-item { padding: 10px; }
     }
 
     .fade-in { animation: fadeIn .3s ease; }
@@ -676,7 +696,7 @@
         </div>
 
         <div class="sidebar">
-          <div>
+          <div style="min-width:0;">
             <div class="calendar-grid" id="calendarGrid"></div>
           </div>
           <div class="upcoming-panel" id="upcomingPanel">
