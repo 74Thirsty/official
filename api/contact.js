@@ -90,8 +90,10 @@ export default function handler(req, res) {
       if (apiRes.ok) {
         return sendJson(res, { ok: true, message: 'Message sent. Thank you for reaching out.' }, 201);
       }
+      console.error('Resend send failed:', apiRes.status, await apiRes.text());
       return sendJson(res, { error: 'The message could not be sent. Please try again.' }, 502);
     } catch (err) {
+      console.error('Resend fetch error:', err);
       return sendJson(res, { error: 'The message could not be sent. Please try again.' }, 502);
     }
   }).catch(() => sendJson(res, { error: 'Server error.' }, 500));
