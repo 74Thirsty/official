@@ -595,7 +595,7 @@
               <span id="signedStatusText">Checking signed e-book status...</span>
             </div>
             <p style="color:var(--muted); font-size:12px; line-height:1.5; margin-bottom:12px;">
-              The signed e-book is a <strong>certified, digitally signed PDF</strong> uploaded directly (no e-sign workflow on this site). To make signed-copy claims live: host the certified signed PDF somewhere private, set <code>EBOOK_DOWNLOAD_URL</code> to it, and set <code>EBOOK_SIGNED=1</code>. Until then the welcome email honestly offers a free digital copy with no autograph claim.
+              The signed e-book is a <strong>certified, digitally signed PDF</strong> uploaded directly (no e-sign workflow on this site). To make signed-copy claims live: host the PDF in S3-compatible storage and set <code>EBOOK_STORAGE_*</code> — each one-time download then gets a fresh, short-lived presigned URL generated at the moment of access. (Or set <code>EBOOK_DOWNLOAD_URL</code> to a private URL.) Then set <code>EBOOK_SIGNED=1</code>. Until then the welcome email honestly offers a free digital copy with no autograph claim.
             </p>
            <textarea id="nlMessage" placeholder="Optional custom message to include at the top of the newsletter..."></textarea>
            <div style="display:flex; gap:12px; flex-wrap:wrap;">
@@ -888,7 +888,7 @@
             text.textContent = 'Signed e-book: ACTIVE. Subscribers receive the certified digitally signed copy.';
           } else {
             dot.style.background = '#f59e0b';
-            text.textContent = 'Signed e-book: not marked live yet. Set EBOOK_DOWNLOAD_URL to the certified signed PDF and EBOOK_SIGNED=1. Until then, welcome copy offers a free digital copy (no autograph claim).';
+            text.textContent = 'Signed e-book: not marked live yet. Configure EBOOK_STORAGE_* (presigned URLs) or EBOOK_DOWNLOAD_URL to the certified signed PDF, then set EBOOK_SIGNED=1. Until then, welcome copy offers a free digital copy (no autograph claim).';
           }
         } catch {
           dot.style.background = '#888';

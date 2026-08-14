@@ -1,6 +1,7 @@
 import { getList, setList, KEYS } from '../lib/storage.js';
 import { sendJson, sendEmpty, sendRedirect, getParam } from '../lib/http.js';
 import { addAudit } from '../lib/audit.js';
+import { generateDownloadUrl } from '../lib/download.js';
 
 function ttlMs() {
   const days = parseInt(process.env.EBOOK_LINK_TTL_DAYS || '7', 10) || 7;
@@ -35,19 +36,20 @@ export default function handler(req, res) {
       }, 410);
     }
 
-    const downloadUrl = process.env.EBOOK_DOWNLOAD_URL;
-    if (!downloadUrl) {
-      console.error('EBOOK_DOWNLOAD_URL is not configured on the server.');
+    const target = generateDownloadUrl();
+    if (!target.ok) {
+      console.error('No e-book download target configured on the server.');
       return sendJson(res, { error: 'Download not configured.' }, 503);
     }
 
     sub.ebookTokenUsed = true;
     sub.ebookAccessedAt = new Date().toISOString();
     sub.ebookDownloadCount = (sub.ebookDownloadCount || 0) + 1;
+    sub.ebookUrlKind = target.kind;
     await setList(KEYS.subscribers, subs);
 
-    await addAudit('ebook_accessed', sub.email, { downloadCount: sub.ebookDownloadCount });
+    await addAudit('ebook_accessed', sub.email, { downloadCount: sub.ebookDownloadCount, kind: target.kind });
 
-    return sendRedirect(res, downloadUrl);
+    return sendRedirect(res, target.url);
   }).catch(() => sendJson(res, { error: 'Storage error.' }, 500));
 }
