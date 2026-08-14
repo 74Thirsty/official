@@ -1,6 +1,9 @@
 import { getList, setList, KEYS } from '../lib/storage.js';
 import { sendJson, sendEmpty, readBody, isAdmin, clean, getParam } from '../lib/http.js';
-import { buildNewsletter, getUpcomingEvents } from '../lib/newsletter.js';
+import { buildNewsletter, getUpcomingEvents, buildWelcomeEmail } from '../lib/newsletter.js';
+import { sendEmail } from '../lib/email.js';
+import { addAudit } from '../lib/audit.js';
+import { randomBytes } from 'crypto';
 import { seedStream } from '../lib/seed.js';
 import { parseBrowser } from '../lib/ua.js';
 import { autoArchive, normalizeKeep, adminArchive, purgeExpired } from '../lib/stream.js';
@@ -133,6 +136,59 @@ export default function handler(req, res) {
       await autoArchive(oldStream, stream);
       await setList(KEYS.stream, [stream]);
       sendJson(res, { stream });
+    }).catch(fail);
+    return;
+  }
+
+  if (action === 'resend-welcome' && req.method === 'POST') {
+    readBody(req).then(async (payload) => {
+      const email = String(payload.email ?? '').trim().toLowerCase();
+      if (!email) {
+        return sendJson(res, { error: 'Email is required.' }, 422);
+      }
+      const entries = await getList(KEYS.subscribers);
+      const index = entries.findIndex((e) => e.email === email);
+      if (index < 0) {
+        return sendJson(res, { error: 'Subscriber not found.' }, 404);
+      }
+      const sub = entries[index];
+      if ((sub.status ?? 'active') !== 'active') {
+        return sendJson(res, { error: 'Unsubscribed subscribers do not receive welcome emails.' }, 422);
+      }
+
+      sub.ebookToken = randomBytes(24).toString('hex');
+      sub.ebookTokenUsed = false;
+      sub.ebookTokenIssuedAt = null;
+      sub.ebookLinkIssued = false;
+      sub.welcomeStatus = null;
+      sub.welcomeError = null;
+      sub.welcomeResendCount = (sub.welcomeResendCount || 0) + 1;
+
+      const { html, subject } = buildWelcomeEmail(sub);
+      const result = await sendEmail(email, subject, html);
+      if (result.ok) {
+        sub.welcomeStatus = 'sent';
+        sub.welcomeSentAt = new Date().toISOString();
+        sub.ebookLinkIssued = true;
+        sub.ebookTokenIssuedAt = new Date().toISOString();
+      } else {
+        sub.welcomeStatus = 'failed';
+        sub.welcomeError = String(result.reason || `status_${result.status}`);
+      }
+      entries[index] = sub;
+      await setList(KEYS.subscribers, entries);
+
+      await addAudit('welcome_resend', email, { welcomeStatus: sub.welcomeStatus });
+
+      return sendJson(res, { ok: true, email, welcomeStatus: sub.welcomeStatus });
+    }).catch(fail);
+    return;
+  }
+
+  if (action === 'audit') {
+    getList(KEYS.audit).then((audit) => {
+      const limit = Math.min(200, Math.max(1, parseInt(getParam(req, 'limit') || '100', 10) || 100));
+      sendJson(res, { audit: audit.slice(0, limit), total: audit.length });
     }).catch(fail);
     return;
   }

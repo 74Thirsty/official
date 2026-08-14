@@ -544,6 +544,10 @@
                 <th>Screen</th>
                 <th>Proxy</th>
                 <th>Subscribed</th>
+                <th>Status</th>
+                <th>Welcome</th>
+                <th>E-Book</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="subsBody"></tbody>
@@ -919,6 +923,21 @@
           if (proxy) badges += '<span class="badge badge-proxy">Proxy</span> ';
           if (hosting) badges += '<span class="badge badge-hosting">Hosting</span> ';
           if (!proxy && !hosting) badges = '<span class="badge badge-clean">Clean</span>';
+          const isUnsubscribed = (s.status || 'active') === 'unsubscribed';
+          const statusBadge = isUnsubscribed
+            ? '<span class="badge badge-hosting">Unsubscribed</span>'
+            : '<span class="badge badge-clean">Active</span>';
+          const welcomeCell = s.welcomeStatus === 'sent'
+            ? escapeHtml(formatDate(s.welcomeSentAt)) || 'Sent'
+            : s.welcomeStatus === 'failed'
+              ? '<span class="badge badge-proxy" title="' + escapeHtml(s.welcomeError || 'send failed') + '">Failed</span>'
+              : 'Pending';
+          const ebookCell = s.ebookLinkIssued
+            ? (s.ebookTokenUsed ? 'Used' : 'Issued')
+            : '—';
+          const resendBtn = isUnsubscribed
+            ? '<span style="color:#666;font-size:12px;">—</span>'
+            : '<button class="btn btn-sm" onclick="resendWelcome(\'' + escapeHtml(s.email) + '\')" title="Re-send the welcome letter with a fresh e-book link">Resend</button>';
           return '<tr>' +
             '<td>' + escapeHtml(s.name || '') + '</td>' +
             '<td>' + escapeHtml(s.email || '') + '</td>' +
@@ -930,9 +949,28 @@
             '<td>' + escapeHtml(br.screen || 'N/A') + '</td>' +
             '<td>' + badges + '</td>' +
             '<td>' + escapeHtml(formatDate(s.signedAt)) + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td>' + welcomeCell + '</td>' +
+            '<td>' + ebookCell + '</td>' +
+            '<td>' + resendBtn + '</td>' +
           '</tr>';
         }).join('');
       } catch {}
+    }
+
+    async function resendWelcome(email) {
+      const res = await fetch(apiUrl('resend-welcome'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        alert('Welcome letter re-sent to ' + email + ' (' + data.welcomeStatus + ').');
+      } else {
+        alert(data.error || 'Failed to re-send welcome letter.');
+      }
+      loadSubscribers();
     }
 
     // --- Visitors ---

@@ -793,7 +793,7 @@
         });
         const data = await res.json();
         if (data.ok) {
-          nlStatus.innerHTML = 'Welcome to the ride. Here is your free copy of <strong>I Can. I Will.</strong>: <a href="assets/202607061311-i-can-i-will.zip" download style="color:var(--orange);text-decoration:underline;font-weight:800;">Download Book (ZIP)</a>';
+          nlStatus.innerHTML = 'Welcome to the ride. Check your email for the welcome letter and your free copy of <strong>I Can. I Will.</strong>';
           nlForm.reset();
         } else {
           nlStatus.textContent = data.message || 'Something went wrong.';
