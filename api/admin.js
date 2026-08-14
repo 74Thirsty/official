@@ -1,6 +1,6 @@
 import { getList, setList, KEYS } from '../lib/storage.js';
 import { sendJson, sendEmpty, readBody, isAdmin, clean, getParam } from '../lib/http.js';
-import { buildNewsletter, getUpcomingEvents, buildWelcomeEmail } from '../lib/newsletter.js';
+import { buildNewsletter, getUpcomingEvents, getUpcomingStreams, buildWelcomeEmail, signedCopyAvailable } from '../lib/newsletter.js';
 import { sendEmail } from '../lib/email.js';
 import { addAudit } from '../lib/audit.js';
 import { randomBytes } from 'crypto';
@@ -52,6 +52,7 @@ export default function handler(req, res) {
         subscribers: subscribers.length,
         topCountries,
         browserStats: getBrowserStats(visitors),
+        signedCopyReady: signedCopyAvailable(),
       });
     }).catch(fail);
     return;
@@ -78,10 +79,15 @@ export default function handler(req, res) {
   }
 
   if (action === 'send-newsletter' && req.method === 'POST') {
-    Promise.all([readBody(req), getList(KEYS.events)]).then(async ([payload, events]) => {
+    Promise.all([readBody(req), getList(KEYS.events), getList(KEYS.stream)]).then(async ([payload, events, streamArr]) => {
       const upcoming = getUpcomingEvents(events);
-      const { html, eventCount } = buildNewsletter(String(payload.message || '').trim(), upcoming);
-      sendJson(res, { html, eventCount });
+      const streamSchedule = (streamArr && streamArr[0] && streamArr[0].schedule) || [];
+      const { html, eventCount, streamCount } = buildNewsletter(
+        String(payload.message || '').trim(),
+        upcoming,
+        getUpcomingStreams(streamSchedule)
+      );
+      sendJson(res, { html, eventCount, streamCount });
     }).catch(fail);
     return;
   }

@@ -1,6 +1,6 @@
 import { getList, getDate, setDate, KEYS } from '../lib/storage.js';
 import { sendJson, sendEmpty } from '../lib/http.js';
-import { buildNewsletter, getUpcomingEvents, buildUnsubscribeUrl } from '../lib/newsletter.js';
+import { buildNewsletter, getUpcomingEvents, getUpcomingStreams, buildUnsubscribeUrl } from '../lib/newsletter.js';
 import { sendEmail } from '../lib/email.js';
 
 const SEND_INTERVAL_MS = 13 * 86400000;
@@ -31,8 +31,11 @@ export default function handler(req, res) {
 
     const events = await getList(KEYS.events);
     const upcoming = getUpcomingEvents(events);
+    const streamArr = await getList(KEYS.stream);
+    const streamSchedule = (streamArr && streamArr[0] && streamArr[0].schedule) || [];
+    const streamList = getUpcomingStreams(streamSchedule);
     const userMessage = process.env.NEWSLETTER_MESSAGE || '';
-    const { dateRange } = buildNewsletter(userMessage, upcoming);
+    const { dateRange } = buildNewsletter(userMessage, upcoming, streamList);
     const subject = `Lost Limb Riders — Events ${dateRange}`;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -50,7 +53,7 @@ export default function handler(req, res) {
         continue;
       }
       const name = String(sub.name || 'Rider').replace(/[<>]/g, '').trim() || 'Rider';
-      const { html } = buildNewsletter(userMessage, upcoming, name, buildUnsubscribeUrl(sub.unsubToken || ''));
+      const { html } = buildNewsletter(userMessage, upcoming, streamList, name, buildUnsubscribeUrl(sub.unsubToken || ''));
       const result = await sendEmail(to, subject, html);
       if (result.ok) {
         sent++;

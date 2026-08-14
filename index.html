@@ -444,6 +444,114 @@
       font-weight: 800;
     }
 
+    .offer-eyebrow {
+      display: inline-block;
+      padding: 6px 14px;
+      border: 1px solid rgba(255, 106, 0, .45);
+      border-radius: 999px;
+      color: var(--orange);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .offer-grid {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 44px;
+      align-items: center;
+      text-align: left;
+      margin-top: 26px;
+    }
+
+    .offer-values {
+      display: grid;
+      gap: 14px;
+      margin: 26px 0 30px;
+      text-align: left;
+    }
+
+    .offer-value {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .offer-value .num {
+      flex: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: rgba(255, 106, 0, .15);
+      color: var(--orange);
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .offer-value b { display: block; color: var(--white); font-size: 16px; }
+    .offer-value span { color: #b7b7b7; font-size: 14px; line-height: 1.55; }
+
+    .offer-cta {
+      width: 100%;
+      font-size: 18px;
+      padding: 18px 24px;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
+    .offer-note { margin: 14px 0 0; color: #8f8f8f; font-size: 12.5px; }
+
+    .offer-book {
+      position: relative;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+      border: 1px solid rgba(255, 255, 255, .1);
+      padding: 40px 26px 28px;
+      text-align: center;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, .5);
+    }
+
+    .offer-book .book-title {
+      font-size: clamp(30px, 4vw, 44px);
+      font-weight: 900;
+      line-height: 1.02;
+      letter-spacing: -.02em;
+      color: #fff;
+      text-transform: uppercase;
+    }
+
+    .offer-book .book-sub {
+      color: var(--orange);
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-size: 13px;
+      margin-top: 12px;
+    }
+
+    .offer-book .book-auth { color: #b7b7b7; font-weight: 700; margin-top: 18px; font-size: 15px; }
+
+    .offer-book .book-badge {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 9px 16px;
+      border-radius: 8px;
+      background: var(--orange);
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .offer-book .book-desc { color: #8f8f8f; font-size: 13px; line-height: 1.55; margin-top: 18px; }
+
     footer {
       padding: 34px 7vw;
       color: #858585;
@@ -454,7 +562,8 @@
     @media (max-width: 940px) {
       .nav { position: static; align-items: flex-start; flex-direction: column; }
       .nav-links { flex-wrap: wrap; }
-      .hero, .grid, .split, .form, .two-column, .newsletter-row { grid-template-columns: 1fr; }
+      .hero, .grid, .split, .form, .two-column, .newsletter-row, .offer-grid { grid-template-columns: 1fr; }
+      .offer-book { order: -1; }
       .hero { min-height: auto; background-position: center bottom; }
       .book-card { grid-template-columns: 150px 1fr; }
     }
@@ -624,18 +733,52 @@
     </section>
 
     <section id="newsletter">
-      <div class="wrap panel" style="text-align:center;">
-        <h2 class="section-title">Join the <span class="orange">Ride</span></h2>
-        <p class="lead" style="max-width:600px; margin:0 auto 8px;">Get updates on events, rides, podcasts, and the mission. No spam. Just the good stuff — straight to your inbox.</p>
-        <p style="max-width:600px; margin:0 auto 28px; color:var(--orange); font-weight:800; font-size:15px;">Subscribe now and get a FREE digital copy of <em>I Can. I Will.</em> — John's full autobiography.</p>
-        <form id="newsletterForm" style="max-width:560px; margin:0 auto;">
-          <div class="newsletter-row">
-            <input id="nlName" autocomplete="name" placeholder="Full name" required>
-            <input id="nlEmail" type="email" autocomplete="email" placeholder="Email address" required>
-            <button type="submit" style="white-space:nowrap;">Get the Book</button>
+      <div class="wrap panel newsletter-offer">
+        <span class="offer-eyebrow">Free Signed E-Book Offer</span>
+        <h2 class="section-title">Get the Book.<br><span class="orange">Stay in the Ride.</span></h2>
+        <p class="lead" style="max-width:680px; margin:0 auto;">
+          Sign up for the Lost Limb Riders biweekly newsletter and get a
+          <strong>free, personally autographed digital copy of <em>I Can. I Will.</em></strong> —
+          John Thompson's story of losing a leg and refusing to lose his life.
+        </p>
+
+        <div class="offer-grid">
+          <div>
+            <p style="color:#fff; font-weight:800; font-size:18px; margin:0 0 4px;">Every two weeks, you stay connected:</p>
+            <div class="offer-values">
+              <div class="offer-value">
+                <span class="num">1</span>
+                <div><b>The Event Calendar</b><span>Every ride, rally, outreach, and community gathering — dates, places, and how to show up.</span></div>
+              </div>
+              <div class="offer-value">
+                <span class="num">2</span>
+                <div><b>Scheduled Live Streams</b><span>Know when we go live. Weekly rides, Coffee Talk recordings, and rally coverage — before the cameras roll.</span></div>
+              </div>
+              <div class="offer-value">
+                <span class="num">3</span>
+                <div><b>The Mission &amp; The Movement</b><span>Advocacy news, community activities, and real ways to get involved. One ride. One mission. One community.</span></div>
+              </div>
+            </div>
+
+            <form id="newsletterForm">
+              <div class="newsletter-row">
+                <input id="nlName" autocomplete="name" placeholder="Full name" required>
+                <input id="nlEmail" type="email" autocomplete="email" placeholder="Email address" required>
+                <button type="submit" class="offer-cta">Get My Free Autographed E-Book &amp; Join the Ride</button>
+              </div>
+              <div id="nlStatus" class="newsletter-status" role="status" aria-live="polite"></div>
+            </form>
+            <p class="offer-note">Biweekly. No spam. Unsubscribe anytime. Your signed copy of <em>I Can. I Will.</em> arrives in your welcome email.</p>
           </div>
-          <div id="nlStatus" class="newsletter-status" role="status" aria-live="polite"></div>
-        </form>
+
+          <aside class="offer-book" aria-label="I Can. I Will. by John Thompson">
+            <div class="book-title">I Can.<br>I Will.</div>
+            <div class="book-sub">Born From Lived Experience</div>
+            <div class="book-auth">by John Thompson</div>
+            <div class="book-badge">Personally Autographed</div>
+            <p class="book-desc">A book written for anyone facing limb loss — something real to hold onto when the world tells you the road is over. It isn't. Read it. Ride with us. Prove it.</p>
+          </aside>
+        </div>
       </div>
     </section>
 

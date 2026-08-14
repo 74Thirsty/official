@@ -586,10 +586,17 @@
       <!-- Newsletter panel -->
        <div id="panel-newsletter" class="tab-panel">
          <div class="panel" style="margin-bottom:20px;">
-           <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px;">Compose Newsletter</h3>
-           <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">
-             Write a custom intro message. Upcoming events are auto-populated from the calendar. Preview before sending.
-           </p>
+            <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px;">Compose Newsletter</h3>
+            <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">
+              Write a custom intro message. Upcoming events auto-populate from the calendar and scheduled livestreams from the stream config. Preview before sending.
+            </p>
+            <div id="signedStatus" style="display:flex; gap:8px; align-items:center; font-size:12px; color:var(--muted); margin-bottom:12px; padding:8px 10px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:8px;">
+              <span class="signed-dot" style="width:8px;height:8px;border-radius:50%;background:#888;"></span>
+              <span id="signedStatusText">Checking signed e-book status...</span>
+            </div>
+            <p style="color:var(--muted); font-size:12px; line-height:1.5; margin-bottom:12px;">
+              The signed e-book is a <strong>certified, digitally signed PDF</strong> uploaded directly (no e-sign workflow on this site). To make signed-copy claims live: host the certified signed PDF somewhere private, set <code>EBOOK_DOWNLOAD_URL</code> to it, and set <code>EBOOK_SIGNED=1</code>. Until then the welcome email honestly offers a free digital copy with no autograph claim.
+            </p>
            <textarea id="nlMessage" placeholder="Optional custom message to include at the top of the newsletter..."></textarea>
            <div style="display:flex; gap:12px; flex-wrap:wrap;">
              <button class="btn btn-primary" onclick="previewNewsletter()">Preview</button>
@@ -867,6 +874,30 @@
         if (name === 'visitors') loadVisitors(1);
         if (name === 'stream') { loadStreamConfig(); loadArchive(); }
         if (name === 'events') loadEvents();
+        if (name === 'newsletter') loadSignedStatus();
+      }
+
+      async function loadSignedStatus() {
+        const dot = document.querySelector('.signed-dot');
+        const text = document.getElementById('signedStatusText');
+        try {
+          const res = await fetch(apiUrl('stats'));
+          const data = await res.json();
+          if (data.signedCopyReady) {
+            dot.style.background = '#22c55e';
+            text.textContent = 'Signed e-book: ACTIVE. Subscribers receive the certified digitally signed copy.';
+          } else {
+            dot.style.background = '#f59e0b';
+            text.textContent = 'Signed e-book: not marked live yet. Set EBOOK_DOWNLOAD_URL to the certified signed PDF and EBOOK_SIGNED=1. Until then, welcome copy offers a free digital copy (no autograph claim).';
+          }
+        } catch {
+          dot.style.background = '#888';
+          text.textContent = 'Signed e-book: status unavailable.';
+        }
+      }
+
+      function getAdminKey() {
+        return sessionStorage.getItem('llr-admin-key') || '';
       }
 
     // --- Charts ---
@@ -1051,7 +1082,7 @@
         });
         if (!res.ok) { status.textContent = 'Failed to build newsletter.'; return; }
         const data = await res.json();
-        status.textContent = 'Newsletter built with ' + data.eventCount + ' events. HTML generated. Scheduled sends run automatically via the Vercel cron (weekly, sends every two weeks).';
+        status.textContent = 'Newsletter built with ' + data.eventCount + ' events and ' + data.streamCount + ' scheduled streams. HTML generated. Scheduled sends run automatically via the Vercel cron (weekly, sends every two weeks).';
       } catch {
         status.textContent = 'Connection error.';
       }
