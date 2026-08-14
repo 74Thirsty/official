@@ -357,6 +357,60 @@
       font-weight: 800;
     }
 
+    .status.error { color: #ff5b5b; }
+
+    .contact-form {
+      max-width: 640px;
+      margin-top: 26px;
+    }
+
+    .contact-form .form { margin-top: 0; }
+
+    button:disabled { opacity: .6; cursor: not-allowed; }
+
+    .file-field {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border: 1px dashed rgba(255,255,255,.22);
+      border-radius: 14px;
+      background: #090909;
+      cursor: pointer;
+    }
+
+    .file-field input[type="file"] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      overflow: hidden;
+    }
+
+    .file-label {
+      color: var(--orange);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .file-name {
+      color: var(--muted);
+      font-size: 14px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .hp {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      overflow: hidden;
+    }
+
     .guestbook-list {
       display: grid;
       gap: 14px;
@@ -589,8 +643,24 @@
       <div class="wrap panel">
         <h2 class="section-title">Become Part of <span class="orange">the Ride</span></h2>
         <p class="lead">Interested in joining, volunteering, sponsoring, booking John, or getting book updates? Reach out and connect with Lost Limb Riders.</p>
+        <form id="contactForm" class="contact-form" novalidate>
+          <div class="form">
+            <input id="cfName" name="name" placeholder="Full name *" autocomplete="name" aria-label="Full name" required>
+            <input id="cfEmail" name="email" type="email" placeholder="Email address *" autocomplete="email" aria-label="Email address" required>
+            <input id="cfPhone" name="phone" type="tel" placeholder="Phone number (optional)" autocomplete="tel" aria-label="Phone number">
+            <input id="cfSubject" name="subject" placeholder="Subject *" aria-label="Subject" required>
+            <textarea id="cfMessage" name="message" placeholder="Your message *" aria-label="Your message" required></textarea>
+            <label class="file-field" for="cfFile">
+              <input type="file" id="cfFile" name="attachment">
+              <span class="file-label">Attach a file (optional, max 3 MB)</span>
+              <span class="file-name" id="cfFileName"></span>
+            </label>
+            <input type="text" id="cfWebsite" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <button type="submit">Send Message</button>
+            <div id="contactStatus" class="status" role="status" aria-live="polite"></div>
+          </div>
+        </form>
         <div class="actions">
-          <a class="btn btn-primary" href="tel:15158905765">Call / Text 515-890-5765</a>
           <a class="btn btn-secondary" href="#top">Back to Top</a>
         </div>
       </div>
@@ -730,6 +800,80 @@
         }
       } catch (err) {
         nlStatus.textContent = 'Network error. Please try again.';
+      }
+    });
+
+    const contactForm = document.getElementById('contactForm');
+    const contactStatus = document.getElementById('contactStatus');
+    const cfFile = document.getElementById('cfFile');
+    const cfFileName = document.getElementById('cfFileName');
+    const CONTACT_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024;
+
+    cfFile.addEventListener('change', () => {
+      const f = cfFile.files[0];
+      cfFileName.textContent = f ? (f.name + (f.size > MAX_ATTACHMENT_BYTES ? ' — too large (max 3 MB)' : '')) : '';
+    });
+
+    function setContactStatus(msg, isError) {
+      contactStatus.textContent = msg;
+      contactStatus.classList.toggle('error', Boolean(isError));
+    }
+
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    contactForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const name = document.getElementById('cfName').value.trim();
+      const email = document.getElementById('cfEmail').value.trim();
+      const phone = document.getElementById('cfPhone').value.trim();
+      const subject = document.getElementById('cfSubject').value.trim();
+      const message = document.getElementById('cfMessage').value.trim();
+      const file = cfFile.files[0];
+
+      if (!name) return setContactStatus('Please enter your full name.', true);
+      if (!CONTACT_EMAIL_RE.test(email)) return setContactStatus('Please enter a valid email address.', true);
+      if (!subject) return setContactStatus('Please enter a subject.', true);
+      if (!message) return setContactStatus('Please enter a message.', true);
+
+      let attachment = null;
+      if (file) {
+        if (file.size > MAX_ATTACHMENT_BYTES) return setContactStatus('Attachment must be under 3 MB.', true);
+        const content = await readFileAsBase64(file);
+        attachment = { filename: file.name, contentType: file.type || 'application/octet-stream', content };
+      }
+
+      const btn = contactForm.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      setContactStatus('Sending your message...');
+      try {
+        const res = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name, email, phone, subject, message, attachment,
+            website: document.getElementById('cfWebsite').value
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          setContactStatus(data.message || 'Message sent. Thank you for reaching out.');
+          contactForm.reset();
+          cfFileName.textContent = '';
+        } else {
+          setContactStatus(data.error || 'Something went wrong. Please try again.', true);
+        }
+      } catch (err) {
+        setContactStatus('Network error. Please try again.', true);
+      } finally {
+        btn.disabled = false;
       }
     });
 
