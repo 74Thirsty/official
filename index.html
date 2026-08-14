@@ -238,6 +238,26 @@
       font-size: 17px;
     }
 
+    .card-link {
+      display: block;
+      height: 100%;
+      color: inherit;
+      text-decoration: none;
+      border-radius: 28px;
+    }
+    .card-link .card {
+      height: 100%;
+      transition: border-color .2s ease, transform .2s ease;
+    }
+    .card-link:hover .card {
+      border-color: rgba(255,106,0,.55);
+      transform: translateY(-3px);
+    }
+    .card-link:focus-visible {
+      outline: 2px solid var(--orange);
+      outline-offset: 4px;
+    }
+
     .statement {
       text-align: center;
       background: linear-gradient(135deg, rgba(255,106,0,.16), rgba(255,255,255,.03));
@@ -443,20 +463,26 @@
         </div>
 
         <div class="grid">
-          <article class="card">
-            <h3>Brotherhood & Sisterhood</h3>
-            <p>Real connection for amputees, families, riders, veterans, supporters, and anyone who believes healing is stronger when people show up for each other.</p>
-          </article>
+          <a class="card-link" href="mission.html#story">
+            <article class="card">
+              <h3>Brotherhood & Sisterhood</h3>
+              <p>Real connection for amputees, families, riders, veterans, supporters, and anyone who believes healing is stronger when people show up for each other.</p>
+            </article>
+          </a>
 
-          <article class="card">
-            <h3>Community Support</h3>
-            <p>Every ride, event, conversation, and fundraiser exists to raise awareness and support people adapting to life after limb loss.</p>
-          </article>
+          <a class="card-link" href="mission.html#involved">
+            <article class="card">
+              <h3>Community Support</h3>
+              <p>Every ride, event, conversation, and fundraiser exists to raise awareness and support people adapting to life after limb loss.</p>
+            </article>
+          </a>
 
-          <article class="card">
-            <h3>Forward Motion</h3>
-            <p>The mission is simple: help amputees find confidence, dignity, friendship, and the courage to keep shifting gears.</p>
-          </article>
+          <a class="card-link" href="mission.html#mission-statement">
+            <article class="card">
+              <h3>Forward Motion</h3>
+              <p>The mission is simple: help amputees find confidence, dignity, friendship, and the courage to keep shifting gears.</p>
+            </article>
+          </a>
         </div>
       </div>
     </section>
