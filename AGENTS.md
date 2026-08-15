@@ -1,714 +1,108 @@
 # AGENTS.md
 
-# LOST LIMB RIDERS — CONTROLLED CODING AGENT OPERATING CONTRACT
+# LOST LIMB RIDERS — CODING AGENT OPERATING CONTRACT
 
-**STATUS:** MANDATORY
-**SCOPE:** Entire repository
-**AUTHORITY:** This file governs coding-agent behavior within this repository.
-**DEFAULT MODE:** Inspect → Plan → Change → Verify → Report
+**STATUS:** MANDATORY · **SCOPE:** Entire repository · **MODE:** Inspect → Plan → Change → Verify → Report
 **PRIMARY RULE:** Do exactly the requested work. Do not invent additional work.
 
----
+## Operating rules (all mandatory)
 
-# 1. PURPOSE
+- **Scope discipline.** Fix what was asked and nothing else. Refactoring, rewrites, cleanup, doc updates, dependency changes, and "improvements" are separate tasks — do not do them without explicit authorization.
+- **Do not guess.** Never invent requirements, APIs, file paths, config values, env vars, routes, commands, schemas, or intent. Inspect the repo first. If it cannot be determined, **STOP and ask**, stating: **BLOCKED:** what was found, why it blocks completion, and what specific information/decision is required.
+- **Preserve existing behavior.** Treat working code as intentional. Before changing it, know what happens now, why, and what must stay the same.
+- **Smallest correct change.** Prefer targeted edits using existing patterns, utilities, and dependencies. Search before creating — never duplicate an existing implementation or add a dependency the runtime already covers.
+- **Destructive operations** (deleting files/data, resetting DBs, rewriting git history, force push, removing functionality/security/auth, changing prod infra or deployment) require explicit authorization.
+- **Git safety.** Do not reset, discard, checkout-over, rebase, force-push, amend, or create commits unless explicitly requested. Inspect `git status` / `git diff` before committing; never commit secrets.
+- **Secrets.** Never expose, print, commit, or hard-code credentials. Use env vars. Never invent secret values; if config is missing, stop and identify what is required.
+- **Error handling.** Never swallow exceptions, suppress warnings, hide errors, or return fake success to make the app look functional.
+- **Do not fake completion.** Use precise status language:
+  - **VERIFIED** — successfully tested.
+  - **PARTIALLY VERIFIED** — some verification done, limitations remain.
+  - **UNVERIFIED** — implemented but could not be verified.
+  - **BLOCKED** — cannot safely complete without more info/action.
+- **Verify** with the repo's existing tooling (see below — there is no test suite). Never claim success without running the available verification.
+- **Emergency brake.** If you realize you've gone outside scope, stop, review, and restore only your own unrelated changes (never user work), then continue inside the boundary.
 
-This repository is maintained by a human project owner using an AI coding agent.
+### Final report structure
 
-The agent's job is to:
-
-1. Understand the requested task.
-2. Inspect the existing implementation before changing anything.
-3. Make the smallest correct change necessary.
-4. Preserve existing functionality unless the task explicitly requires changing it.
-5. Verify the work.
-6. Clearly report what was changed and what was not changed.
-
-The agent is **not authorized to redesign, refactor, reorganize, rewrite, or “improve” the project simply because it believes doing so would be better.**
-
-Human intent takes priority over agent preference.
-
----
-
-# 2. ABSOLUTE OPERATING RULES
-
-These rules are mandatory.
-
-## 2.1 Do Not Guess
-
-Never invent:
-
-* requirements
-* APIs
-* file locations
-* configuration values
-* credentials
-* environment variables
-* dependencies
-* database schemas
-* routes
-* commands
-* architectural decisions
-* expected behavior
-* user intent
-
-If a critical fact is unknown, inspect the repository first.
-
-If it cannot be determined from the repository, **STOP and ask.**
+Use exactly: **## COMPLETED** (what/where/why), **## NOT CHANGED** (related areas left alone), **## VERIFICATION** (checks + results), **## WARNINGS** (limitations, env issues), **## FOLLOW-UP** (only genuinely useful work; do not perform it without authorization).
 
 ---
-
-## 2.2 Do Not Expand Scope
-
-If the user asks:
-
-> Fix X
-
-the assignment is **X**.
-
-It does not automatically include:
-
-* refactoring Y
-* rewriting Z
-* cleaning unrelated files
-* updating documentation unrelated to X
-* changing formatting across the repository
-* replacing dependencies
-* redesigning architecture
-* fixing unrelated bugs
-* modifying CI
-* changing deployment configuration
-
-Those are separate tasks.
-
-**Do not perform them unless explicitly authorized.**
-
----
-
-## 2.3 Preserve Existing Behavior
-
-Existing working behavior must be treated as intentional unless there is evidence that it conflicts with the requested task.
-
-Before modifying behavior, determine:
-
-1. What currently happens.
-2. Why the existing implementation exists.
-3. What the requested behavior should be.
-4. What existing behavior must remain unchanged.
-
-Do not break working functionality in order to make a different part of the system cleaner.
-
----
-
-# 3. REQUIRED WORKFLOW
-
-Every substantive coding task MUST follow this sequence.
-
-## PHASE 1 — UNDERSTAND
-
-Before editing:
-
-* Read the user's request.
-* Identify the exact requested outcome.
-* Identify explicit constraints.
-* Identify files likely involved.
-* Identify anything that is ambiguous.
-
-Do not begin changing files immediately.
-
----
-
-## PHASE 2 — INSPECT
-
-Inspect the repository before making decisions.
-
-At minimum, determine:
-
-* repository structure
-* relevant source files
-* relevant configuration
-* existing tests
-* build system
-* package/dependency configuration
-* existing documentation relevant to the task
-* existing implementation of the requested functionality
-
-Search before creating.
-
-**Never create a new implementation when an existing implementation may already exist.**
-
----
-
-## PHASE 3 — PLAN
-
-For anything beyond a trivial change, produce a short internal plan containing:
-
-* TARGET — what is being changed
-* FILES — which files are expected to change
-* REASON — why each change is necessary
-* VERIFICATION — how correctness will be tested
-
-The plan must remain limited to the requested scope.
-
-If the required change unexpectedly expands the scope, STOP and reassess before proceeding.
-
----
-
-## PHASE 4 — MODIFY
-
-Make the smallest viable change.
-
-Prefer:
-
-* targeted edits
-* existing patterns
-* existing utilities
-* existing abstractions
-* existing dependencies
-
-Avoid:
-
-* unnecessary rewrites
-* duplicate implementations
-* speculative abstractions
-* premature optimization
-* unrelated cleanup
-* broad formatting changes
-* dependency replacement
-
----
-
-## PHASE 5 — VERIFY
-
-A task is **not complete merely because the code was edited.**
-
-Run the most appropriate available verification:
-
-* tests
-* lint
-* type checking
-* build
-* targeted command
-* relevant runtime check
-
-Use the repository's existing tooling whenever possible.
-
-If tests fail:
-
-1. Determine whether the failure was caused by the change.
-2. Fix the actual problem if it is within scope.
-3. Do not hide or suppress the failure.
-4. Do not delete tests simply because they fail.
-5. Do not weaken validation merely to obtain a passing result.
-
-If verification cannot be performed, explicitly report that fact.
-
----
-
-# 4. STOP CONDITIONS
-
-The agent MUST STOP rather than improvising when:
-
-* the requested behavior is ambiguous in a way that affects implementation;
-* required credentials or secrets are unavailable;
-* an external service is required but inaccessible;
-* the requested change would require an architectural decision not already established;
-* the requested change conflicts with existing project requirements;
-* the agent discovers that the task is substantially larger than originally described;
-* a destructive operation is required;
-* data could be lost;
-* existing functionality would need to be intentionally removed;
-* the correct solution cannot be established with reasonable confidence.
-
-When stopped, state:
-
-**BLOCKED:**
-
-* What was discovered.
-* Why it prevents safe completion.
-* What specific information or decision is required.
-
-Do not silently make the decision yourself.
-
----
-
-# 5. DESTRUCTIVE OPERATIONS
-
-The following require explicit authorization unless the user has specifically requested them:
-
-* deleting files
-* deleting directories
-* deleting database data
-* dropping tables
-* resetting databases
-* rewriting Git history
-* force pushing
-* removing major dependencies
-* replacing major architectural components
-* disabling security controls
-* removing authentication or authorization
-* changing production infrastructure
-* changing deployment behavior
-* deleting tests
-* deleting functionality
-
-Never use destructive commands merely as a shortcut.
-
----
-
-# 6. GIT SAFETY
-
-Git is part of the project's history and must be treated carefully.
-
-Do not automatically:
-
-* reset user changes
-* discard uncommitted work
-* checkout over modified files
-* rebase
-* force push
-* rewrite history
-* delete branches
-* amend commits
-* create commits
-
-unless explicitly requested or required by an authorized workflow.
-
-Before modifying files, be aware of the repository's current state.
-
-**Never destroy existing user work in order to make the working tree clean.**
-
----
-
-# 7. FILE DISCIPLINE
-
-Do not modify files merely because they are nearby.
-
-Every modified file must have a reason directly related to the task.
-
-If a file is changed, the final report must be able to answer:
-
-> Why did this file need to change?
-
-Do not create:
-
-* duplicate configuration files
-* duplicate utilities
-* duplicate documentation
-* duplicate components
-* unnecessary wrapper files
-* speculative abstractions
-
-Before creating a new file, search for an existing file that already serves the required purpose.
-
----
-
-# 8. DEPENDENCY DISCIPLINE
-
-Do not add a dependency unless it is genuinely required.
-
-Before adding one:
-
-1. Check whether the repository already has a dependency capable of performing the task.
-2. Check whether the language/runtime already provides the required functionality.
-3. Prefer existing project conventions.
-4. Do not add a library merely because it is convenient.
-
-Do not upgrade unrelated dependencies.
-
-Do not perform dependency migrations unless explicitly requested.
-
----
-
-# 9. CONFIGURATION AND SECRETS
-
-Never expose, print, commit, or hard-code:
-
-* passwords
-* API keys
-* access tokens
-* private keys
-* authentication cookies
-* secrets
-* personally sensitive credentials
-
-Never commit `.env` files containing secrets.
-
-Use the repository's existing environment/configuration mechanism.
-
-Do not invent secret values.
-
-If configuration is missing, STOP and identify what is required.
-
----
-
-# 10. DATABASE SAFETY
-
-Treat databases as potentially destructive systems.
-
-Before changing database behavior:
-
-* inspect the existing schema;
-* inspect migrations;
-* inspect models;
-* inspect data-access code;
-* understand existing relationships.
-
-Never casually:
-
-* drop data;
-* reset production data;
-* recreate schemas;
-* alter migrations destructively;
-* delete records for convenience.
-
-If a migration is required, preserve existing data unless the user explicitly authorizes data destruction.
-
----
-
-# 11. TESTING REQUIREMENTS
-
-Tests are evidence of behavior.
-
-Do not:
-
-* delete tests to make the suite pass;
-* weaken assertions without justification;
-* disable failing test suites;
-* mock away the actual behavior being tested;
-* claim success without running available verification.
-
-When fixing a bug, prefer adding or updating a regression test when appropriate.
-
-A successful task should ideally establish:
-
-**Before → Change → Verification → Result**
-
----
-
-# 12. ERROR HANDLING
-
-Never hide errors merely to make the application appear functional.
-
-Do not:
-
-* swallow exceptions without justification;
-* replace meaningful errors with silent failures;
-* disable logging to hide problems;
-* suppress warnings without understanding them;
-* return fake success responses;
-* fabricate data to satisfy an interface.
-
-If a failure is expected and intentionally handled, follow the existing project pattern.
-
----
-
-# 13. ARCHITECTURE
-
-Do not redesign the architecture unless the task explicitly calls for architectural work.
-
-Do not introduce:
-
-* new frameworks
-* new architectural patterns
-* new services
-* new databases
-* new build systems
-* new deployment systems
-* new state-management systems
-
-merely because the agent prefers them.
-
-**Existing architecture is the default architecture.**
-
----
-
-# 14. REFACTORING
-
-Refactoring is not automatically part of bug fixing.
-
-If the task is to fix a bug:
-
-> Fix the bug first.
-
-Do not simultaneously:
-
-* rename unrelated functions;
-* reorganize directories;
-* rewrite modules;
-* modernize unrelated syntax;
-* change APIs;
-* migrate frameworks;
-* reformat the repository.
-
-If refactoring is necessary to safely implement the requested change, keep it minimal and explain why.
-
----
-
-# 15. USER AUTHORITY
-
-The human project owner determines:
-
-* requirements
-* priorities
-* scope
-* acceptable tradeoffs
-* product behavior
-* architectural direction
-* release decisions
-
-The agent may identify problems and make recommendations.
-
-The agent may **not silently convert recommendations into requirements.**
-
-If the agent believes additional work is necessary, it must distinguish:
-
-**REQUIRED FOR TASK**
-
-from
-
-**RECOMMENDED FOLLOW-UP**
-
-Recommended follow-up work must not be performed automatically.
-
----
-
-# 16. NO AUTONOMOUS FEATURE CREEP
-
-The following reasoning is NOT sufficient authorization:
-
-* "This would be better."
-* "Users probably expect this."
-* "I noticed another issue."
-* "While I was here..."
-* "This code is old."
-* "This could be cleaner."
-* "I decided to modernize it."
-* "I refactored the whole thing for consistency."
-
-These may justify a recommendation.
-
-They do not justify additional modifications.
-
----
-
-# 17. CHANGE BOUNDARY
-
-Before completing the task, compare the final changes against the original request.
-
-Ask:
-
-1. Did I change only what was necessary?
-2. Did I modify anything unrelated?
-3. Did I introduce new dependencies?
-4. Did I alter behavior outside the requested area?
-5. Did I create files unnecessarily?
-6. Did I remove anything?
-7. Did I change configuration?
-8. Did I modify security behavior?
-9. Did I modify data behavior?
-10. Did I actually verify the result?
-
-If the answer to any question reveals unexpected scope, investigate before declaring completion.
-
----
-
-# 18. DO NOT FAKE COMPLETION
-
-Never claim:
-
-* "fixed"
-* "working"
-* "tested"
-* "verified"
-* "deployed"
-* "complete"
-
-unless the available evidence supports the claim.
-
-Use precise status language:
-
-**VERIFIED** — successfully tested.
-
-**PARTIALLY VERIFIED** — some verification completed, but limitations remain.
-
-**UNVERIFIED** — implementation completed but verification could not be performed.
-
-**BLOCKED** — cannot safely complete without additional information/action.
-
----
-
-# 19. FINAL REPORT
-
-At the end of every substantive task, provide a concise report.
-
-Use this exact structure:
-
-## COMPLETED
-
-* What was changed.
-* Where it was changed.
-* Why it was changed.
-
-## NOT CHANGED
-
-* Important related areas intentionally left untouched.
-
-## VERIFICATION
-
-* Tests/checks executed.
-* Result of each check.
-
-## WARNINGS
-
-* Known limitations.
-* Failed checks.
-* Environmental limitations.
-* Anything requiring human attention.
-
-## FOLLOW-UP
-
-Only list genuinely useful additional work.
-
-**Do not perform follow-up work unless separately authorized.**
-
----
-
-# 20. EMERGENCY BRAKE
-
-If the agent realizes it has begun making changes outside the requested scope:
-
-**STOP.**
-
-Do not continue expanding the change.
-
-Instead:
-
-1. Stop modifying files.
-2. Review the changes already made.
-3. Determine what belongs to the requested task.
-4. Identify unrelated modifications.
-5. Restore only unrelated changes that were introduced by the agent, provided doing so will not destroy pre-existing user work.
-6. Re-establish the original task boundary.
-7. Continue only within that boundary.
-
-If restoration is unsafe or uncertain:
-
-**STOP AND REPORT.**
-
----
-
-# 21. CORE PRINCIPLE
-
-The agent is not rewarded for changing the most code.
-
-The agent is not rewarded for producing the most sophisticated solution.
-
-The agent is not rewarded for demonstrating autonomy.
-
-The agent is rewarded for producing the **correct requested result with the smallest safe, verifiable change.**
-
-### OPERATING FORMULA
-
-**UNDERSTAND → INSPECT → PLAN → CHANGE → VERIFY → REPORT**
-
-Not:
-
-**GUESS → MODIFY EVERYTHING → HOPE IT WORKS**
-
----
-
-# 22. FINAL COMMAND
-
-When working in this repository:
-
-**DO THE JOB THAT WAS REQUESTED.**
-
-**DO NOT INVENT A DIFFERENT JOB.**
-
-**DO NOT EXPAND THE SCOPE.**
-
-**DO NOT DESTROY EXISTING WORK.**
-
-**DO NOT CLAIM SUCCESS WITHOUT VERIFICATION.**
-
-**WHEN YOU DON'T KNOW, INSPECT.**
-
-**WHEN YOU CAN'T KNOW, STOP AND ASK.**
-
-**WHEN YOU MAKE A CHANGE, BE ABLE TO EXPLAIN WHY.**
-
-**WHEN YOU FINISH, PROVE WHAT YOU DID.**
-
 
 ## Project overview
 
-Static site for Lost Limb Riders (nonprofit motorcycle community). No build system, no package manager, no framework — vanilla HTML/CSS/JS frontend with **Vercel serverless functions** (Node.js) replacing the original PHP backend. Deployed on Vercel; data lives in **Vercel KV (Redis)**.
+Static vanilla HTML/CSS/JS frontend (no build step, no bundler, no framework) with **Vercel serverless functions** (Node.js ESM) serving JSON APIs. Deployed on **Vercel**; all data lives in **Vercel KV (Redis)** via `@upstash/redis`. No tests, no lint, no formatter, no CI. `README.md` is GitHub-profile boilerplate, not project docs — ignore it.
 
-## Structure
+## Verification reality
 
-### Pages
-- `index.html` — homepage (hero, book, newsletter signup with free book download, guestbook, contact)
-- `events.html` — interactive calendar (month/week views, CRUD, category filters, hidden admin mode via A keypress)
-- `media.html` — podcast player, YouTube vlogs, Coffee Talk episodes, subscribe links; admin mode via A keypress (CRUD episodes backed by `/api/media`)
-- `mission.html` — mission statement, board, programs, donate
-- `admin.html` — admin dashboard (stats, subscriber profiles, visitor log, newsletter compose/preview)
+- **No test suite, no lint, no typecheck, no build.** Verification means: `node --check <file>` for syntax, running `vercel dev` locally for manual checks, and reviewing deploy logs after `vercel --prod`.
+- `npm run dev` = `vercel dev` (serves site + functions at `http://localhost:3000`; requires the project linked / KV env vars present or functions fail on `Redis.fromEnv()`).
+- `npm run deploy` = `vercel --prod`.
 
-### API Endpoints (Vercel Functions)
-- `api/events.js` — calendar CRUD: list (public), add/update/delete (admin key auth)
-- `api/newsletter.js` — newsletter signup: name, email, full geolocation (ip-api.com), device fingerprint
-- `api/visit.js` — visitor logging: IP, geolocation, browser, device on every page load
-- `api/admin.js` — admin API: stats, subscriber list, visitor log (paginated), newsletter HTML builder
-- `api/guestbook.js` — guestbook CRUD, download, clear (admin key auth)
-- `api/cron-newsletter.js` — Vercel Cron sender: builds and emails newsletter to all subscribers via Resend
-- `api/media.js` — media CRUD: list (public, auto-seeds `llr:media`), add/update/delete (admin key auth)
+## Pages
 
-### Shared Library
-- `lib/http.js` — JSON responses, admin key check (timing-safe), input cleaning, IP extraction
-- `lib/storage.js` — Vercel KV access + key names + list caps
-- `lib/geo.js` — ip-api.com geolocation lookup
-- `lib/newsletter.js` — newsletter HTML builder (template + events)
-- `lib/seed.js` — seed events + seed media episodes + the email template (embedded, source of truth)
+- `index.html` — hero, book offering, newsletter signup (free book download), guestbook, contact. Calls `/api/newsletter`, `/api/visit`, `/api/guestbook`.
+- `events.html` — **public-only** interactive calendar (month/week views, category filters). Calls `/api/events?action=list`.
+- `media.html` — **public-only** podcast player, YouTube vlogs, Coffee Talk episodes, live stream + schedule/archive display. Calls `/api/media`, `/api/stream`, `/api/podcast-rss` (subscribe link).
+- `mission.html` — mission, board, programs, donate. No API calls.
+- `admin.html` — **the single admin dashboard**: key login (`sessionStorage` key `llr-admin-key`), tabs for Subscribers, Visitor Log, Send Newsletter (preview builder only — does **not** send), Live Stream (config, schedule, archive approval/purge), and Events CRUD. Calls `/api/admin`, `/api/events`.
 
-### Storage (Vercel KV)
-Keys stored as JSON arrays under `llr:*`:
-- `llr:events` — event objects `{ id, title, date, endDate, category, description, ... }`
-- `llr:media` — media episodes `{ id, type: podcast|vlog|coffeetalk, title, date, duration, durationSec, desc, audioUrl, videoId, featured, ... }`
-- `llr:subscribers` — subscriber profiles (max 5000)
-- `llr:visitors` — visitor entries (max 5000, structured objects)
-- `llr:guestbook` — guestbook entries (max 500)
-- `llr:last-newsletter-sent` — ISO date used by cron to send biweekly
+There is **no hidden admin mode** anywhere anymore — no A-keypress toggles. All admin UI was consolidated into `admin.html`.
 
-## Key details
+## API endpoints (Vercel Functions, all extensionless)
 
-- CSS is inline in each HTML file (no shared stylesheet).
-- All pages share the same CSS custom properties (`--orange`, `--black`, etc.) — keep them consistent across all pages.
-- Frontend calls extensionless paths: `/api/events`, `/api/guestbook`, `/api/newsletter`, `/api/visit`, `/api/admin`.
-- Admin auth uses `ADMIN_KEY` env var (on Vercel). Key stored in `sessionStorage` as `llr-admin-key`. Passed via `?key=` query param.
-- Calendar admin mode: press **A** on keyboard to toggle (hidden from public).
-- Newsletter signup silently captures full visitor profile: IP, geolocation (ip-api.com), browser, device, screen, timezone, proxy/hosting flags. Zero browser permission prompts.
-- Guestbook persists server-side via `api/guestbook.js` (was localStorage-only before the serverless migration — do not revert).
-- No tests, no lint, no build step, no CI.
-- `README.md` is the GitHub profile README (boilerplate, not project docs).
+- `/api/events` — `action=list` (public, auto-seeds `llr:events` from `lib/seed.js` when empty), `action=validate`, `add|update|delete` (POST, admin). Event fields: `title, date, endDate, time, category, location, description` (clean()'d, capped).
+- `/api/newsletter` — POST signup (public). Validates name+email, silently captures full profile: IP, ip-api.com geolocation, browser/device/screen/timezone, proxy/hosting flags. Dedupes by email.
+- `/api/visit` — POST (public) on every page load; logs IP, geolocation, browser, page, etc.
+- `/api/admin` — admin-only. `action=stats|visitors|subscribers|send-newsletter|stream|archive|purge-archive|update-stream`.
+- `/api/guestbook` — `list`/`add` (public), `download`/`clear` (admin). Server-side persisted; do not revert to localStorage.
+- `/api/media` — `list` (public, auto-seeds `llr:media`), `add|update|delete` (admin, POST). Media types: `podcast|vlog|coffeetalk`. Fields include `num, season, title, date, duration, durationSec, desc, audioUrl, videoId, featured` (normalized to boolean + `hasVideo`). No admin UI is currently wired to the CRUD actions.
+- `/api/stream` — live-stream status: `get` (public, seeds `llr:stream` from `seedStream`), `archive` (public), `update`, `add-schedule`, `delete-schedule` (admin).
+- `/api/podcast-rss` — public RSS 2.0 feed generated from `llr:media` episodes where `type === 'podcast'`.
+- `/api/cron-newsletter` — Vercel Cron sender (see Deployment). Refuses requests without `Authorization: Bearer $CRON_SECRET`.
 
-## Environment Variables (Vercel)
+## Shared library (`lib/`)
 
-- `ADMIN_KEY` — secret key for admin API operations (`openssl rand -base64 32`).
-- `CRON_SECRET` — secret sent by Vercel Cron as `Authorization: Bearer`; the cron endpoint refuses requests without it.
-- `RESEND_API_KEY` — Resend API key (email sending, free tier 100/day).
-- `RESEND_FROM` — sender address, e.g. `Lost Limb Riders <john.thompson@lostlimbriders.org>`.
-- `NEWSLETTER_MESSAGE` — optional default intro message for the cron newsletter.
+- `lib/http.js` — `sendJson`, `sendEmpty`, `sendDownload`, `readBody`, `getParam`, `getClientIp`, `clean()` (strips tags, collapses whitespace, truncates), `timingSafeStrEqual`, `isAdmin(req)` (checks `?key=` query param or `X-Admin-Key` header against `ADMIN_KEY` via timing-safe compare).
+- `lib/storage.js` — sole KV access layer (`Redis.fromEnv()`). Use `getList`/`setList`/`getDate`/`setDate` + the `KEYS`/`LIMITS` constants — **never call `kv` directly from an endpoint**. List caps are enforced here.
+- `lib/geo.js` — ip-api.com lookup (`http://ip-api.com`, ~45 req/min free tier). Returns `{ status:'unavailable' }` on failure; localhost returns empty.
+- `lib/newsletter.js` — `buildNewsletter(userMessage, events)` + `getUpcomingEvents`. Placeholders in template: `{{DATE_RANGE}}`, `{{EVENTS_LIST}}`, `{{MESSAGE}}`, `{{NAME}}`.
+- `lib/seed.js` — source of truth for `seedEvents`, `seedMedia`, `seedStream`, `podcastLinks`, and the embedded `newsletterTemplate`. Edit here to change them; do not read `data/`.
+- `lib/stream.js` — stream auto-archiving (`autoArchive` when status goes live→offline), `publicArchive`, `adminArchive`, `purgeExpired`, keep-amount normalization.
+- `lib/ua.js` — `parseBrowser(userAgent)` used by the admin panel.
 
-## Deployment
+## Storage (Vercel KV) — JSON arrays under `llr:*`
+
+- `llr:events` (auto-seeds when empty), `llr:media` (auto-seeds when empty), `llr:stream` (single object in an array, auto-seeds), `llr:stream-archive` (cap 500).
+- `llr:subscribers` (cap 5000), `llr:visitors` (cap 5000), `llr:guestbook` (cap 500), `llr:last-newsletter-sent` (ISO date string).
+- Re-seeding tip: deleting `llr:events`/`llr:media`/`llr:stream` in the Vercel KV dashboard causes the next public read to re-seed from `lib/seed.js`.
+
+## Key conventions
+
+- CSS is **inline in each HTML file** (no shared stylesheet). All pages share the same `:root` custom properties (`--orange`, `--black`, `--charcoal`, `--card`, `--white`, `--muted`, `--line`, `--shadow`) — keep them consistent across all pages.
+- Admin auth: `ADMIN_KEY` env var on Vercel is the source of truth. Frontend stores it in `sessionStorage` under `llr-admin-key` and sends it as `?key=` (API also accepts `X-Admin-Key` header). Timing-safe compare only.
+- Every visitor page load hits `/api/visit` → one ip-api.com lookup; newsletter signup does another. Keep this in mind re: geo rate limits.
+- Response conventions: JSON, errors as `{ "error": "..." }` with proper status (403 admin, 422 validation, 404 not found/unsupported, 500 storage). 201 on create, 204 on delete/OPTIONS.
+
+## Environment variables (Vercel)
+
+- `ADMIN_KEY` — admin API secret (`openssl rand -base64 32`).
+- `CRON_SECRET` — sent by Vercel Cron as `Authorization: Bearer`; cron endpoint refuses requests without it.
+- `RESEND_API_KEY` + `RESEND_FROM` — email sending (free tier 100/day).
+- `NEWSLETTER_MESSAGE` — optional default intro for the cron newsletter.
+- `KV_*` — auto-created by `vercel link` when attaching the KV store (not set by hand).
+
+## Deployment & cron
 
 1. `npm install`
-2. `vercel link` (attach KV store — auto-creates `KV_*` env vars)
-3. Set the env vars above in Vercel dashboard
-4. `vercel --prod`
-5. Cron is configured in `vercel.json` (weekly; the function gates itself to send every two weeks)
+2. `vercel link` (attach KV store → creates `KV_*` env vars)
+3. Set env vars in the Vercel dashboard
+4. `npm run deploy` (`vercel --prod`)
+5. Cron configured in `vercel.json`: `"0 9 * * 1"` (Mondays 09:00 UTC). The function gates itself: sends at most every **13 days** and caps **100 sends/run** via Resend. Sending only happens via cron — `admin.html`'s newsletter tab only builds preview HTML.
 
-## Editing the newsletter template / seed events
+## Editing newsletter template / seed data
 
-They live in `lib/seed.js` (embedded). Edit there, then redeploy. Do not rely on `data/` — it is no longer read at runtime.
+Edit `lib/seed.js` (embedded), then redeploy. Keep the `{{...}}` placeholders intact. `data/` is dead (empty `.gitkeep` only) — never read/write it at runtime. The site is a PHP→Node migration; do not add `.php` files.
 
 ---
 
@@ -718,63 +112,36 @@ They live in `lib/seed.js` (embedded). Edit there, then redeploy. Do not rely on
 
 **STATUS:** IMMEDIATE / MANDATORY
 
-Effective immediately, **every code change is subject to a mandatory completion cycle.** No change is considered complete merely because the code was edited locally.
+Every code change is subject to a mandatory completion cycle. No change is complete merely because code was edited locally.
 
 ### REQUIRED WORKFLOW
 
-For **every modification**, the coding agent shall execute the following sequence:
-
-1. **IMPLEMENT**
-   * Make the requested code change.
-   * Keep the change scoped to the requested objective.
-
-2. **COMPILE / BUILD**
-   * Compile or build the affected application after making the change.
-   * Resolve compilation/build failures before proceeding.
-
-3. **TEST / VERIFY**
-   * Run applicable tests, linting, type checks, or project validation.
-   * Confirm implementation works as intended.
-
-4. **COMMIT TO GIT**
-   * Create an intentional Git commit containing the completed change.
-
-5. **PUSH TO GITHUB**
-   * Push the commit to the appropriate GitHub branch.
-
-6. **REDEPLOY**
-   * Redeploy the application using the project's established deployment process.
-
-7. **VERIFY DEPLOYMENT**
-   * Confirm deployment completed successfully.
-   * Verify the running/deployed application reflects the new code.
+1. **IMPLEMENT** — make the requested change, scoped to the request.
+2. **BUILD** — compile/build the affected app; resolve failures first.
+3. **TEST / VERIFY** — run applicable checks and confirm it works.
+4. **COMMIT TO GIT** — create an intentional commit with the change.
+5. **PUSH TO GITHUB** — push to the appropriate branch (`main`; remote `origin` at `https://github.com/LostLimbRider/official`).
+6. **REDEPLOY** — redeploy via the established process (`npm run deploy`).
+7. **VERIFY DEPLOYMENT** — confirm the deployed app reflects the new code.
 
 ### COMPLETION STANDARD
 
-A task shall **NOT** be reported as complete until:
+A task is **not** complete until: **Code changed → Build successful → Tests/verification successful → Git commit created → GitHub push successful → Deployment successful → Deployed version verified.**
 
-**Code changed → Build successful → Tests/verification successful → Git commit created → GitHub push successful → Deployment successful → Deployed version verified.**
+### PROHIBITED
 
-### PROHIBITED BEHAVIOR
-
-* Make changes and leave them only on the local machine.
-* Make changes without compiling/building.
-* Make changes without appropriate verification.
-* Commit changes but fail to push to GitHub.
-* Push changes without redeploying when deployment is part of the workflow.
-* Claim a task is complete when the GitHub repository or deployed application does not contain the completed changes.
-* Skip the workflow merely because a change appears small or trivial.
+- Leaving changes only local, skipping build/verify, committing without pushing, pushing without redeploying, claiming completion when GitHub/deploy doesn't have the changes, or skipping stages because a change "looks trivial."
 
 ### FAILURE HANDLING
 
-If any required stage fails:
-
-**STOP THE COMPLETION CLAIM.**
-
-Report the exact failed stage, the error encountered, and corrective action taken or required. **The workflow remains blocked until you (the human) confirm the change should proceed.** No change is complete without your explicit confirmation after any failure.
+If any stage fails: **STOP THE COMPLETION CLAIM.** Report the exact failed stage, the error, and corrective action taken or required. The workflow stays blocked until the human confirms the change should proceed.
 
 ### EXECUTIVE RULE
 
-**NO CHANGE IS COMPLETE UNTIL IT IS BUILT, VERIFIED, COMMITTED, PUSHED TO GITHUB, REDEPLOYED, AND VERIFIED IN THE DEPLOYED ENVIRONMENT.**
+**NO CHANGE IS COMPLETE UNTIL IT IS BUILT, VERIFIED, COMMITTED, PUSHED TO GITHUB, REDEPLOYED, AND VERIFIED IN THE DEPLOYED ENVIRONMENT.** Applies to all subsequent coding work unless superseded by a later directive.
 
-This directive applies to **all subsequent coding work unless explicitly superseded by a later executive directive.**
+---
+
+## Other instruction sources
+
+`.github/copilot-instructions.md` contains a detailed, currently-accurate project reference (API response codes, CSS tokens, troubleshooting, testing checklist). When it conflicts with this file, this file wins; report the conflict.

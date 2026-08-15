@@ -22,6 +22,7 @@
       --cat-community: #3b82f6;
       --cat-meeting: #a855f7;
       --cat-rally: #ef4444;
+      --cat-livestream: #ff6a00;
     }
 
     * { box-sizing: border-box; }
@@ -340,12 +341,14 @@
     .cal-event.cat-community { background: rgba(59,130,246,.15); color: var(--cat-community); }
     .cal-event.cat-meeting { background: rgba(168,85,247,.15); color: var(--cat-meeting); }
     .cal-event.cat-rally { background: rgba(239,68,68,.15); color: var(--cat-rally); }
+    .cal-event.cat-livestream { background: rgba(255,106,0,.15); color: var(--cat-livestream); }
 
     .cal-event .ev-dot.cat-ride { background: var(--cat-ride); }
     .cal-event .ev-dot.cat-fundraiser { background: var(--cat-fundraiser); }
     .cal-event .ev-dot.cat-community { background: var(--cat-community); }
     .cal-event .ev-dot.cat-meeting { background: var(--cat-meeting); }
     .cal-event .ev-dot.cat-rally { background: var(--cat-rally); }
+    .cal-event .ev-dot.cat-livestream { background: var(--cat-livestream); }
 
     .more-events {
       font-size: 11px;
@@ -427,6 +430,7 @@
     .cat-badge.cat-community { background: rgba(59,130,246,.15); color: var(--cat-community); }
     .cat-badge.cat-meeting { background: rgba(168,85,247,.15); color: var(--cat-meeting); }
     .cat-badge.cat-rally { background: rgba(239,68,68,.15); color: var(--cat-rally); }
+    .cat-badge.cat-livestream { background: rgba(255,106,0,.15); color: var(--cat-livestream); }
 
     .no-events {
       text-align: center;
@@ -707,7 +711,8 @@
       fundraiser: { label: 'Fundraiser', color: '--cat-fundraiser' },
       community:  { label: 'Community',  color: '--cat-community' },
       meeting:    { label: 'Meeting',    color: '--cat-meeting' },
-      rally:      { label: 'Rally',      color: '--cat-rally' }
+      rally:      { label: 'Rally',      color: '--cat-rally' },
+      livestream: { label: 'Livestream', color: '--cat-livestream' }
     };
 
      let allEvents = [];

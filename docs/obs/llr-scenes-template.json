@@ -1,0 +1,38 @@
+{
+  "version": "0.11.0",
+  "current_scene": "LLR — Offline",
+  "current_program_scene": "LLR — Offline",
+  "current_transition": "Cut",
+  "transition_duration": 300,
+  "scene_order": [
+    { "name": "LLR — Starting Soon" },
+    { "name": "LLR — Live Show" },
+    { "name": "LLR — Guest" },
+    { "name": "LLR — Screen Share" },
+    { "name": "LLR — Prerecorded Episode" },
+    { "name": "LLR — Break" },
+    { "name": "LLR — Announcements" },
+    { "name": "LLR — Ending" },
+    { "name": "LLR — Offline" }
+  ],
+  "sources": [
+    { "name": "LLR — Starting Soon", "versioned_id": "scene", "id": "scene", "width": 0, "height": 0, "volume": 1, "muted": false, "config": { "items": [] } },
+    { "name": "LLR — Live Show", "versioned_id": "scene", "id": "scene", "width": 0, "height": 0, "volume": 1, "muted": false, "config": { "items": [] } },
+    { "name": "LLR — Guest", "versioned_id": "scene", "id": "scene", "width": 0, "height": 0, "volume": 1, "muted": false, "config": { "items": [] } },
+    { "name": "LLR — Screen Share", "versioned_id": "scene", "id": "scene", "width": 0, "height": 0, "volume": 1, "muted": false, "config": { "items": [] } },
+    { "name": "LLR — Prerecorded Episode", "versioned_id": "scene", "id": "scene", "width": 0, "height": 0, "volume": 1, "muted": false, "config": { "items": [] } },
+    { "name": "LLR — Break", "versioned_id": "scene", "id": "scene", "width": 0, "height": 0, "volume": 1, "muted": false, "config": { "items": [] } },
+    { "name": "LLR — Announcements", "versioned_id": "scene", "id": "scene", "width": 0, "height": 0, "volume": 1, "muted": false, "config": { "items": [] } },
+    { "name": "LLR — Ending", "versioned_id": "scene", "id": "scene", "width": 0, "height": 0, "volume": 1, "muted": false, "config": { "items": [] } },
+    { "name": "LLR — Offline", "versioned_id": "scene", "id": "scene", "width": 0, "height": 0, "volume": 1, "muted": false, "config": { "items": [] } }
+  ],
+  "groups": [],
+  "hotkeys": {},
+  "saved_projectors": [],
+  "transition_properties": {},
+  "quick_transitions": [
+    { "name": "Cut", "id": "cut_transition", "duration": 0, "hotkeys": [] },
+    { "name": "Fade", "id": "fade_transition", "duration": 300, "hotkeys": [] }
+  ],
+  "display_custom_outputs": false
+}

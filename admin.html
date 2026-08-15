@@ -618,25 +618,27 @@
        <!-- Live Stream panel -->
        <div id="panel-stream" class="tab-panel">
          <div class="panel">
-           <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px;">Stream Configuration</h3>
-           <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">Manage your live stream settings. When status is set to "live", the media page will show the embedded player.</p>
+            <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px;">Stream Configuration</h3>
+            <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">OBS Studio is the broadcast producer; this panel manages the public-facing stream metadata. When a platform check confirms the broadcast is live, the media page shows the embedded player with the correct status label.</p>
 
            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-             <div>
-               <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Platform</label>
-               <select id="smPlatform" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px; font-family:inherit;">
-                  <option value="youtube">YouTube Live</option>
-                  <option value="facebook">Facebook Live</option>
+              <div>
+                <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Platform</label>
+                <select id="smPlatform" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px; font-family:inherit;">
+                   <option value="youtube">YouTube Live</option>
+                   <option value="facebook">Facebook Live</option>
+                   <option value="twitch">Twitch</option>
+                   <option value="owncast">Owncast</option>
                 </select>
-             </div>
-             <div>
-               <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Status</label>
-               <select id="smStatus" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px; font-family:inherit;">
-                 <option value="offline">Offline</option>
-                 <option value="live">Live</option>
-               </select>
-             </div>
-           </div>
+              </div>
+              <div>
+                <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Status</label>
+                <select id="smStatus" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px; font-family:inherit;">
+                  <option value="offline">Offline</option>
+                  <option value="live">Live</option>
+                </select>
+              </div>
+            </div>
 
            <div style="margin-bottom:14px;">
              <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Stream ID (YouTube video ID or Facebook video URL)</label>
@@ -671,11 +673,30 @@
            </div>
 
            <div style="display:flex; gap:12px;">
-             <button class="btn btn-primary" onclick="saveStreamConfig()" style="flex:1; justify-content:center;">Save</button>
-             <button class="btn" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.2);flex:1; justify-content:center;" onclick="goLive()">Go Live Now</button>
-           </div>
-           <div id="streamSaveStatus" style="margin-top:12px; font-size:13px; min-height:18px;"></div>
-         </div>
+              <button class="btn btn-primary" onclick="saveStreamConfig()" style="flex:1; justify-content:center;">Save</button>
+              <button class="btn" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.2);flex:1; justify-content:center;" onclick="goLive()">Go Live Now</button>
+              <button class="btn" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.2);flex:1; justify-content:center;" onclick="checkStreamLive()">Check Live Status</button>
+            </div>
+            <div id="streamLiveStatus" style="margin-top:12px; font-size:13px; min-height:18px;"></div>
+            <div id="streamSaveStatus" style="margin-top:12px; font-size:13px; min-height:18px;"></div>
+          </div>
+
+          <div class="panel" style="margin-top:20px;">
+            <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">OBS Studio Status</h3>
+            <p style="color:var(--muted); font-size:13px; margin-bottom:14px;">
+              Connect to OBS Studio on this machine (Tools &rarr; WebSocket Server Settings &rarr; enable, port 4455) to verify it is running, see the current scene, and confirm the media source for a prerecorded broadcast. The password stays in memory for this session only — it is never sent to or stored by the website.
+            </p>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:14px;">
+              <input id="obsUrl" value="ws://localhost:4455" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:13px;">
+              <input id="obsPassword" type="password" autocomplete="off" placeholder="OBS WebSocket password (in-memory)" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:13px;">
+              <input id="obsMediaSource" placeholder="Media source name (prerecorded)" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:13px;">
+            </div>
+            <div style="display:flex; gap:12px; margin-bottom:14px;">
+              <button class="btn btn-sm btn-primary" onclick="connectOBS()">Connect</button>
+              <button class="btn btn-sm" onclick="disconnectOBS()" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.2);">Disconnect</button>
+            </div>
+            <div id="obsStatus" style="font-size:13px; line-height:1.7;"></div>
+          </div>
 
          <div class="panel" style="margin-top:20px;">
            <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">Stream Archive</h3>
@@ -694,11 +715,45 @@
 
        <!-- Schedule item modal -->
        <div id="scheduleModal" style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.75); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:20px;">
-         <div class="media-modal">
-           <h3>Add Scheduled Stream</h3>
+         <div class="media-modal" style="max-width:560px;">
+           <h3 id="scheduleModalTitle">Add Scheduled Broadcast</h3>
            <div class="form-field" style="margin-bottom:14px;">
              <label>Title</label>
              <input id="schTitle" maxlength="200" placeholder="e.g. Weekly Wednesday Ride">
+           </div>
+           <div class="form-row">
+             <div class="form-field">
+               <label>Broadcast Mode</label>
+               <select id="schMode" onchange="toggleSchMedia()">
+                 <option value="realtime">Real-Time Live</option>
+                 <option value="prerecorded">Prerecorded File Broadcast</option>
+               </select>
+             </div>
+             <div class="form-field">
+               <label>Destination</label>
+               <select id="schDestination">
+                 <option value="youtube">YouTube Live</option>
+                 <option value="facebook">Facebook Live</option>
+                 <option value="twitch">Twitch</option>
+                 <option value="owncast">Owncast</option>
+               </select>
+             </div>
+           </div>
+           <div id="schMediaWrap" style="display:none;">
+             <div class="form-row">
+               <div class="form-field">
+                 <label>Media File (on the OBS machine)</label>
+                 <input id="schMediaFile" maxlength="200" placeholder="e.g. LLR-CoffeeTalk-Encore.mp4">
+               </div>
+               <div class="form-field">
+                 <label>Expected Duration (min)</label>
+                 <input id="schDurationMin" type="number" min="0" max="600" placeholder="e.g. 45">
+               </div>
+             </div>
+             <label style="display:flex; align-items:flex-start; gap:8px; font-size:12px; color:var(--muted); margin-bottom:14px; cursor:pointer;">
+               <input id="schMediaVerified" type="checkbox" style="margin-top:2px;">
+               <span>Confirmed: the media file exists and plays in OBS (verify with the OBS Studio Status panel above).</span>
+             </label>
            </div>
            <div class="form-row">
              <div class="form-field">
@@ -706,7 +761,7 @@
                <select id="schDay">
                  <option value="Sunday">Sunday</option>
                  <option value="Monday">Monday</option>
-               <option value="Tuesday">Tuesday</option>
+                 <option value="Tuesday">Tuesday</option>
                  <option value="Wednesday">Wednesday</option>
                  <option value="Thursday">Thursday</option>
                  <option value="Friday">Friday</option>
@@ -731,16 +786,53 @@
                </select>
              </div>
            </div>
+           <div class="form-row">
+             <div class="form-field">
+               <label>Visibility</label>
+               <select id="schVisibility">
+                 <option value="public">Public</option>
+                 <option value="private">Private</option>
+               </select>
+             </div>
+             <div class="form-field">
+               <label>OBS Scene</label>
+               <input id="schScene" maxlength="60" placeholder="e.g. LLR — Live Show">
+             </div>
+           </div>
+           <div class="form-row">
+             <div class="form-field">
+               <label>Featured Topic</label>
+               <input id="schTopic" maxlength="200" placeholder="e.g. Coffee Talk">
+             </div>
+             <div class="form-field">
+               <label>Stream Key Ref (env var name — never the key)</label>
+               <input id="schStreamKeyRef" maxlength="100" placeholder="e.g. FACEBOOK_STREAM_KEY">
+             </div>
+           </div>
+           <div class="form-row">
+             <div class="form-field">
+               <label>Host</label>
+               <input id="schHost" maxlength="200" placeholder="e.g. John Thompson">
+             </div>
+             <div class="form-field">
+               <label>Guest</label>
+               <input id="schGuest" maxlength="200" placeholder="Optional">
+             </div>
+           </div>
+           <div class="form-field" style="margin-bottom:14px;">
+             <label>Thumbnail / Cover Image URL (optional)</label>
+             <input id="schThumbnail" maxlength="500" placeholder="https://...">
+           </div>
            <div class="form-field" style="margin-bottom:14px;">
              <label>Description</label>
-             <textarea id="schDesc" maxlength="2000" placeholder="What is this stream about?"></textarea>
+             <textarea id="schDesc" maxlength="2000" placeholder="What is this broadcast about?"></textarea>
            </div>
            <div class="form-actions">
              <button type="button" class="btn btn-secondary" onclick="closeScheduleModal()">Cancel</button>
-             <button type="submit" class="btn btn-primary" onclick="saveScheduledItem()">Add</button>
+             <button type="submit" class="btn btn-primary" id="scheduleModalSaveBtn" onclick="saveScheduledItem()">Add</button>
            </div>
          </div>
-        </div>
+       </div>
 
         <!-- Events panel -->
         <div id="panel-events" class="tab-panel">
@@ -775,6 +867,7 @@
                     <option value="community">Community</option>
                     <option value="meeting">Meeting</option>
                     <option value="rally">Rally</option>
+                    <option value="livestream">Livestream</option>
                   </select>
                 </div>
                 <div class="form-field">
@@ -864,15 +957,21 @@
     }
 
     // --- Tabs ---
+      let streamCheckTimer = null;
       function switchTab(name) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
         event.target.classList.add('active');
         document.getElementById('panel-' + name).classList.add('active');
 
+        if (streamCheckTimer) { clearInterval(streamCheckTimer); streamCheckTimer = null; }
         if (name === 'subscribers') loadSubscribers();
         if (name === 'visitors') loadVisitors(1);
-        if (name === 'stream') { loadStreamConfig(); loadArchive(); }
+        if (name === 'stream') {
+          loadStreamConfig();
+          loadArchive();
+          streamCheckTimer = setInterval(checkStreamLive, 60000);
+        }
         if (name === 'events') loadEvents();
         if (name === 'newsletter') loadSignedStatus();
       }
@@ -1103,28 +1202,42 @@
          document.getElementById('smDesc').value = stream.description || '';
          document.getElementById('smStatus').value = stream.status || 'offline';
          document.getElementById('smViewers').value = stream.viewerCount || 0;
-         document.getElementById('smArchiveKeep').value = stream.archiveKeep || 20;
-         renderScheduleAdmin(stream.schedule || []);
-         status.textContent = '';
-       } catch {
-         status.textContent = 'Connection error.';
-       }
-     }
+          document.getElementById('smArchiveKeep').value = stream.archiveKeep || 20;
+          window.__streamSchedule = stream.schedule || [];
+          renderScheduleAdmin(stream.schedule || []);
+          status.textContent = '';
+          checkStreamLive();
+        } catch {
+          status.textContent = 'Connection error.';
+        }
+      }
 
      function renderScheduleAdmin(schedule) {
        const list = document.getElementById('scheduleListAdmin');
        if (!schedule.length) {
-         list.innerHTML = '<p style="color:var(--muted); font-size:13px; text-align:center; padding:16px;">No scheduled streams yet.</p>';
+         list.innerHTML = '<p style="color:var(--muted); font-size:13px; text-align:center; padding:16px;">No scheduled broadcasts yet.</p>';
          return;
        }
        list.innerHTML = schedule.map(item => {
          const recurring = item.recurring !== false ? ' (recurring)' : '';
+         const modeBadge = item.mode === 'prerecorded'
+           ? '<span class="badge" style="background:rgba(252,211,77,.15); color:#fcd34d;">Prerecorded</span>'
+           : '<span class="badge badge-clean">Real-Time</span>';
+         const media = item.mode === 'prerecorded'
+           ? '<div style="font-size:12px; color:var(--muted); margin-top:2px;">File: ' + escapeHtml(item.mediaFile || '') +
+             (item.mediaVerified ? ' \u2713 verified' : ' \u2717 NOT verified') + '</div>'
+           : '';
+         const privateBadge = item.visibility === 'private' ? ' \u2022 <span style="color:#fca5a5;">private</span>' : '';
          return '<div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.03);">' +
            '<div style="flex:1; min-width:0;">' +
-             '<div style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:2px;">' + escapeHtml(item.title || '') + '</div>' +
-             '<div style="font-size:12px; color:var(--muted);">' + escapeHtml(item.day || '') + ' ' + escapeHtml(item.time || '') + (item.date ? ' \u2022 ' + escapeHtml(item.date) : '') + recurring + '</div>' +
+             '<div style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:2px;">' + escapeHtml(item.title || '') + ' ' + modeBadge + privateBadge + '</div>' +
+             '<div style="font-size:12px; color:var(--muted);">' + escapeHtml(item.day || '') + ' ' + escapeHtml(item.time || '') + (item.date ? ' \u2022 ' + escapeHtml(item.date) : '') + recurring + ' \u2022 ' + escapeHtml(item.destination || 'facebook') + '</div>' +
+             media +
            '</div>' +
-           '<button class="btn btn-sm" style="margin-left:12px; background:transparent; color:#ef4444; border-color:rgba(239,68,68,.3);" onclick="deleteScheduleItem(\'' + item.id + '\')">Delete</button>' +
+           '<div style="display:flex; gap:8px; margin-left:12px; flex-shrink:0;">' +
+             '<button class="btn btn-sm" onclick="editScheduleItem(\'' + item.id + '\')" style="background:transparent;color:var(--muted);border-color:rgba(255,255,255,.2);">Edit</button>' +
+             '<button class="btn btn-sm" style="background:transparent; color:#ef4444; border-color:rgba(239,68,68,.3);" onclick="deleteScheduleItem(\'' + item.id + '\')">Delete</button>' +
+           '</div>' +
          '</div>';
        }).join('');
      }
@@ -1157,55 +1270,139 @@
      async function goLive() {
        document.getElementById('smStatus').value = 'live';
        await saveStreamConfig();
+       await checkStreamLive();
      }
 
-     function openScheduleModal() {
+     async function checkStreamLive() {
+       const el = document.getElementById('streamLiveStatus');
+       el.textContent = 'Checking broadcast status...';
+       try {
+         const res = await fetch(apiUrl('stream-check'), {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({})
+         });
+         if (!res.ok) { el.textContent = 'Check failed.'; return; }
+         const data = await res.json();
+         const p = data.platform || {};
+         const liveLabel = { 'live-realtime': 'LIVE NOW — REAL-TIME', 'live-prerecorded': 'LIVE NOW — PRERECORDED BROADCAST', 'starting-soon': 'Starting Soon', scheduled: 'Upcoming', replay: 'Offline — Replay Available', offline: 'Offline' };
+         let text = 'State: ' + (liveLabel[data.liveState] || data.liveState);
+         if (p.configured) {
+           text += ' \u2022 Platform (' + (p.platform || '') + '): ' + (p.live ? 'LIVE' : 'not live') + ' \u2022 ' + (p.reason || '');
+         } else {
+           text += ' \u2022 Platform check not configured \u2014 using manual status.';
+         }
+         el.textContent = text;
+         loadStreamConfig();
+       } catch {
+         el.textContent = 'Connection error.';
+       }
+     }
+
+     function toggleSchMedia() {
+       const wrap = document.getElementById('schMediaWrap');
+       wrap.style.display = document.getElementById('schMode').value === 'prerecorded' ? 'block' : 'none';
+     }
+
+     let scheduleEditingId = '';
+
+     function openScheduleModal(editingId) {
+       scheduleEditingId = editingId || '';
+       document.getElementById('scheduleModalTitle').textContent = editingId ? 'Edit Scheduled Broadcast' : 'Add Scheduled Broadcast';
+       document.getElementById('scheduleModalSaveBtn').textContent = editingId ? 'Save Changes' : 'Add';
+       if (editingId) {
+         const item = window.__streamSchedule ? window.__streamSchedule.find(s => s.id === editingId) : null;
+         if (item) {
+           document.getElementById('schTitle').value = item.title || '';
+           document.getElementById('schMode').value = item.mode || 'realtime';
+           document.getElementById('schDestination').value = item.destination || 'facebook';
+           document.getElementById('schMediaFile').value = item.mediaFile || '';
+           document.getElementById('schDurationMin').value = item.durationMin || 0;
+           document.getElementById('schMediaVerified').checked = item.mediaVerified === true;
+           document.getElementById('schDay').value = item.day || 'Wednesday';
+           document.getElementById('schTime').value = item.time || '';
+           document.getElementById('schDate').value = item.date || '';
+           document.getElementById('schRecurring').value = item.recurring === false ? 'false' : 'true';
+           document.getElementById('schVisibility').value = item.visibility || 'public';
+           document.getElementById('schScene').value = item.scene || '';
+           document.getElementById('schTopic').value = item.featuredTopic || '';
+           document.getElementById('schStreamKeyRef').value = item.streamKeyRef || '';
+           document.getElementById('schHost').value = item.host || '';
+           document.getElementById('schGuest').value = item.guest || '';
+           document.getElementById('schThumbnail').value = item.thumbnail || '';
+           document.getElementById('schDesc').value = item.description || '';
+         }
+       }
+       toggleSchMedia();
        document.getElementById('scheduleModal').style.display = 'flex';
        document.getElementById('scheduleModal').querySelector('input, select, textarea').focus();
      }
 
+     function editScheduleItem(id) {
+       openScheduleModal(id);
+     }
+
      function closeScheduleModal() {
        document.getElementById('scheduleModal').style.display = 'none';
+       scheduleEditingId = '';
        document.getElementById('schTitle').value = '';
        document.getElementById('schTime').value = '';
        document.getElementById('schDate').value = '';
        document.getElementById('schDesc').value = '';
        document.getElementById('schDay').value = 'Wednesday';
        document.getElementById('schRecurring').value = 'true';
+       document.getElementById('schMode').value = 'realtime';
+       document.getElementById('schDestination').value = 'facebook';
+       document.getElementById('schMediaFile').value = '';
+       document.getElementById('schDurationMin').value = '';
+       document.getElementById('schMediaVerified').checked = false;
+       document.getElementById('schVisibility').value = 'public';
+       document.getElementById('schScene').value = '';
+       document.getElementById('schTopic').value = '';
+       document.getElementById('schStreamKeyRef').value = '';
+       document.getElementById('schHost').value = '';
+       document.getElementById('schGuest').value = '';
+       document.getElementById('schThumbnail').value = '';
+       toggleSchMedia();
      }
 
      async function saveScheduledItem() {
        const title = document.getElementById('schTitle').value.trim();
        if (!title) return;
        const item = {
-         id: 'ls-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8),
+         id: scheduleEditingId,
          title: title,
          day: document.getElementById('schDay').value,
          time: document.getElementById('schTime').value.trim(),
          date: document.getElementById('schDate').value.trim(),
          recurring: document.getElementById('schRecurring').value !== 'false',
          description: document.getElementById('schDesc').value.trim(),
+         mode: document.getElementById('schMode').value,
+         destination: document.getElementById('schDestination').value,
+         mediaFile: document.getElementById('schMediaFile').value.trim(),
+         mediaVerified: document.getElementById('schMediaVerified').checked,
+         durationMin: parseInt(document.getElementById('schDurationMin').value, 10) || 0,
+         visibility: document.getElementById('schVisibility').value,
+         scene: document.getElementById('schScene').value.trim(),
+         featuredTopic: document.getElementById('schTopic').value.trim(),
+         streamKeyRef: document.getElementById('schStreamKeyRef').value.trim(),
+         host: document.getElementById('schHost').value.trim(),
+         guest: document.getElementById('schGuest').value.trim(),
+         thumbnail: document.getElementById('schThumbnail').value.trim(),
        };
+       const action = scheduleEditingId ? 'update-schedule' : 'add-schedule';
+       const streamUrl = '/api/stream?action=' + action + '&key=' + encodeURIComponent(adminKey);
        try {
-         const res = await fetch(apiUrl('stream'));
-         if (!res.ok) return;
-         const data = await res.json();
-         const stream = data.stream || {};
-         const schedule = Array.isArray(stream.schedule) ? stream.schedule : [];
-         schedule.unshift(item);
-         await fetch(apiUrl('update-stream'), {
+         const res = await fetch(streamUrl, {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({
-             platform: stream.platform,
-             streamId: stream.streamId,
-             title: stream.title,
-             description: stream.description,
-             status: stream.status,
-             viewerCount: stream.viewerCount,
-             schedule: schedule,
-           })
+           body: JSON.stringify(item)
          });
+         const data = await res.json();
+         if (!res.ok) {
+           document.getElementById('streamSaveStatus').textContent = data.error || 'Error saving schedule.';
+           return;
+         }
          closeScheduleModal();
          loadStreamConfig();
        } catch {
@@ -1214,29 +1411,124 @@
      }
 
      async function deleteScheduleItem(id) {
-       if (!confirm('Delete this scheduled stream?')) return;
+       if (!confirm('Delete this scheduled broadcast? This also removes its linked calendar event.')) return;
        try {
-         const res = await fetch(apiUrl('stream'));
-         if (!res.ok) return;
-         const data = await res.json();
-         const stream = data.stream || {};
-         const schedule = (stream.schedule || []).filter(s => s.id !== id);
-         await fetch(apiUrl('update-stream'), {
+         const res = await fetch('/api/stream?action=delete-schedule&key=' + encodeURIComponent(adminKey), {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({
-             platform: stream.platform,
-             streamId: stream.streamId,
-             title: stream.title,
-             description: stream.description,
-             status: stream.status,
-             viewerCount: stream.viewerCount,
-             schedule: schedule,
-           })
+           body: JSON.stringify({ id })
          });
-          loadStreamConfig();
-        } catch {}
-      }
+         if (!res.ok) return;
+         loadStreamConfig();
+       } catch {}
+     }
+
+     // --- OBS Studio status (local WebSocket, obs-websocket v5) ---
+     let obsSocket = null;
+     let obsRequestSeq = 0;
+
+     function obsSendRequest(requestType, requestData, cb) {
+       if (!obsSocket || obsSocket.readyState !== 1) return;
+       const id = 'obs-' + (++obsRequestSeq);
+       obsRequestCallbacks[id] = cb;
+       obsSocket.send(JSON.stringify({ op: 6, d: { requestType, requestId: id, requestData: requestData || {} } }));
+     }
+     let obsRequestCallbacks = {};
+
+     function obsAuthString(password, challenge, salt) {
+       const enc = new TextEncoder();
+       const sha = (str) => crypto.subtle.digest('SHA-256', enc.encode(str));
+       return sha(password + salt).then(buf => {
+         const secret = btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
+         return sha(challenge + secret).then(buf2 => btoa(String.fromCharCode.apply(null, new Uint8Array(buf2))));
+       });
+     }
+
+     function connectOBS() {
+       const status = document.getElementById('obsStatus');
+       const url = document.getElementById('obsUrl').value.trim() || 'ws://localhost:4455';
+       const password = document.getElementById('obsPassword').value;
+       if (obsSocket) { try { obsSocket.close(); } catch (e) {} obsSocket = null; }
+       status.innerHTML = '<span style="color:var(--muted);">Connecting to OBS at ' + escapeHtml(url) + '...</span>';
+       let ws;
+       try {
+         ws = new WebSocket(url);
+       } catch (e) {
+         status.innerHTML = '<span style="color:#fca5a5;">Could not connect to OBS. Start OBS Studio and enable Tools &rarr; WebSocket Server Settings (default ws://localhost:4455).</span>';
+         return;
+       }
+       obsSocket = ws;
+       ws.onopen = () => {};
+       ws.onmessage = (ev) => {
+         let msg;
+         try { msg = JSON.parse(ev.data); } catch (e) { return; }
+         const d = msg.d || {};
+         if (msg.op === 0) {
+           const auth = d.authentication;
+           const identify = { op: 1, d: { rpcVersion: 1 } };
+           if (auth && auth.challenge && auth.salt) {
+             if (!password) {
+               status.innerHTML = '<span style="color:#fcd34d;">OBS requires a WebSocket password. Enter it and reconnect.</span>';
+               ws.close();
+               return;
+             }
+             obsAuthString(password, auth.challenge, auth.salt).then(authStr => {
+               identify.d.authentication = authStr;
+               ws.send(JSON.stringify(identify));
+             });
+           } else {
+             ws.send(JSON.stringify(identify));
+           }
+         } else if (msg.op === 2) {
+           status.innerHTML = '<span style="color:#22c55e;">OBS connected.</span>';
+           obsRefreshOBS();
+         } else if (msg.op === 7) {
+           const cb = obsRequestCallbacks[d.requestId];
+           delete obsRequestCallbacks[d.requestId];
+           if (cb) cb(d);
+         } else if (msg.op === 5) {
+           status.innerHTML = '<span style="color:#fca5a5;">OBS connection failed: ' + escapeHtml((d.error || {}).message || 'unknown error') + '</span>';
+         }
+       };
+       ws.onclose = () => {
+         if (obsSocket === ws) {
+           obsSocket = null;
+           status.innerHTML = '<span style="color:var(--muted);">OBS disconnected. If you expected it running, start OBS Studio and enable the WebSocket server.</span>';
+         }
+       };
+       ws.onerror = () => {
+         status.innerHTML = '<span style="color:#fca5a5;">OBS not detected at ' + escapeHtml(url) + '. Start OBS Studio and enable Tools &rarr; WebSocket Server Settings.</span>';
+       };
+     }
+
+     function obsRefreshOBS() {
+       obsSendRequest('GetCurrentProgramScene', {}, (d) => {
+         const scene = (d.responseData || {}).currentProgramSceneName || 'unknown';
+         obsSendRequest('GetStreamStatus', {}, (d2) => {
+           const streaming = (d2.responseData || {}).outputActive === true;
+           const parts = ['<div style="color:var(--white);">Current scene: <strong>' + escapeHtml(scene) + '</strong></div>',
+             '<div>' + (streaming ? '<span style="color:#fca5a5;">\u25cf Streaming to platform</span>' : '<span style="color:var(--muted);">Not streaming</span>') + '</div>'];
+           const mediaSource = document.getElementById('obsMediaSource').value.trim();
+           if (mediaSource) {
+             obsSendRequest('GetMediaInputStatus', { inputName: mediaSource }, (d3) => {
+               const st = d3.requestStatus;
+               const ms = (d3.responseData || {}).mediaState || 'unknown';
+               const ok = st && st.result;
+               parts.push('<div>' + (ok ? '<span style="color:#fcd34d;">Media source "' + escapeHtml(mediaSource) + '": ' + escapeHtml(ms) + '</span>' : '<span style="color:#fca5a5;">Media source "' + escapeHtml(mediaSource) + '" not found in OBS</span>') + '</div>');
+               document.getElementById('obsStatus').innerHTML = parts.join('');
+             });
+           } else {
+             document.getElementById('obsStatus').innerHTML = parts.join('');
+           }
+         });
+       });
+     }
+
+     function disconnectOBS() {
+       if (obsSocket) { try { obsSocket.close(); } catch (e) {} }
+       obsSocket = null;
+       document.getElementById('obsStatus').innerHTML = '<span style="color:var(--muted);">Disconnected.</span>';
+     }
 
      // --- Stream Archive ---
      async function loadArchive() {

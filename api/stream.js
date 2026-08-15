@@ -1,7 +1,8 @@
 import { getList, setList, KEYS } from '../lib/storage.js';
 import { sendJson, sendEmpty, readBody, isAdmin, clean, getParam } from '../lib/http.js';
 import { seedStream } from '../lib/seed.js';
-import { autoArchive, normalizeKeep, publicArchive } from '../lib/stream.js';
+import { autoArchive, normalizeKeep, publicArchive, checkLiveStatus, deriveLiveState, hasArchive } from '../lib/stream.js';
+import { validateEpisode, sanitizeSchedule, syncEpisodeEvent, removeLinkedEvent } from '../lib/episodes.js';
 
 const FIELDS = [
   ['platform', 20],
@@ -15,6 +16,27 @@ function normalizeStream(s) {
   if (!s) return { ...seedStream };
   if (s.featured !== undefined) delete s.featured;
   return s;
+}
+
+function publicStream(stream, state) {
+  const safe = {
+    platform: stream.platform || 'facebook',
+    title: stream.title || 'Lost Limb Riders Live',
+    description: stream.description || '',
+    status: stream.status || 'offline',
+    viewerCount: stream.viewerCount || 0,
+    archiveKeep: stream.archiveKeep || 20,
+    liveStartedAt: stream.liveStartedAt || null,
+    liveState: state.liveState,
+    platformLive: state.platformLive,
+    platformVerified: state.platformVerified,
+    lastLiveCheck: stream.lastLiveCheck || null,
+    currentEpisode: state.currentEpisode,
+    nextEpisode: state.nextEpisode,
+    episodes: state.episodes,
+    schedule: state.episodes,
+  };
+  return safe;
 }
 
 export default function handler(req, res) {
@@ -32,7 +54,9 @@ export default function handler(req, res) {
         } else {
           stream = normalizeStream(arr[0]);
         }
-        sendJson(res, { stream });
+        const archive = await hasArchive();
+        const state = deriveLiveState(stream, { hasArchive: archive });
+        sendJson(res, { stream: publicStream(stream, state) });
       })
       .catch(() => sendJson(res, { error: 'Storage error.' }, 500));
     return;
@@ -42,6 +66,26 @@ export default function handler(req, res) {
     publicArchive()
       .then((archive) => sendJson(res, { archive }))
       .catch(() => sendJson(res, { error: 'Storage error.' }, 500));
+    return;
+  }
+
+  if (action === 'check') {
+    if (!isAdmin(req)) {
+      return sendJson(res, { error: 'Admin access required.' }, 403);
+    }
+    getList(KEYS.stream).then(async (arr) => {
+      const stream = arr.length ? { ...arr[0] } : { ...seedStream };
+      const archive = await hasArchive();
+      const result = await checkLiveStatus(stream, { hasArchive: archive });
+      result.stream.updatedAt = new Date().toISOString();
+      await setList(KEYS.stream, [result.stream]);
+      sendJson(res, {
+        ok: true,
+        platform: result.platformResult,
+        liveState: result.state.liveState,
+        status: result.stream.status,
+      });
+    }).catch(() => sendJson(res, { error: 'Storage error.' }, 500));
     return;
   }
 
@@ -62,9 +106,11 @@ export default function handler(req, res) {
       }
       if (payload.viewerCount !== undefined) stream.viewerCount = parseInt(payload.viewerCount, 10) || 0;
       if (payload.archiveKeep !== undefined) stream.archiveKeep = normalizeKeep(payload.archiveKeep);
-      if (stream.platform && !['youtube', 'facebook'].includes(stream.platform)) {
-        return sendJson(res, { error: 'Platform must be youtube or facebook.' }, 422);
+      if (stream.platform && !['youtube', 'facebook', 'twitch', 'owncast'].includes(stream.platform)) {
+        return sendJson(res, { error: 'Platform must be youtube, facebook, twitch, or owncast.' }, 422);
       }
+      const cleaned = sanitizeSchedule(payload.schedule);
+      if (cleaned) stream.schedule = cleaned;
       if (stream.status === 'live' && oldStream.status !== 'live') {
         stream.liveStartedAt = new Date().toISOString();
       }
@@ -72,30 +118,45 @@ export default function handler(req, res) {
       stream.updatedAt = new Date().toISOString();
       await autoArchive(oldStream, stream);
       await setList(KEYS.stream, [stream]);
-      return sendJson(res, { stream });
+      const state = deriveLiveState(stream, { hasArchive: await hasArchive() });
+      return sendJson(res, { stream: publicStream(stream, state) });
     }
 
     if (action === 'add-schedule' && req.method === 'POST') {
+      const { episode, errors } = validateEpisode(payload, { stream: {} });
+      if (errors.length) {
+        return sendJson(res, { error: errors[0], errors }, 422);
+      }
       const arr = await getList(KEYS.stream);
       const stream = arr.length ? { ...arr[0] } : { ...seedStream };
       if (!stream.schedule) stream.schedule = [];
-
-      const item = {
-        id: 'ls-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8),
-        title: clean(payload.title, 200),
-        day: clean(payload.day, 30),
-        time: clean(payload.time, 10),
-        date: clean(payload.date || '', 10),
-        recurring: payload.recurring !== 'false',
-        description: clean(payload.description, 2000),
-      };
-      if (!item.title) {
-        return sendJson(res, { error: 'Title is required.' }, 422);
-      }
-      stream.schedule.unshift(item);
+      stream.schedule.unshift(episode);
       stream.updatedAt = new Date().toISOString();
+      const events = await syncEpisodeEvent(await getList(KEYS.events), episode);
+      await setList(KEYS.events, events);
       await setList(KEYS.stream, [stream]);
-      return sendJson(res, { stream });
+      return sendJson(res, { stream, episode }, 201);
+    }
+
+    if (action === 'update-schedule' && req.method === 'POST') {
+      const id = String(payload.id ?? '');
+      if (!id) return sendJson(res, { error: 'Schedule ID required.' }, 422);
+
+      const arr = await getList(KEYS.stream);
+      const stream = arr.length ? { ...arr[0] } : { ...seedStream };
+      const idx = (stream.schedule || []).findIndex((s) => s.id === id);
+      if (idx === -1) return sendJson(res, { error: 'Schedule item not found.' }, 404);
+
+      const { episode, errors } = validateEpisode(payload, { stream, id });
+      if (errors.length) {
+        return sendJson(res, { error: errors[0], errors }, 422);
+      }
+      stream.schedule[idx] = episode;
+      stream.updatedAt = new Date().toISOString();
+      const events = await syncEpisodeEvent(await getList(KEYS.events), episode);
+      await setList(KEYS.events, events);
+      await setList(KEYS.stream, [stream]);
+      return sendJson(res, { stream, episode });
     }
 
     if (action === 'delete-schedule' && req.method === 'POST') {
@@ -104,10 +165,15 @@ export default function handler(req, res) {
 
       const arr = await getList(KEYS.stream);
       const stream = arr.length ? { ...arr[0] } : { ...seedStream };
+      const removed = (stream.schedule || []).find((s) => s.id === id);
       if (stream.schedule) {
         stream.schedule = stream.schedule.filter((s) => s.id !== id);
       }
       stream.updatedAt = new Date().toISOString();
+      if (removed) {
+        const events = removeLinkedEvent(await getList(KEYS.events), removed.id);
+        await setList(KEYS.events, events);
+      }
       await setList(KEYS.stream, [stream]);
       return sendJson(res, { stream });
     }

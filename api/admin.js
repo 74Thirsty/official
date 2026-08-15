@@ -6,7 +6,8 @@ import { addAudit } from '../lib/audit.js';
 import { randomBytes } from 'crypto';
 import { seedStream } from '../lib/seed.js';
 import { parseBrowser } from '../lib/ua.js';
-import { autoArchive, normalizeKeep, adminArchive, purgeExpired } from '../lib/stream.js';
+import { autoArchive, normalizeKeep, adminArchive, purgeExpired, checkLiveStatus, hasArchive } from '../lib/stream.js';
+import { sanitizeSchedule } from '../lib/episodes.js';
 
 function getBrowserStats(visitors) {
   const stats = { Chrome: 0, Firefox: 0, Safari: 0, Edge: 0, Other: 0 };
@@ -100,6 +101,24 @@ export default function handler(req, res) {
     return;
   }
 
+  if (action === 'stream-check' && req.method === 'POST') {
+    readBody(req).then(async () => {
+      const arr = await getList(KEYS.stream);
+      const stream = arr.length ? { ...arr[0] } : { ...seedStream };
+      const archive = await hasArchive();
+      const result = await checkLiveStatus(stream, { hasArchive: archive });
+      result.stream.updatedAt = new Date().toISOString();
+      await setList(KEYS.stream, [result.stream]);
+      sendJson(res, {
+        ok: true,
+        platform: result.platformResult,
+        liveState: result.state.liveState,
+        status: result.stream.status,
+      });
+    }).catch(fail);
+    return;
+  }
+
   if (action === 'archive') {
     adminArchive().then((data) => sendJson(res, data)).catch(fail);
     return;
@@ -123,20 +142,16 @@ export default function handler(req, res) {
       }
       if (payload.viewerCount !== undefined) stream.viewerCount = parseInt(payload.viewerCount, 10) || 0;
       if (payload.archiveKeep !== undefined) stream.archiveKeep = normalizeKeep(payload.archiveKeep);
+      if (stream.platform && !['youtube', 'facebook', 'twitch', 'owncast'].includes(stream.platform)) {
+        return sendJson(res, { error: 'Platform must be youtube, facebook, twitch, or owncast.' }, 422);
+      }
       if (stream.status === 'live' && oldStream.status !== 'live') {
         stream.liveStartedAt = new Date().toISOString();
       }
       if (stream.status !== 'live') delete stream.liveStartedAt;
-      if (payload.schedule !== undefined && Array.isArray(payload.schedule)) {
-        stream.schedule = payload.schedule.map((item) => ({
-          id: item.id || ('ls-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8)),
-          title: clean(item.title || '', 200),
-          day: clean(item.day || '', 30),
-          time: clean(item.time || '', 10),
-          date: clean(item.date || '', 10),
-          recurring: item.recurring !== false,
-          description: clean(item.description || '', 2000),
-        }));
+      if (payload.schedule !== undefined) {
+        const cleaned = sanitizeSchedule(payload.schedule);
+        if (cleaned) stream.schedule = cleaned;
       }
       stream.updatedAt = new Date().toISOString();
       await autoArchive(oldStream, stream);

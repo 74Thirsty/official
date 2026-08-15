@@ -774,8 +774,10 @@
        text-transform: uppercase;
        letter-spacing: .08em;
      }
-     .live-badge.live { background: rgba(239,68,68,.15); color: #fca5a5; }
-     .live-badge.offline { background: rgba(183,183,183,.12); color: var(--muted); }
+      .live-badge.live { background: rgba(239,68,68,.15); color: #fca5a5; }
+      .live-badge.prerecorded { background: rgba(252,211,77,.15); color: #fcd34d; }
+      .live-badge.soon { background: rgba(252,211,77,.15); color: #fcd34d; }
+      .live-badge.offline { background: rgba(183,183,183,.12); color: var(--muted); }
      .live-meta .live-title {
        font-size: clamp(20px, 2.5vw, 30px);
        font-weight: 800;
@@ -816,9 +818,22 @@
        min-width: 80px;
        flex-shrink: 0;
      }
-     .schedule-item .schedule-info { flex: 1; min-width: 0; }
-     .schedule-item .schedule-info h4 { font-size: 15px; font-weight: 700; margin: 0 0 2px; }
-     .schedule-item .schedule-info p { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.4; }
+      .schedule-item .schedule-info { flex: 1; min-width: 0; }
+      .schedule-item .schedule-info h4 { font-size: 15px; font-weight: 700; margin: 0 0 6px; }
+      .schedule-item .schedule-info p { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.4; }
+      .mode-chip {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        padding: 3px 10px;
+        border-radius: 999px;
+        margin-left: 8px;
+        vertical-align: 2px;
+      }
+      .mode-chip.realtime { background: rgba(239,68,68,.15); color: #fca5a5; }
+      .mode-chip.prerecorded { background: rgba(252,211,77,.15); color: #fcd34d; }
 
      @media (max-width: 940px) {
        .nav { position: static; align-items: flex-start; flex-direction: column; }
@@ -913,6 +928,23 @@
         </div>
 
         <div class="schedule-list" id="archiveList"></div>
+
+        <div class="section-heading" style="margin-top:40px;">
+          <h2 class="section-title">Never Miss A <span class="orange">Broadcast</span></h2>
+          <p style="color:var(--muted); font-size:18px; line-height:1.5;">Get the biweekly newsletter with upcoming events, scheduled livestream episodes, and mission updates — before the cameras roll.</p>
+        </div>
+        <div style="background:linear-gradient(135deg, rgba(255,106,0,.14), rgba(255,106,0,.04)); border:1px solid rgba(255,106,0,.25); border-radius:18px; padding:28px;">
+          <form id="nlMediaForm" style="display:flex; flex-direction:column; gap:14px; max-width:640px;">
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              <input id="nlMediaName" autocomplete="name" placeholder="Full name" required style="padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.05); color:var(--white); font-size:15px; font-family:inherit;">
+              <input id="nlMediaEmail" type="email" autocomplete="email" placeholder="Email address" required style="padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.05); color:var(--white); font-size:15px; font-family:inherit;">
+            </div>
+            <div>
+              <button type="submit" style="background:#ff6a00; color:#fff; font-weight:900; font-size:14px; text-transform:uppercase; letter-spacing:.06em; border:0; border-radius:10px; padding:14px 30px; cursor:pointer; font-family:inherit;">Get Broadcast Alerts</button>
+              <div id="nlMediaStatus" role="status" aria-live="polite" style="margin-top:10px; font-size:13px; min-height:18px; color:var(--muted);"></div>
+            </div>
+          </form>
+        </div>
       </div>
     </section>
 
@@ -1121,33 +1153,69 @@
     }
 
     function renderLive(stream) {
-      const isLive = stream.status === 'live' && stream.streamId;
+      const liveState = stream.liveState || (stream.status === 'live' && stream.streamId ? 'live-realtime' : 'offline');
+      const isLive = liveState === 'live-realtime' || liveState === 'live-prerecorded';
+      const hasEmbed = isLive && stream.streamId;
       const badge = document.getElementById('liveBadge');
-      badge.textContent = isLive ? 'LIVE' : 'Offline';
-      badge.className = 'live-badge ' + (isLive ? 'live' : 'offline');
+      const badgeText = {
+        'live-realtime': 'LIVE NOW — REAL-TIME',
+        'live-prerecorded': 'LIVE NOW — PRERECORDED BROADCAST',
+        'starting-soon': 'Starting Soon',
+        scheduled: 'Upcoming',
+        replay: 'Offline',
+        offline: 'Offline'
+      };
+      const badgeClass = {
+        'live-realtime': 'live',
+        'live-prerecorded': 'prerecorded',
+        'starting-soon': 'soon',
+        scheduled: 'offline',
+        replay: 'offline',
+        offline: 'offline'
+      };
+      badge.textContent = badgeText[liveState] || 'Offline';
+      badge.className = 'live-badge ' + (badgeClass[liveState] || 'offline');
 
-      document.getElementById('liveTitle').textContent = stream.title || 'Lost Limb Riders Live';
-      document.getElementById('liveDesc').textContent = stream.description || '';
+      const activeTitle = isLive && stream.currentEpisode && stream.currentEpisode.title
+        ? stream.currentEpisode.title
+        : (stream.title || 'Lost Limb Riders Live');
+      document.getElementById('liveTitle').textContent = activeTitle;
+
+      const descParts = [];
+      if (isLive && stream.currentEpisode) {
+        descParts.push(stream.currentEpisode.description || '');
+        if (liveState === 'live-prerecorded') {
+          descParts.push('This is a scheduled prerecorded broadcast playing live — not a real-time event.');
+        }
+      } else {
+        descParts.push(stream.description || '');
+      }
+      document.getElementById('liveDesc').textContent = descParts.filter(Boolean).join(' ');
 
       const frame = document.getElementById('liveFrame');
       const placeholder = document.getElementById('livePlaceholder');
 
-      if (isLive) {
+      if (hasEmbed) {
         let embed = '';
         if (stream.platform === 'youtube') {
           embed = '<iframe src="https://www.youtube.com/embed/' + encodeURIComponent(stream.streamId) + '?autoplay=1" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
         } else if (stream.platform === 'facebook') {
           embed = '<iframe src="https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(stream.streamId) + '&show_text=false&autoplay=true" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
+        } else if (stream.platform === 'twitch') {
+          embed = '<iframe src="https://player.twitch.tv/?channel=' + encodeURIComponent(stream.streamId) + '&parent=' + encodeURIComponent(window.location.hostname) + '" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
+        } else if (stream.platform === 'owncast' && stream.streamId) {
+          embed = '<iframe src="' + encodeURIComponent(stream.streamId) + '" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
         }
         if (embed) {
+          const showViewers = stream.platformVerified === true;
           const viewers = parseInt(stream.viewerCount, 10) || 0;
           placeholder.style.display = 'none';
           frame.innerHTML =
             embed +
             '<div class="live-overlay">' +
               '<span class="live-dot"></span>' +
-              '<span class="status-text live-now">LIVE</span>' +
-              '<span class="viewer-count">' + viewers + ' watching</span>' +
+              '<span class="status-text live-now">' + (liveState === 'live-prerecorded' ? 'LIVE — PRERECORDED BROADCAST' : 'LIVE NOW — REAL-TIME') + '</span>' +
+              (showViewers ? '<span class="viewer-count">' + viewers + ' watching</span>' : '') +
             '</div>';
           return;
         }
@@ -1166,13 +1234,18 @@
       list.innerHTML = schedule.map(item => {
         const recurring = item.recurring !== false;
         const day = recurring ? 'Every ' + (item.day || '') : (item.date ? formatShortDate(item.date) : (item.day || ''));
+        const isPrerecorded = item.mode === 'prerecorded';
+        const chip = isPrerecorded
+          ? '<span class="mode-chip prerecorded">Prerecorded Broadcast</span>'
+          : '<span class="mode-chip realtime">Live · Real-Time</span>';
         return '' +
           '<div class="schedule-item">' +
             '<div class="schedule-day">' + escapeHtml(day) + '</div>' +
             '<div class="schedule-time">' + formatClock(item.time) + '</div>' +
             '<div class="schedule-info">' +
-              '<h4>' + escapeHtml(item.title || '') + '</h4>' +
+              '<h4>' + escapeHtml(item.title || '') + chip + '</h4>' +
               '<p>' + escapeHtml(item.description || '') + '</p>' +
+              (item.featuredTopic ? '<p style="color:#fcd34d; font-size:12px;">Featured: ' + escapeHtml(item.featuredTopic) + '</p>' : '') +
             '</div>' +
           '</div>';
       }).join('');
@@ -1503,6 +1576,33 @@
     fetchMedia();
     loadStream();
     loadArchive();
+
+    // --- Newsletter signup ---
+    const nlMediaForm = document.getElementById('nlMediaForm');
+    const nlMediaStatus = document.getElementById('nlMediaStatus');
+    nlMediaForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const name = document.getElementById('nlMediaName').value.trim();
+      const email = document.getElementById('nlMediaEmail').value.trim();
+      if (!name || !email) { nlMediaStatus.textContent = 'Please enter your name and email.'; return; }
+      nlMediaStatus.textContent = 'Subscribing...';
+      try {
+        const res = await fetch('/api/newsletter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, page: 'media' })
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          nlMediaStatus.innerHTML = 'Welcome to the ride. Check your email for the welcome letter and your free copy of <strong>I Can. I Will.</strong>';
+          nlMediaForm.reset();
+        } else {
+          nlMediaStatus.textContent = data.message || 'Something went wrong.';
+        }
+      } catch {
+        nlMediaStatus.textContent = 'Network error. Please try again.';
+      }
+    });
   </script>
 </body>
 </html>
