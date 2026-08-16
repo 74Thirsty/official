@@ -628,7 +628,7 @@
                   <option value="">Loading platforms&hellip;</option>
                 </select>
                 <div id="streamPlatformsEmpty" style="display:none; margin-top:10px; padding:12px 14px; border:1px solid rgba(252,211,77,.35); border-radius:10px; background:rgba(252,211,77,.08); font-size:13px; color:#fcd34d;">
-                  No streaming platforms are currently configured. Configure the streaming credentials as environment variables on the server (e.g. <code style="color:var(--white);">FACEBOOK_STREAM_KEY</code>, <code style="color:var(--white);">YOUTUBE_STREAM_KEY</code>, <code style="color:var(--white);">TWITCH_STREAM_KEY</code>, <code style="color:var(--white);">OWNCAST_STREAM_KEY</code>) and redeploy. A platform appears here only when its credentials are configured and valid.
+                  No streaming platforms are currently configured. Configure the streaming credentials as environment variables on the server (e.g. <code style="color:var(--white);">FB_STREAM_KEY</code>, <code style="color:var(--white);">YOUTUBE_STREAM_KEY</code>, <code style="color:var(--white);">TWITCH_STREAM_KEY</code>, <code style="color:var(--white);">OWNCAST_STREAM_KEY</code>) and redeploy. A platform appears here only when its credentials are configured and valid.
                 </div>
               </div>
               <div>
@@ -1270,7 +1270,7 @@
        const status = document.getElementById('streamSaveStatus');
        const platform = document.getElementById('smPlatform').value;
        if (!platform) {
-         status.textContent = 'No streaming platform configured. Add the platform credentials (e.g. FACEBOOK_STREAM_KEY) to the server environment and reload.';
+         status.textContent = 'No streaming platform configured. Add the platform credentials (e.g. FB_STREAM_KEY) to the server environment and reload.';
          return;
        }
        status.textContent = 'Saving...';
@@ -1407,7 +1407,7 @@
        if (!title) return;
        const destination = document.getElementById('schDestination').value;
        if (!destination) {
-         document.getElementById('streamSaveStatus').textContent = 'No streaming platform configured. Add the platform credentials (e.g. FACEBOOK_STREAM_KEY) to the server environment first.';
+         document.getElementById('streamSaveStatus').textContent = 'No streaming platform configured. Add the platform credentials (e.g. FB_STREAM_KEY) to the server environment first.';
          return;
        }
        const item = {
