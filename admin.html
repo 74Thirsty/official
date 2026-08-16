@@ -625,11 +625,11 @@
               <div>
                 <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Platform</label>
                 <select id="smPlatform" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px; font-family:inherit;">
-                   <option value="youtube">YouTube Live</option>
-                   <option value="facebook">Facebook Live</option>
-                   <option value="twitch">Twitch</option>
-                   <option value="owncast">Owncast</option>
+                  <option value="">Loading platforms&hellip;</option>
                 </select>
+                <div id="streamPlatformsEmpty" style="display:none; margin-top:10px; padding:12px 14px; border:1px solid rgba(252,211,77,.35); border-radius:10px; background:rgba(252,211,77,.08); font-size:13px; color:#fcd34d;">
+                  No streaming platforms are currently configured. Configure the streaming credentials as environment variables on the server (e.g. <code style="color:var(--white);">FACEBOOK_STREAM_KEY</code>, <code style="color:var(--white);">YOUTUBE_STREAM_KEY</code>, <code style="color:var(--white);">TWITCH_STREAM_KEY</code>, <code style="color:var(--white);">OWNCAST_STREAM_KEY</code>) and redeploy. A platform appears here only when its credentials are configured and valid.
+                </div>
               </div>
               <div>
                 <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Status</label>
@@ -799,30 +799,26 @@
                <input id="schScene" maxlength="60" placeholder="e.g. LLR — Live Show">
              </div>
            </div>
-           <div class="form-row">
-             <div class="form-field">
-               <label>Featured Topic</label>
-               <input id="schTopic" maxlength="200" placeholder="e.g. Coffee Talk">
-             </div>
-             <div class="form-field">
-               <label>Stream Key Ref (env var name — never the key)</label>
-               <input id="schStreamKeyRef" maxlength="100" placeholder="e.g. FACEBOOK_STREAM_KEY">
-             </div>
-           </div>
-           <div class="form-row">
-             <div class="form-field">
-               <label>Host</label>
-               <input id="schHost" maxlength="200" placeholder="e.g. John Thompson">
-             </div>
-             <div class="form-field">
-               <label>Guest</label>
-               <input id="schGuest" maxlength="200" placeholder="Optional">
-             </div>
-           </div>
-           <div class="form-field" style="margin-bottom:14px;">
-             <label>Thumbnail / Cover Image URL (optional)</label>
-             <input id="schThumbnail" maxlength="500" placeholder="https://...">
-           </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label>Featured Topic</label>
+                <input id="schTopic" maxlength="200" placeholder="e.g. Coffee Talk">
+              </div>
+              <div class="form-field">
+                <label>Host</label>
+                <input id="schHost" maxlength="200" placeholder="e.g. John Thompson">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label>Guest</label>
+                <input id="schGuest" maxlength="200" placeholder="Optional">
+              </div>
+              <div class="form-field">
+                <label>Thumbnail / Cover Image URL (optional)</label>
+                <input id="schThumbnail" maxlength="500" placeholder="https://...">
+              </div>
+            </div>
            <div class="form-field" style="margin-bottom:14px;">
              <label>Description</label>
              <textarea id="schDesc" maxlength="2000" placeholder="What is this broadcast about?"></textarea>
@@ -1189,6 +1185,32 @@
      }
 
      // --- Live Stream ---
+     function populatePlatformSelect(platforms, current) {
+       const select = document.getElementById('smPlatform');
+       const empty = document.getElementById('streamPlatformsEmpty');
+       select.innerHTML = '';
+       if (!Array.isArray(platforms) || !platforms.length) {
+         empty.style.display = 'block';
+         select.innerHTML = '<option value="">No platforms configured</option>';
+         return;
+       }
+       empty.style.display = 'none';
+       select.innerHTML = platforms.map(p => '<option value="' + escapeHtml(p.platform) + '">' + escapeHtml(p.label) + '</option>').join('');
+       if (current && platforms.some(p => p.platform === current)) select.value = current;
+     }
+
+     function populateDestinationSelect(current) {
+       const platforms = window.__availablePlatforms || [];
+       const select = document.getElementById('schDestination');
+       select.innerHTML = '';
+       if (!platforms.length) {
+         select.innerHTML = '<option value="">No platforms configured</option>';
+         return;
+       }
+       select.innerHTML = platforms.map(p => '<option value="' + escapeHtml(p.platform) + '">' + escapeHtml(p.label) + '</option>').join('');
+       if (current && platforms.some(p => p.platform === current)) select.value = current;
+     }
+
      async function loadStreamConfig() {
        const status = document.getElementById('streamSaveStatus');
        status.textContent = 'Loading...';
@@ -1197,7 +1219,9 @@
          if (!res.ok) return;
          const data = await res.json();
          const stream = data.stream || {};
-         document.getElementById('smPlatform').value = stream.platform || 'facebook';
+         const platforms = Array.isArray(data.platforms) ? data.platforms : [];
+         window.__availablePlatforms = platforms;
+         populatePlatformSelect(platforms, stream.platform);
          document.getElementById('smStreamId').value = stream.streamId || '';
          document.getElementById('smTitle').value = stream.title || '';
          document.getElementById('smDesc').value = stream.description || '';
@@ -1244,13 +1268,18 @@
 
      async function saveStreamConfig() {
        const status = document.getElementById('streamSaveStatus');
+       const platform = document.getElementById('smPlatform').value;
+       if (!platform) {
+         status.textContent = 'No streaming platform configured. Add the platform credentials (e.g. FACEBOOK_STREAM_KEY) to the server environment and reload.';
+         return;
+       }
        status.textContent = 'Saving...';
        try {
          const res = await fetch(apiUrl('update-stream'), {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({
-             platform: document.getElementById('smPlatform').value,
+             platform: platform,
              streamId: document.getElementById('smStreamId').value.trim(),
              title: document.getElementById('smTitle').value.trim(),
              description: document.getElementById('smDesc').value.trim(),
@@ -1316,12 +1345,13 @@
        scheduleEditingId = editingId || '';
        document.getElementById('scheduleModalTitle').textContent = editingId ? 'Edit Scheduled Broadcast' : 'Add Scheduled Broadcast';
        document.getElementById('scheduleModalSaveBtn').textContent = editingId ? 'Save Changes' : 'Add';
+       const defaultDest = (window.__availablePlatforms && window.__availablePlatforms[0]) ? window.__availablePlatforms[0].platform : '';
        if (editingId) {
          const item = window.__streamSchedule ? window.__streamSchedule.find(s => s.id === editingId) : null;
          if (item) {
            document.getElementById('schTitle').value = item.title || '';
            document.getElementById('schMode').value = item.mode || 'realtime';
-           document.getElementById('schDestination').value = item.destination || 'facebook';
+           populateDestinationSelect(item.destination || defaultDest);
            document.getElementById('schMediaFile').value = item.mediaFile || '';
            document.getElementById('schDurationMin').value = item.durationMin || 0;
            document.getElementById('schMediaVerified').checked = item.mediaVerified === true;
@@ -1332,12 +1362,13 @@
            document.getElementById('schVisibility').value = item.visibility || 'public';
            document.getElementById('schScene').value = item.scene || '';
            document.getElementById('schTopic').value = item.featuredTopic || '';
-           document.getElementById('schStreamKeyRef').value = item.streamKeyRef || '';
            document.getElementById('schHost').value = item.host || '';
            document.getElementById('schGuest').value = item.guest || '';
            document.getElementById('schThumbnail').value = item.thumbnail || '';
            document.getElementById('schDesc').value = item.description || '';
          }
+       } else {
+         populateDestinationSelect(defaultDest);
        }
        toggleSchMedia();
        document.getElementById('scheduleModal').style.display = 'flex';
@@ -1358,14 +1389,13 @@
        document.getElementById('schDay').value = 'Wednesday';
        document.getElementById('schRecurring').value = 'true';
        document.getElementById('schMode').value = 'realtime';
-       document.getElementById('schDestination').value = 'facebook';
+       populateDestinationSelect('');
        document.getElementById('schMediaFile').value = '';
        document.getElementById('schDurationMin').value = '';
        document.getElementById('schMediaVerified').checked = false;
        document.getElementById('schVisibility').value = 'public';
        document.getElementById('schScene').value = '';
        document.getElementById('schTopic').value = '';
-       document.getElementById('schStreamKeyRef').value = '';
        document.getElementById('schHost').value = '';
        document.getElementById('schGuest').value = '';
        document.getElementById('schThumbnail').value = '';
@@ -1375,6 +1405,11 @@
      async function saveScheduledItem() {
        const title = document.getElementById('schTitle').value.trim();
        if (!title) return;
+       const destination = document.getElementById('schDestination').value;
+       if (!destination) {
+         document.getElementById('streamSaveStatus').textContent = 'No streaming platform configured. Add the platform credentials (e.g. FACEBOOK_STREAM_KEY) to the server environment first.';
+         return;
+       }
        const item = {
          id: scheduleEditingId,
          title: title,
@@ -1384,14 +1419,13 @@
          recurring: document.getElementById('schRecurring').value !== 'false',
          description: document.getElementById('schDesc').value.trim(),
          mode: document.getElementById('schMode').value,
-         destination: document.getElementById('schDestination').value,
+         destination: destination,
          mediaFile: document.getElementById('schMediaFile').value.trim(),
          mediaVerified: document.getElementById('schMediaVerified').checked,
          durationMin: parseInt(document.getElementById('schDurationMin').value, 10) || 0,
          visibility: document.getElementById('schVisibility').value,
          scene: document.getElementById('schScene').value.trim(),
          featuredTopic: document.getElementById('schTopic').value.trim(),
-         streamKeyRef: document.getElementById('schStreamKeyRef').value.trim(),
          host: document.getElementById('schHost').value.trim(),
          guest: document.getElementById('schGuest').value.trim(),
          thumbnail: document.getElementById('schThumbnail').value.trim(),

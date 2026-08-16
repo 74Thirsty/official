@@ -8,6 +8,7 @@ import { seedStream } from '../lib/seed.js';
 import { parseBrowser } from '../lib/ua.js';
 import { autoArchive, normalizeKeep, adminArchive, purgeExpired, checkLiveStatus, hasArchive } from '../lib/stream.js';
 import { sanitizeSchedule } from '../lib/episodes.js';
+import { availablePlatforms, stripStreamKeyRefs } from '../lib/streamconfig.js';
 
 function getBrowserStats(visitors) {
   const stats = { Chrome: 0, Firefox: 0, Safari: 0, Edge: 0, Other: 0 };
@@ -96,7 +97,7 @@ export default function handler(req, res) {
   if (action === 'stream') {
     getList(KEYS.stream).then((arr) => {
       const stream = arr.length ? arr[0] : seedStream;
-      sendJson(res, { stream });
+      sendJson(res, { stream: stripStreamKeyRefs(stream), platforms: availablePlatforms() });
     }).catch(fail);
     return;
   }
@@ -156,7 +157,7 @@ export default function handler(req, res) {
       stream.updatedAt = new Date().toISOString();
       await autoArchive(oldStream, stream);
       await setList(KEYS.stream, [stream]);
-      sendJson(res, { stream });
+      sendJson(res, { stream: stripStreamKeyRefs(stream) });
     }).catch(fail);
     return;
   }

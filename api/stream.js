@@ -3,6 +3,7 @@ import { sendJson, sendEmpty, readBody, isAdmin, clean, getParam } from '../lib/
 import { seedStream } from '../lib/seed.js';
 import { autoArchive, normalizeKeep, publicArchive, checkLiveStatus, deriveLiveState, hasArchive } from '../lib/stream.js';
 import { validateEpisode, sanitizeSchedule, syncEpisodeEvent, removeLinkedEvent } from '../lib/episodes.js';
+import { stripStreamKeyRefs } from '../lib/streamconfig.js';
 
 const FIELDS = [
   ['platform', 20],
@@ -136,7 +137,7 @@ export default function handler(req, res) {
       const events = await syncEpisodeEvent(await getList(KEYS.events), episode);
       await setList(KEYS.events, events);
       await setList(KEYS.stream, [stream]);
-      return sendJson(res, { stream, episode }, 201);
+      return sendJson(res, { stream: stripStreamKeyRefs(stream), episode: stripStreamKeyRefs(episode) }, 201);
     }
 
     if (action === 'update-schedule' && req.method === 'POST') {
@@ -157,7 +158,7 @@ export default function handler(req, res) {
       const events = await syncEpisodeEvent(await getList(KEYS.events), episode);
       await setList(KEYS.events, events);
       await setList(KEYS.stream, [stream]);
-      return sendJson(res, { stream, episode });
+      return sendJson(res, { stream: stripStreamKeyRefs(stream), episode: stripStreamKeyRefs(episode) });
     }
 
     if (action === 'delete-schedule' && req.method === 'POST') {
@@ -176,7 +177,7 @@ export default function handler(req, res) {
         await setList(KEYS.events, events);
       }
       await setList(KEYS.stream, [stream]);
-      return sendJson(res, { stream });
+      return sendJson(res, { stream: stripStreamKeyRefs(stream) });
     }
 
     sendJson(res, { error: 'Unsupported action.' }, 404);

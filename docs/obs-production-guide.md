@@ -60,7 +60,7 @@ Branding: orange `#ff6a00`, black/charcoal backgrounds (`#050505`/`#141414`), wh
 Set in OBS: **Settings → Stream**. Service = platform; server + stream key come from your platform dashboard.
 
 - **Never** hard-code stream keys into the scene collection, this repo, or any committed config.
-- The scheduled episode stores a `streamKeyRef` — the **name** of the environment variable that holds the key (e.g. `FACEBOOK_STREAM_KEY`, `YOUTUBE_STREAM_KEY`). The key itself lives only in secrets:
+- The scheduled episode stores a `streamKeyRef` — the **name** of the environment variable that holds the key (e.g. `FACEBOOK_STREAM_KEY`, `YOUTUBE_STREAM_KEY`). It is derived automatically from the broadcast's destination platform by the server; the admin UI has no field for it. The key itself lives only in secrets:
   - **Local development:** store in **KWallet** (`kwalletmanager`) or your OS keyring; paste into OBS at stream time.
   - **Production:** set as Vercel environment variables only.
 - Stream keys must never appear in GitHub, frontend JS, public API responses, HTML, browser storage, or public config files.
@@ -116,4 +116,5 @@ Scheduled episodes live in **one place**: `llr:stream.schedule`. From there:
 
 - Existing: `ADMIN_KEY`, `CRON_SECRET`, `RESEND_API_KEY`, `RESEND_FROM`, `KV_*`.
 - Optional live-status: `YOUTUBE_API_KEY`, `YOUTUBE_VIDEO_ID`, `FACEBOOK_ACCESS_TOKEN`, `FACEBOOK_PAGE_ID`, `TWITCH_CLIENT_ID`, `TWITCH_ACCESS_TOKEN`, `TWITCH_USER_LOGIN`, `OWNCAST_URL`.
-- Stream keys (referenced by name only): `YOUTUBE_STREAM_KEY`, `FACEBOOK_STREAM_KEY`, etc. — never read or returned by the API.
+- Stream keys (referenced by env var name only, never exposed): `YOUTUBE_STREAM_KEY`, `FACEBOOK_STREAM_KEY`, `TWITCH_STREAM_KEY`, `OWNCAST_STREAM_KEY`.
+  The admin platform dropdown lists only platforms whose stream-key env var is present and structurally valid; a platform with missing, empty, or malformed credentials is omitted entirely.
