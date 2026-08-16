@@ -970,6 +970,7 @@
         if (name === 'stream') {
           loadStreamConfig();
           loadArchive();
+          checkStreamLive();
           streamCheckTimer = setInterval(checkStreamLive, 60000);
         }
         if (name === 'events') loadEvents();
@@ -1206,7 +1207,6 @@
           window.__streamSchedule = stream.schedule || [];
           renderScheduleAdmin(stream.schedule || []);
           status.textContent = '';
-          checkStreamLive();
         } catch {
           status.textContent = 'Connection error.';
         }
@@ -1273,7 +1273,11 @@
        await checkStreamLive();
      }
 
+     let streamCheckInFlight = false;
+
      async function checkStreamLive() {
+       if (streamCheckInFlight) return;
+       streamCheckInFlight = true;
        const el = document.getElementById('streamLiveStatus');
        el.textContent = 'Checking broadcast status...';
        try {
@@ -1296,6 +1300,8 @@
          loadStreamConfig();
        } catch {
          el.textContent = 'Connection error.';
+       } finally {
+         streamCheckInFlight = false;
        }
      }
 
@@ -1576,7 +1582,7 @@
        const purgeBtn = document.getElementById('archivePurgeBtn');
        if (data.pendingPurge > 0) {
          purgeWrap.style.display = 'block';
-         purgeBtn.textContent = 'Approve &amp; Purge ' + data.pendingPurge + ' old recording' + (data.pendingPurge > 1 ? 's' : '');
+          purgeBtn.textContent = 'Approve & Purge ' + data.pendingPurge + ' old recording' + (data.pendingPurge > 1 ? 's' : '');
        } else {
          purgeWrap.style.display = 'none';
        }
