@@ -21,6 +21,7 @@ function normalizeStream(s) {
 function publicStream(stream, state) {
   const safe = {
     platform: stream.platform || 'facebook',
+    streamId: stream.streamId || '',
     title: stream.title || 'Lost Limb Riders Live',
     description: stream.description || '',
     status: stream.status || 'offline',
