@@ -19,10 +19,18 @@ function normalizeStream(s) {
   return s;
 }
 
+// Facebook stream keys look like "FB-<pageId>-<num>-<hash>" and are secrets.
+// "streamId" must hold a viewer-facing Facebook video/page URL, never the key.
+const FB_STREAM_KEY_SHAPE = /^FB-\d+-\d+-/;
+
 function publicStream(stream, state) {
+  let streamId = stream.streamId || '';
+  if ((stream.platform || 'facebook') === 'facebook' && FB_STREAM_KEY_SHAPE.test(streamId)) {
+    streamId = '';
+  }
   const safe = {
     platform: stream.platform || 'facebook',
-    streamId: stream.streamId || '',
+    streamId,
     title: stream.title || 'Lost Limb Riders Live',
     description: stream.description || '',
     status: stream.status || 'offline',
