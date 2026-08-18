@@ -186,7 +186,7 @@ export default function handler(req, res) {
       sub.welcomeError = null;
       sub.welcomeResendCount = (sub.welcomeResendCount || 0) + 1;
 
-      const { html, subject } = buildWelcomeEmail(sub);
+      const { html, subject } = await buildWelcomeEmail(sub);
       const result = await sendEmail(email, subject, html);
       if (result.ok) {
         sub.welcomeStatus = 'sent';

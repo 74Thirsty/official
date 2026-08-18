@@ -86,7 +86,7 @@ function newSubscriber(payload, profile) {
 }
 
 async function sendWelcome(sub, auditLog) {
-  const { html, subject, ebookUrl } = buildWelcomeEmail(sub);
+  const { html, subject } = await buildWelcomeEmail(sub);
   const result = await sendEmail(sub.email, subject, html);
   if (result.ok) {
     sub.welcomeStatus = 'sent';
