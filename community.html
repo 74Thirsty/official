@@ -356,7 +356,7 @@
     async function loadTestimonials() {
       let testimonials = [];
       try {
-        const res = await fetch('/api/testimonials?action=list');
+        const res = await fetch('/api/community?type=testimonial&action=list');
         const data = await res.json();
         testimonials = data.testimonials || [];
       } catch {}
@@ -442,7 +442,7 @@
       const btn = document.getElementById('photoSubmitBtn');
       btn.disabled = true; btn.textContent = 'Submitting...';
       try {
-        const res = await fetch('/api/gallery?action=submit', {
+        const res = await fetch('/api/community?type=gallery&action=submit', {
           method: 'POST', headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ name: document.getElementById('photoName').value.trim(), caption: document.getElementById('photoCaption').value.trim(), image: selectedFile })
         });
@@ -470,7 +470,7 @@
       const btn = document.getElementById('testSubmitBtn');
       btn.disabled = true; btn.textContent = 'Submitting...';
       try {
-        const res = await fetch('/api/testimonials?action=submit', {
+        const res = await fetch('/api/community?type=testimonial&action=submit', {
           method: 'POST', headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ name: document.getElementById('testName').value.trim(), quote: document.getElementById('testQuote').value.trim(), ridingInfo: document.getElementById('testInfo').value.trim() })
         });

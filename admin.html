@@ -1909,7 +1909,7 @@
       const list = document.getElementById('galleryPendingList');
       const empty = document.getElementById('galleryEmpty');
       try {
-        const res = await fetch('/api/gallery?action=pending&key=' + encodeURIComponent(adminKey));
+        const res = await fetch('/api/community?type=gallery&action=pending&key=' + encodeURIComponent(adminKey));
         const data = await res.json();
         if (!data.pending || !data.pending.length) {
           list.innerHTML = '';
@@ -1942,7 +1942,7 @@
     async function approveGallery(id) {
       if (!confirm('Approve this photo? Save the image to assets/approved/ and update manifest.json after.')) return;
       try {
-        const res = await fetch('/api/gallery?action=approve&key=' + encodeURIComponent(adminKey), {
+        const res = await fetch('/api/community?type=gallery&action=approve&key=' + encodeURIComponent(adminKey), {
           method: 'POST', headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ id })
         });
@@ -1955,7 +1955,7 @@
     async function deleteGallery(id) {
       if (!confirm('Delete this submission?')) return;
       try {
-        const res = await fetch('/api/gallery?action=delete&key=' + encodeURIComponent(adminKey), {
+        const res = await fetch('/api/community?type=gallery&action=delete&key=' + encodeURIComponent(adminKey), {
           method: 'POST', headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ id })
         });
@@ -1968,7 +1968,7 @@
       const list = document.getElementById('testimonialPendingList');
       const empty = document.getElementById('testimonialEmpty');
       try {
-        const res = await fetch('/api/testimonials?action=pending&key=' + encodeURIComponent(adminKey));
+        const res = await fetch('/api/community?type=testimonial&action=pending&key=' + encodeURIComponent(adminKey));
         const data = await res.json();
         if (!data.pending || !data.pending.length) {
           list.innerHTML = '';
@@ -1996,7 +1996,7 @@
 
     async function approveTestimonial(id) {
       try {
-        const res = await fetch('/api/testimonials?action=approve&key=' + encodeURIComponent(adminKey), {
+        const res = await fetch('/api/community?type=testimonial&action=approve&key=' + encodeURIComponent(adminKey), {
           method: 'POST', headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ id })
         });
@@ -2008,7 +2008,7 @@
     async function deleteTestimonial(id) {
       if (!confirm('Delete this testimonial?')) return;
       try {
-        const res = await fetch('/api/testimonials?action=delete&key=' + encodeURIComponent(adminKey), {
+        const res = await fetch('/api/community?type=testimonial&action=delete&key=' + encodeURIComponent(adminKey), {
           method: 'POST', headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ id })
         });
