@@ -1,7 +1,7 @@
 import { getList, setList, KEYS } from '../lib/storage.js';
-import { sendJson, sendEmpty, sendRedirect, getParam } from '../lib/http.js';
+import { readFile } from 'node:fs/promises';
+import { sendJson, sendEmpty, getParam } from '../lib/http.js';
 import { addAudit } from '../lib/audit.js';
-import { generateDownloadUrl } from '../lib/download.js';
 
 function ttlMs() {
   const days = parseInt(process.env.EBOOK_LINK_TTL_DAYS || '7', 10) || 7;
@@ -36,20 +36,25 @@ export default function handler(req, res) {
       }, 410);
     }
 
-    const target = generateDownloadUrl();
-    if (!target.ok) {
-      console.error('No e-book download target configured on the server.');
-      return sendJson(res, { error: 'Download not configured.' }, 503);
+    const pdfPath = new URL('../assets/i-can-i-will-STANDARD-PRINT-READY and Certificate.pdf', import.meta.url);
+    let pdf;
+    try {
+      pdf = await readFile(pdfPath);
+    } catch (err) {
+      console.error('E-book asset unavailable:', err);
+      return sendJson(res, { error: 'Book asset unavailable.' }, 503);
     }
 
     sub.ebookTokenUsed = true;
     sub.ebookAccessedAt = new Date().toISOString();
     sub.ebookDownloadCount = (sub.ebookDownloadCount || 0) + 1;
-    sub.ebookUrlKind = target.kind;
+    sub.ebookUrlKind = 'asset';
     await setList(KEYS.subscribers, subs);
 
-    await addAudit('ebook_accessed', sub.email, { downloadCount: sub.ebookDownloadCount, kind: target.kind });
+    await addAudit('ebook_accessed', sub.email, { downloadCount: sub.ebookDownloadCount, kind: 'asset' });
 
-    return sendRedirect(res, target.url);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="I Can I Will.pdf"');
+    return res.status(200).send(pdf);
   }).catch(() => sendJson(res, { error: 'Storage error.' }, 500));
 }

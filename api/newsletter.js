@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
 import { getList, setList, KEYS, LIMITS } from '../lib/storage.js';
-import { sendJson, sendEmpty, readBody, clean, getClientIp } from '../lib/http.js';
+import { sendJson, sendEmpty, readBody, clean, getClientIp, parseCookies } from '../lib/http.js';
 import { geolocateIp } from '../lib/geo.js';
 import { sendEmail } from '../lib/email.js';
 import { buildWelcomeEmail } from '../lib/newsletter.js';
@@ -58,13 +58,14 @@ function buildProfile(req, payload, ip, geo) {
   };
 }
 
-function newSubscriber(payload, profile) {
+function newSubscriber(payload, profile, visitorId) {
   const now = new Date().toISOString();
   const name = clean(payload.name, 120);
   const email = String(payload.email ?? '').trim().toLowerCase();
   return {
     name,
     email,
+    visitorId: visitorId || null,
     signedAt: now,
     ...profile,
     status: 'active',
@@ -104,6 +105,28 @@ async function sendWelcome(sub, auditLog) {
   return false;
 }
 
+async function linkVisitor(sub) {
+  if (!sub.visitorId) return 0;
+  const visitors = await getList(KEYS.visitors);
+  let matched = 0;
+  const now = new Date().toISOString();
+  for (const v of visitors) {
+    if (v.visitorId && v.visitorId === sub.visitorId) {
+      if (!v.email) v.email = sub.email;
+      v.subscriberId = sub.email;
+      v.signupName = sub.name || '';
+      v.newsletterStatus = sub.status;
+      v.signupTimestamp = sub.signedAt;
+      if (!v.linkedAt) v.linkedAt = now;
+      matched++;
+    }
+  }
+  if (matched) {
+    await setList(KEYS.visitors, visitors.slice(0, LIMITS.visitors));
+  }
+  return matched;
+}
+
 export default function handler(req, res) {
   if (req.method === 'OPTIONS') return sendEmpty(res);
   if (req.method !== 'POST') {
@@ -120,6 +143,7 @@ export default function handler(req, res) {
 
     const ip = getClientIp(req);
     const geo = await geolocateIp(ip);
+    const visitorId = parseCookies(req).llr_vid || null;
     const profile = buildProfile(req, payload, ip, geo);
 
     const entries = await getList(KEYS.subscribers);
@@ -133,6 +157,7 @@ export default function handler(req, res) {
     let sub;
     if (existing) {
       sub = { ...existing, ...profile, status: 'active', unsubscribedAt: null };
+      sub.visitorId = visitorId || sub.visitorId || null;
       sub.signedAt = sub.signedAt || new Date().toISOString();
       sub.resubscribedAt = new Date().toISOString();
       sub.signupSource = profile.context.landingPage;
@@ -143,7 +168,7 @@ export default function handler(req, res) {
       sub.unsubToken = makeToken();
       sub.welcomeError = null;
     } else {
-      sub = newSubscriber(payload, profile);
+      sub = newSubscriber(payload, profile, visitorId);
     }
 
     const index = existing ? entries.indexOf(existing) : -1;
@@ -160,6 +185,11 @@ export default function handler(req, res) {
     if (savedIndex >= 0) {
       entries[savedIndex] = sub;
       await setList(KEYS.subscribers, entries.slice(0, LIMITS.subscribers));
+    }
+
+    const linked = await linkVisitor(sub);
+    if (linked) {
+      await addAudit('visitor_linked', email, { visitorId: sub.visitorId, linkedRecords: linked });
     }
 
     return sendJson(res, {

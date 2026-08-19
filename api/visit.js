@@ -1,6 +1,15 @@
 import { getList, setList, KEYS, LIMITS } from '../lib/storage.js';
-import { sendJson, sendEmpty, readBody, clean, getClientIp } from '../lib/http.js';
+import { sendJson, sendEmpty, readBody, clean, getClientIp, parseCookies } from '../lib/http.js';
 import { geolocateIp } from '../lib/geo.js';
+import { randomBytes } from 'crypto';
+
+function makeVisitorId() {
+  return randomBytes(24).toString('hex');
+}
+
+function visitorCookie(visitorId) {
+  return 'llr_vid=' + visitorId + '; Path=/; SameSite=Lax; Secure; HttpOnly; Max-Age=31536000';
+}
 
 export default function handler(req, res) {
   if (req.method === 'OPTIONS') return sendEmpty(res);
@@ -12,8 +21,16 @@ export default function handler(req, res) {
     const ip = getClientIp(req);
     const geo = await geolocateIp(ip);
 
+    const cookies = parseCookies(req);
+    let visitorId = cookies.llr_vid;
+    const isNewVisitor = !visitorId;
+    if (isNewVisitor) {
+      visitorId = makeVisitorId();
+    }
+
     const entry = {
       timestamp: new Date().toISOString(),
+      visitorId,
       ip,
       country: geo.country ?? 'N/A',
       region: geo.regionName ?? 'N/A',
