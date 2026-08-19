@@ -1269,16 +1269,24 @@
       const msg = document.getElementById('nlMessage').value.trim();
       const status = document.getElementById('nlSendStatus');
       document.getElementById('sendConfirm').style.display = 'none';
-      status.textContent = 'Building newsletter...';
+      status.textContent = 'Sending newsletter to all subscribers...';
       try {
-        const res = await fetch(apiUrl('send-newsletter'), {
+        const res = await fetch(apiUrl('blast-newsletter'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: msg })
         });
-        if (!res.ok) { status.textContent = 'Failed to build newsletter.'; return; }
+        if (!res.ok) { status.textContent = 'Failed to send newsletter.'; return; }
         const data = await res.json();
-        status.textContent = 'Newsletter built with ' + data.eventCount + ' events and ' + data.streamCount + ' scheduled streams. HTML generated. Scheduled sends run automatically via the Vercel cron (weekly, sends every two weeks).';
+        let msg = 'Sent ' + data.sent + ' of ' + data.total + ' subscribers.';
+        if (data.failed > 0) {
+          msg += ' Failed: ' + data.failed;
+          if (data.failures && data.failures.length) {
+            msg += ' (' + data.failures.map(f => f.email + ': ' + f.reason).join(', ') + ')';
+          }
+        }
+        if (data.capped) msg += ' Capped at 100 per send.';
+        status.textContent = msg;
       } catch {
         status.textContent = 'Connection error.';
       }
