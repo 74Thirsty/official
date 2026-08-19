@@ -195,14 +195,14 @@ export default function handler(req, res) {
         sub.ebookTokenIssuedAt = new Date().toISOString();
       } else {
         sub.welcomeStatus = 'failed';
-        sub.welcomeError = String(result.reason || `status_${result.status}`);
+        sub.welcomeError = String(result.message || result.reason || `status_${result.status}`);
       }
       entries[index] = sub;
       await setList(KEYS.subscribers, entries);
 
-      await addAudit('welcome_resend', email, { welcomeStatus: sub.welcomeStatus });
+      await addAudit('welcome_resend', email, { welcomeStatus: sub.welcomeStatus, welcomeError: sub.welcomeError });
 
-      return sendJson(res, { ok: true, email, welcomeStatus: sub.welcomeStatus });
+      return sendJson(res, { ok: true, email, welcomeStatus: sub.welcomeStatus, welcomeError: sub.welcomeError || null });
     }).catch(fail);
     return;
   }

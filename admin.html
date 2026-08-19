@@ -477,6 +477,7 @@
       <a href="events.html">Events</a>
       <a href="media.html">Media</a>
       <a href="mission.html">Mission</a>
+      <a href="community.html">Community</a>
       <a href="admin.html" style="color:var(--orange);">Admin</a>
     </div>
   </nav>
@@ -526,10 +527,19 @@
         <button class="tab-btn" onclick="switchTab('newsletter')">Send Newsletter</button>
         <button class="tab-btn" onclick="switchTab('stream')">Live Stream</button>
         <button class="tab-btn" onclick="switchTab('events')">Events</button>
+        <button class="tab-btn" onclick="switchTab('gallery')">Gallery</button>
+        <button class="tab-btn" onclick="switchTab('testimonials')">Testimonials</button>
       </div>
 
       <!-- Subscribers panel -->
       <div id="panel-subscribers" class="tab-panel active">
+        <div id="subsEmailStats" style="margin-bottom:16px; padding:14px 18px; border-radius:14px; background:var(--card); border:1px solid var(--line); display:none;">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <div id="subsEmailStatsText" style="font-size:14px;"></div>
+            <button id="resendAllFailedBtn" class="btn btn-sm btn-primary" onclick="resendAllFailed()" style="display:none;">Resend All Failed</button>
+          </div>
+          <div id="resendAllStatus" style="margin-top:8px; font-size:13px; color:var(--muted);"></div>
+        </div>
         <div class="table-scroll">
           <table>
             <thead>
@@ -905,6 +915,30 @@
           </div>
         </div>
 
+        <!-- Gallery Panel -->
+        <div id="panel-gallery" class="tab-panel">
+          <div class="panel-header">
+            <h2>Gallery <span class="orange">Reviews</span></h2>
+            <p style="color:var(--muted); margin-top:4px;">Review and approve member photo submissions.</p>
+          </div>
+          <div style="margin-top:16px;">
+            <div id="galleryPendingList"></div>
+            <div id="galleryEmpty" class="empty-state" style="display:none;">No pending photo submissions.</div>
+          </div>
+        </div>
+
+        <!-- Testimonials Panel -->
+        <div id="panel-testimonials" class="tab-panel">
+          <div class="panel-header">
+            <h2>Testimonial <span class="orange">Reviews</span></h2>
+            <p style="color:var(--muted); margin-top:4px;">Review and approve member testimonials.</p>
+          </div>
+          <div style="margin-top:16px;">
+            <div id="testimonialPendingList"></div>
+            <div id="testimonialEmpty" class="empty-state" style="display:none;">No pending testimonials.</div>
+          </div>
+        </div>
+
      </div>
   </section>
 
@@ -971,6 +1005,8 @@
         }
         if (name === 'events') loadEvents();
         if (name === 'newsletter') loadSignedStatus();
+        if (name === 'gallery') loadGalleryPending();
+        if (name === 'testimonials') loadTestimonialPending();
       }
 
       async function loadSignedStatus() {
@@ -1054,17 +1090,28 @@
           const statusBadge = isUnsubscribed
             ? '<span class="badge badge-hosting">Unsubscribed</span>'
             : '<span class="badge badge-clean">Active</span>';
-          const welcomeCell = s.welcomeStatus === 'sent'
-            ? escapeHtml(formatDate(s.welcomeSentAt)) || 'Sent'
-            : s.welcomeStatus === 'failed'
-              ? '<span class="badge badge-proxy" title="' + escapeHtml(s.welcomeError || 'send failed') + '">Failed</span>'
-              : 'Pending';
+          let welcomeCell;
+          if (s.welcomeStatus === 'sent') {
+            const dateStr = escapeHtml(formatDate(s.welcomeSentAt));
+            const resendCount = s.welcomeResendCount || 0;
+            const suffix = resendCount > 0 ? ' <span style="color:var(--muted);font-size:11px;">(resent ' + resendCount + 'x)</span>' : '';
+            welcomeCell = '<span class="badge badge-clean">Sent</span> <span style="font-size:12px;color:#aaa;">' + dateStr + '</span>' + suffix;
+          } else if (s.welcomeStatus === 'failed') {
+            const errMsg = escapeHtml(s.welcomeError || 'unknown');
+            const resendCount = s.welcomeResendCount || 0;
+            const suffix = resendCount > 0 ? ' <span style="color:var(--muted);font-size:11px;">(tried ' + resendCount + 'x)</span>' : '';
+            welcomeCell = '<span class="badge badge-proxy" style="cursor:help;" title="Last error: ' + errMsg + '">Failed</span> <span style="font-size:12px;color:#ef4444;">' + errMsg + '</span>' + suffix;
+          } else {
+            const resendCount = s.welcomeResendCount || 0;
+            const suffix = resendCount > 0 ? ' <span style="color:var(--muted);font-size:11px;">(tried ' + resendCount + 'x)</span>' : '';
+            welcomeCell = '<span style="color:#666;">Not Sent</span>' + suffix;
+          }
           const ebookCell = s.ebookLinkIssued
-            ? (s.ebookTokenUsed ? 'Used' : 'Issued')
-            : '—';
+            ? (s.ebookTokenUsed ? '<span class="badge badge-clean">Downloaded</span>' : '<span style="color:var(--muted);">Issued</span>')
+            : '<span style="color:#555;">—</span>';
           const resendBtn = isUnsubscribed
-            ? '<span style="color:#666;font-size:12px;">—</span>'
-            : '<button class="btn btn-sm" onclick="resendWelcome(\'' + escapeHtml(s.email) + '\')" title="Re-send the welcome letter with a fresh e-book link">Resend</button>';
+            ? '<span style="color:#666;font-size:12px;">Unsubscribed</span>'
+            : '<button class="btn btn-sm" onclick="resendWelcome(\'' + escapeHtml(s.email) + '\')" title="Re-send welcome letter with a fresh e-book link">Resend</button>';
           return '<tr>' +
             '<td>' + escapeHtml(s.name || '') + '</td>' +
             '<td>' + escapeHtml(s.email || '') + '</td>' +
@@ -1077,11 +1124,31 @@
             '<td>' + badges + '</td>' +
             '<td>' + escapeHtml(formatDate(s.signedAt)) + '</td>' +
             '<td>' + statusBadge + '</td>' +
-            '<td>' + welcomeCell + '</td>' +
+            '<td style="max-width:260px;">' + welcomeCell + '</td>' +
             '<td>' + ebookCell + '</td>' +
             '<td>' + resendBtn + '</td>' +
           '</tr>';
         }).join('');
+        const sent = subs.filter(s => s.welcomeStatus === 'sent').length;
+        const failed = subs.filter(s => s.welcomeStatus === 'failed').length;
+        const notSent = subs.filter(s => !s.welcomeStatus || s.welcomeStatus === 'null').length;
+        const active = subs.filter(s => (s.status || 'active') === 'active');
+        const activeFailed = active.filter(s => s.welcomeStatus === 'failed').length;
+        const statsDiv = document.getElementById('subsEmailStats');
+        const statsText = document.getElementById('subsEmailStatsText');
+        const resendBtn = document.getElementById('resendAllFailedBtn');
+        statsDiv.style.display = 'block';
+        statsText.innerHTML =
+          '<span style="color:#22c55e;font-weight:700;">' + sent + ' Sent</span>' +
+          ' &nbsp;&middot;&nbsp; <span style="color:#ef4444;font-weight:700;">' + failed + ' Failed</span>' +
+          ' &nbsp;&middot;&nbsp; <span style="color:#666;font-weight:700;">' + notSent + ' Never Sent</span>' +
+          ' &nbsp;&middot;&nbsp; <span style="color:#888;">' + subs.length + ' Total</span>';
+        if (activeFailed > 0) {
+          resendBtn.style.display = 'inline-block';
+          resendBtn.textContent = 'Resend All Failed (' + activeFailed + ')';
+        } else {
+          resendBtn.style.display = 'none';
+        }
       } catch {}
     }
 
@@ -1093,11 +1160,44 @@
       });
       const data = await res.json();
       if (res.ok && data.ok) {
-        alert('Welcome letter re-sent to ' + email + ' (' + data.welcomeStatus + ').');
+        if (data.welcomeStatus === 'sent') {
+          alert('Welcome letter re-sent successfully to ' + email + '.');
+        } else {
+          alert('Re-send attempted to ' + email + ' but FAILED.\n\nError: ' + (data.welcomeError || data.error || 'unknown') + '\n\nThis is likely because the Resend domain is still pending DNS verification. Check the Resend dashboard.');
+        }
       } else {
         alert(data.error || 'Failed to re-send welcome letter.');
       }
       loadSubscribers();
+    }
+
+    async function resendAllFailed() {
+      const statusEl = document.getElementById('resendAllStatus');
+      statusEl.textContent = 'Fetching subscriber list...';
+      try {
+        const res = await fetch(apiUrl('subscribers'));
+        const data = await res.json();
+        const subs = data.subscribers || [];
+        const failed = subs.filter(s => s.welcomeStatus === 'failed' && (s.status || 'active') === 'active');
+        if (!failed.length) { statusEl.textContent = 'No failed subscribers to retry.'; return; }
+        statusEl.textContent = 'Re-sending to ' + failed.length + ' failed subscriber(s)...';
+        let sent = 0, failedCount = 0;
+        for (const s of failed) {
+          try {
+            const r = await fetch(apiUrl('resend-welcome'), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: s.email })
+            });
+            const d = await r.json();
+            if (d.ok && d.welcomeStatus === 'sent') sent++;
+            else failedCount++;
+          } catch { failedCount++; }
+          await new Promise(r => setTimeout(r, 250));
+        }
+        statusEl.textContent = 'Done. Sent: ' + sent + ', Still failed: ' + failedCount + ' of ' + failed.length;
+        loadSubscribers();
+      } catch { statusEl.textContent = 'Error fetching subscribers.'; }
     }
 
     // --- Visitors ---
@@ -1802,6 +1902,118 @@
         const d = new Date(iso);
         return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       } catch { return iso; }
+    }
+
+    // --- Gallery ---
+    async function loadGalleryPending() {
+      const list = document.getElementById('galleryPendingList');
+      const empty = document.getElementById('galleryEmpty');
+      try {
+        const res = await fetch('/api/gallery?action=pending&key=' + encodeURIComponent(adminKey));
+        const data = await res.json();
+        if (!data.pending || !data.pending.length) {
+          list.innerHTML = '';
+          empty.style.display = 'block';
+          return;
+        }
+        empty.style.display = 'none';
+        list.innerHTML = data.pending.map(s => `
+          <div style="border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; background:var(--card);">
+            <div style="display:flex; gap:16px; align-items:flex-start;">
+              <img src="${escapeHtml(s.image)}" style="width:180px; height:120px; object-fit:cover; border-radius:10px; border:1px solid var(--line);">
+              <div style="flex:1;">
+                <div style="font-weight:800;">${escapeHtml(s.name)}</div>
+                <div style="color:var(--muted); font-size:13px; margin-top:4px;">${escapeHtml(s.caption || 'No caption')}</div>
+                <div style="color:#666; font-size:12px; margin-top:4px;">Submitted ${formatDate(s.submittedAt)}</div>
+                <div style="margin-top:10px; display:flex; gap:8px;">
+                  <button class="btn btn-sm btn-primary" onclick="approveGallery('${escapeHtml(s.id)}')">Approve</button>
+                  <button class="btn btn-sm" style="background:#ef4444; color:#fff;" onclick="deleteGallery('${escapeHtml(s.id)}')">Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch {
+        list.innerHTML = '';
+        empty.style.display = 'block';
+      }
+    }
+
+    async function approveGallery(id) {
+      if (!confirm('Approve this photo? Save the image to assets/approved/ and update manifest.json after.')) return;
+      try {
+        const res = await fetch('/api/gallery?action=approve&key=' + encodeURIComponent(adminKey), {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if (res.ok) { alert('Approved. Remember to add the image to assets/approved/ and update manifest.json.'); loadGalleryPending(); }
+        else { alert(data.error || 'Failed.'); }
+      } catch { alert('Network error.'); }
+    }
+
+    async function deleteGallery(id) {
+      if (!confirm('Delete this submission?')) return;
+      try {
+        const res = await fetch('/api/gallery?action=delete&key=' + encodeURIComponent(adminKey), {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) loadGalleryPending();
+      } catch { alert('Network error.'); }
+    }
+
+    // --- Testimonials ---
+    async function loadTestimonialPending() {
+      const list = document.getElementById('testimonialPendingList');
+      const empty = document.getElementById('testimonialEmpty');
+      try {
+        const res = await fetch('/api/testimonials?action=pending&key=' + encodeURIComponent(adminKey));
+        const data = await res.json();
+        if (!data.pending || !data.pending.length) {
+          list.innerHTML = '';
+          empty.style.display = 'block';
+          return;
+        }
+        empty.style.display = 'none';
+        list.innerHTML = data.pending.map(t => `
+          <div style="border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; background:var(--card);">
+            <div style="font-style:italic; color:#e0e0e0; line-height:1.5;">"${escapeHtml(t.quote)}"</div>
+            <div style="margin-top:10px; font-weight:800; font-size:14px;">${escapeHtml(t.name)}</div>
+            ${t.ridingInfo ? '<div style="color:var(--muted); font-size:13px;">' + escapeHtml(t.ridingInfo) + '</div>' : ''}
+            <div style="color:#666; font-size:12px; margin-top:4px;">Submitted ${formatDate(t.submittedAt)}</div>
+            <div style="margin-top:10px; display:flex; gap:8px;">
+              <button class="btn btn-sm btn-primary" onclick="approveTestimonial('${escapeHtml(t.id)}')">Approve</button>
+              <button class="btn btn-sm" style="background:#ef4444; color:#fff;" onclick="deleteTestimonial('${escapeHtml(t.id)}')">Delete</button>
+            </div>
+          </div>
+        `).join('');
+      } catch {
+        list.innerHTML = '';
+        empty.style.display = 'block';
+      }
+    }
+
+    async function approveTestimonial(id) {
+      try {
+        const res = await fetch('/api/testimonials?action=approve&key=' + encodeURIComponent(adminKey), {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) loadTestimonialPending();
+        else { const d = await res.json(); alert(d.error || 'Failed.'); }
+      } catch { alert('Network error.'); }
+    }
+
+    async function deleteTestimonial(id) {
+      if (!confirm('Delete this testimonial?')) return;
+      try {
+        const res = await fetch('/api/testimonials?action=delete&key=' + encodeURIComponent(adminKey), {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) loadTestimonialPending();
+      } catch { alert('Network error.'); }
     }
 
     // --- Init ---

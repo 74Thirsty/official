@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community Hub | Lost Limb Riders</title>
+  <link rel="icon" type="image/png" href="assets/logo-nobg.png">
+  <meta name="description" content="The Lost Limb Riders community hub — member photo gallery, testimonials, and stories from the ride.">
+  <style>
+    :root {
+      --orange: #ff6a00;
+      --orange-dark: #c94f00;
+      --black: #050505;
+      --charcoal: #101010;
+      --card: #171717;
+      --line: rgba(255,255,255,.14);
+      --muted: #b7b7b7;
+      --white: #ffffff;
+      --shadow: 0 24px 70px rgba(0,0,0,.45);
+    }
+    body { margin:0; background:var(--black); color:var(--white); font-family:Arial,Helvetica,sans-serif; overflow-x:hidden; }
+    body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse at 20% 20%, rgba(255,106,0,.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(255,106,0,.03) 0%, transparent 60%); pointer-events:none; z-index:0; }
+    a { color:var(--orange); text-decoration:none; }
+    .wrap { max-width:1180px; margin:0 auto; position:relative; z-index:1; }
+    .orange { color:var(--orange); }
+
+    /* NAV */
+    .nav { position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:14px 7vw; background:rgba(5,5,5,.88); border-bottom:1px solid var(--line); backdrop-filter:blur(16px); }
+    .brand { display:flex; align-items:center; gap:12px; color:var(--white); font-weight:900; font-size:16px; letter-spacing:.08em; text-transform:uppercase; }
+    .brand img { width:54px; height:54px; min-width:54px; border-radius:12px; }
+    .nav-links { display:flex; gap:18px; align-items:center; }
+    .nav-links a { color:#dedede; font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+
+    /* HERO */
+    .page-hero { position:relative; padding:110px 7vw 70px; text-align:center; background:linear-gradient(180deg, rgba(255,106,0,.08) 0%, transparent 100%); border-bottom:1px solid var(--line); }
+    .eyebrow { display:inline-block; padding:6px 18px; border:1px solid rgba(255,106,0,.75); border-radius:50px; font-size:12px; font-weight:900; letter-spacing:.22em; text-transform:uppercase; color:var(--orange); margin-bottom:20px; }
+    .page-hero h1 { font-size:clamp(38px,5.5vw,76px); line-height:.92; letter-spacing:-.04em; text-transform:uppercase; margin:0 0 16px; }
+    .page-hero .subtitle { color:var(--muted); font-size:clamp(17px,2vw,22px); line-height:1.45; max-width:700px; margin:0 auto; }
+
+    /* SECTIONS */
+    section { padding:84px 7vw; position:relative; z-index:1; }
+    .section-heading { text-align:center; margin-bottom:48px; }
+    .section-title { font-size:clamp(32px,4.5vw,60px); line-height:.95; letter-spacing:-.03em; text-transform:uppercase; margin:0 0 12px; }
+
+    /* STATEMENT BREAK */
+    .statement { padding:50px 7vw; text-align:center; background:linear-gradient(90deg, rgba(255,106,0,.12) 0%, rgba(255,106,0,.04) 100%); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+    .statement p { font-size:clamp(16px,2vw,22px); font-weight:800; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin:0; }
+
+    /* GALLERY GRID */
+    .gallery-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+    .gallery-card { position:relative; border-radius:20px; overflow:hidden; cursor:pointer; border:2px solid var(--line); background:var(--card); transition:border-color .3s, box-shadow .3s, transform .3s; }
+    .gallery-card:hover { border-color:var(--orange); box-shadow:0 0 30px rgba(255,106,0,.2), 0 20px 50px rgba(0,0,0,.4); transform:translateY(-4px); }
+    .gallery-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, var(--orange), var(--orange-dark)); opacity:0; transition:opacity .3s; z-index:2; }
+    .gallery-card:hover::before { opacity:1; }
+    .gallery-card::after { content:'LLR'; position:absolute; top:12px; right:12px; padding:3px 8px; background:rgba(0,0,0,.65); backdrop-filter:blur(8px); border:1px solid rgba(255,106,0,.4); border-radius:6px; font-size:9px; font-weight:900; letter-spacing:.15em; color:var(--orange); opacity:0; transition:opacity .3s; z-index:2; }
+    .gallery-card:hover::after { opacity:1; }
+    .gallery-card img { width:100%; aspect-ratio:3/2; object-fit:cover; display:block; transition:transform .4s; }
+    .gallery-card:hover img { transform:scale(1.05); }
+    .gallery-card .caption { padding:14px 16px; }
+    .gallery-card .caption .name { font-weight:800; font-size:14px; color:var(--white); }
+    .gallery-card .caption .desc { font-size:13px; color:var(--muted); margin-top:4px; line-height:1.4; }
+
+    .gallery-empty { text-align:center; padding:60px 20px; color:var(--muted); font-size:16px; }
+
+    /* LIGHTBOX */
+    .lightbox { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.92); backdrop-filter:blur(12px); align-items:center; justify-content:center; flex-direction:column; }
+    .lightbox.active { display:flex; }
+    .lightbox-img { max-width:90vw; max-height:80vh; border-radius:12px; box-shadow:0 20px 80px rgba(0,0,0,.6); object-fit:contain; }
+    .lightbox-caption { color:var(--muted); font-size:15px; margin-top:16px; text-align:center; max-width:700px; }
+    .lightbox-close { position:absolute; top:20px; right:24px; width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.2); background:rgba(0,0,0,.5); color:var(--white); font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .2s, border-color .2s; z-index:101; }
+    .lightbox-close:hover { background:var(--orange); border-color:var(--orange); color:#111; }
+    .lightbox-nav { position:absolute; top:50%; transform:translateY(-50%); width:48px; height:48px; border-radius:50%; border:1px solid rgba(255,255,255,.2); background:rgba(0,0,0,.4); color:var(--white); font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .2s, border-color .2s; }
+    .lightbox-nav:hover { background:var(--orange); border-color:var(--orange); color:#111; }
+    .lightbox-prev { left:20px; }
+    .lightbox-next { right:20px; }
+
+    /* TESTIMONIALS */
+    .testimonials-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:24px; }
+    .testimonial-card { border:1px solid var(--line); border-radius:20px; background:linear-gradient(145deg, rgba(28,28,28,.92), rgba(9,9,9,.92)); padding:32px; position:relative; transition:border-color .3s, box-shadow .3s; }
+    .testimonial-card:hover { border-color:rgba(255,106,0,.4); box-shadow:0 12px 40px rgba(0,0,0,.3); }
+    .testimonial-card::before { content:'\201C'; position:absolute; top:16px; left:24px; font-size:60px; line-height:1; color:var(--orange); opacity:.25; font-family:Georgia,serif; }
+    .testimonial-card .quote { font-size:16px; line-height:1.55; color:#e0e0e0; margin-bottom:20px; padding-top:8px; }
+    .testimonial-card .author { display:flex; align-items:center; gap:12px; }
+    .testimonial-card .avatar { width:42px; height:42px; border-radius:50%; background:linear-gradient(135deg, var(--orange), var(--orange-dark)); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:16px; color:#111; flex-shrink:0; }
+    .testimonial-card .author-name { font-weight:800; font-size:14px; }
+    .testimonial-card .author-info { font-size:13px; color:var(--muted); margin-top:2px; }
+    .testimonials-empty { text-align:center; padding:60px 20px; color:var(--muted); font-size:16px; }
+
+    /* BUTTONS */
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:52px; padding:0 28px; border:none; border-radius:14px; font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; transition:all .2s; }
+    .btn-primary { background:var(--orange); color:#111; box-shadow:0 18px 36px rgba(255,106,0,.2); }
+    .btn-primary:hover { background:#ff8533; box-shadow:0 22px 44px rgba(255,106,0,.3); transform:translateY(-2px); }
+    .btn-secondary { border:1px solid rgba(255,255,255,.28); color:var(--white); background:rgba(255,255,255,.07); }
+    .btn-secondary:hover { background:rgba(255,255,255,.14); }
+    .btn-sm { min-height:40px; padding:0 18px; font-size:12px; border-radius:10px; }
+
+    /* FORMS / MODALS */
+    .modal-overlay { display:none; position:fixed; inset:0; z-index:90; background:rgba(0,0,0,.7); backdrop-filter:blur(8px); align-items:center; justify-content:center; }
+    .modal-overlay.active { display:flex; }
+    .modal { background:var(--charcoal); border:1px solid var(--line); border-radius:24px; padding:40px; width:90%; max-width:520px; max-height:90vh; overflow-y:auto; }
+    .modal h3 { font-size:24px; font-weight:900; text-transform:uppercase; letter-spacing:-.02em; margin:0 0 8px; }
+    .modal p.lead { color:var(--muted); font-size:15px; margin:0 0 24px; }
+    .modal label { display:block; font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; margin-top:18px; }
+    .modal label:first-of-type { margin-top:0; }
+    .modal input, .modal textarea, .modal select { width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.05); color:var(--white); font-size:15px; font-family:inherit; outline:none; transition:border-color .2s; box-sizing:border-box; }
+    .modal input:focus, .modal textarea:focus { border-color:var(--orange); box-shadow:0 0 20px rgba(255,106,0,.1); }
+    .modal textarea { min-height:100px; resize:vertical; }
+    .modal .file-zone { border:2px dashed var(--line); border-radius:14px; padding:30px; text-align:center; cursor:pointer; transition:border-color .2s, background .2s; margin-top:6px; }
+    .modal .file-zone:hover, .modal .file-zone.dragover { border-color:var(--orange); background:rgba(255,106,0,.04); }
+    .modal .file-zone p { margin:0; font-size:14px; color:var(--muted); }
+    .modal .file-zone .hint { font-size:12px; color:#777; margin-top:8px; }
+    .modal .file-zone .preview { max-width:100%; max-height:200px; border-radius:10px; margin-top:12px; display:none; }
+    .modal .actions { display:flex; gap:12px; margin-top:28px; }
+    .modal .status { margin-top:12px; font-size:14px; min-height:20px; }
+    .modal .status.error { color:#ef4444; }
+    .modal .status.success { color:#22c55e; }
+    .modal-close { position:absolute; top:16px; right:16px; width:36px; height:36px; border-radius:50%; border:1px solid var(--line); background:transparent; color:var(--white); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .modal-close:hover { background:rgba(255,255,255,.1); }
+
+    /* FOOTER */
+    footer { border-top:1px solid var(--line); padding:0; position:relative; z-index:1; }
+    .footer-inner { max-width:1180px; margin:0 auto; padding:48px 7vw; }
+    .footer-top { display:flex; align-items:flex-start; justify-content:space-between; gap:40px; flex-wrap:wrap; }
+    .footer-brand { display:flex; align-items:center; gap:14px; }
+    .footer-brand img { width:48px; height:48px; border-radius:10px; }
+    .footer-brand .brand-text { font-weight:900; font-size:15px; text-transform:uppercase; letter-spacing:.06em; }
+    .footer-brand .brand-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+    .footer-nav { display:flex; gap:20px; flex-wrap:wrap; }
+    .footer-nav a { color:#999; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; transition:color .2s; }
+    .footer-nav a:hover { color:var(--orange); }
+    .footer-contact { text-align:right; }
+    .footer-contact a { color:var(--muted); font-size:13px; display:block; transition:color .2s; }
+    .footer-contact a:hover { color:var(--orange); }
+    .footer-bottom { margin-top:32px; padding-top:24px; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .footer-bottom .copyright { font-size:12px; color:#666; }
+    .footer-bottom .fine-print { font-size:11px; color:#555; text-align:right; max-width:500px; line-height:1.5; }
+
+    /* RESPONSIVE */
+    @media(max-width:940px) {
+      .nav { position:static; flex-direction:column; }
+      .brand img { width:44px; height:44px; min-width:44px; }
+      .nav-links { flex-wrap:wrap; justify-content:center; }
+      .gallery-grid { grid-template-columns:repeat(2,1fr); }
+      .testimonials-grid { grid-template-columns:1fr; }
+      .footer-top { flex-direction:column; align-items:center; text-align:center; }
+      .footer-contact { text-align:center; }
+      .footer-bottom { flex-direction:column; align-items:center; text-align:center; }
+    }
+    @media(max-width:560px) {
+      .nav-links a { font-size:12px; gap:12px; }
+      .brand span { font-size:13px; }
+      .gallery-grid { grid-template-columns:1fr; }
+      section { padding:48px 22px; }
+      .footer-inner { padding:32px 22px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" aria-label="Primary navigation">
+    <a class="brand" href="index.html" aria-label="Lost Limb Riders home">
+      <img src="assets/logo-nobg.png" alt="Lost Limb Riders logo">
+      <span>Lost Limb Riders</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="events.html">Events</a>
+      <a href="media.html">Media</a>
+      <a href="mission.html">Mission</a>
+      <a href="community.html" style="color:var(--orange)">Community</a>
+    </div>
+  </nav>
+
+  <header class="page-hero">
+    <div class="eyebrow">The Scrapbook</div>
+    <h1>Community <span class="orange">Hub</span></h1>
+    <p class="subtitle">Stories, photos, and voices from the riders who make Lost Limb Riders what it is.</p>
+  </header>
+
+  <main>
+    <!-- GALLERY -->
+    <section id="gallery">
+      <div class="wrap">
+        <div class="section-heading">
+          <h2 class="section-title">Photo <span class="orange">Gallery</span></h2>
+          <p style="color:var(--muted); font-size:16px; margin-top:10px;">Moments from the road, the rallies, and the community.</p>
+        </div>
+        <div style="text-align:center; margin-bottom:36px;">
+          <button class="btn btn-primary" onclick="openPhotoModal()">Submit a Photo</button>
+        </div>
+        <div id="galleryGrid" class="gallery-grid"></div>
+      </div>
+    </section>
+
+    <div class="statement"><p>Ride With Purpose &bull; Support Amputees &bull; Build Community</p></div>
+
+    <!-- TESTIMONIALS -->
+    <section id="testimonials">
+      <div class="wrap">
+        <div class="section-heading">
+          <h2 class="section-title">Rider <span class="orange">Voices</span></h2>
+          <p style="color:var(--muted); font-size:16px; margin-top:10px;">What our members have to say about the ride.</p>
+        </div>
+        <div style="text-align:center; margin-bottom:36px;">
+          <button class="btn btn-primary" onclick="openTestimonialModal()">Share Your Story</button>
+        </div>
+        <div id="testimonialsGrid" class="testimonials-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- LIGHTBOX -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <button class="lightbox-nav lightbox-prev" onclick="navLightbox(-1, event)">&#8249;</button>
+    <button class="lightbox-nav lightbox-next" onclick="navLightbox(1, event)">&#8250;</button>
+    <img class="lightbox-img" id="lightboxImg" src="" alt="">
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+  </div>
+
+  <!-- PHOTO SUBMIT MODAL -->
+  <div class="modal-overlay" id="photoModal" onclick="closePhotoModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>Submit a <span class="orange">Photo</span></h3>
+      <p class="lead">Share a moment from your ride. Submissions are reviewed before appearing in the gallery.</p>
+      <form id="photoForm" onsubmit="submitPhoto(event)">
+        <label for="photoName">Your Name</label>
+        <input type="text" id="photoName" placeholder="e.g. John T." required>
+        <label for="photoCaption">Caption</label>
+        <input type="text" id="photoCaption" placeholder="What's happening in this photo?">
+        <label>Photo</label>
+        <div class="file-zone" id="fileZone" onclick="document.getElementById('photoFile').click()" ondragover="event.preventDefault(); this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)">
+          <p id="fileLabel">Click or drag to upload</p>
+          <p class="hint">JPEG or PNG &bull; 1200 &times; 800px recommended &bull; Max 500KB</p>
+          <img class="preview" id="filePreview">
+        </div>
+        <input type="file" id="photoFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleFileSelect(event)">
+        <div class="actions">
+          <button type="submit" class="btn btn-primary" id="photoSubmitBtn">Submit Photo</button>
+          <button type="button" class="btn btn-secondary" onclick="closePhotoModal()">Cancel</button>
+        </div>
+        <div class="status" id="photoStatus"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TESTIMONIAL SUBMIT MODAL -->
+  <div class="modal-overlay" id="testimonialModal" onclick="closeTestimonialModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>Share Your <span class="orange">Story</span></h3>
+      <p class="lead">Tell us what Lost Limb Riders means to you. Submissions are reviewed before appearing on the page.</p>
+      <form id="testimonialForm" onsubmit="submitTestimonial(event)">
+        <label for="testName">Your Name</label>
+        <input type="text" id="testName" placeholder="e.g. Sarah M." required>
+        <label for="testQuote">Your Testimonial</label>
+        <textarea id="testQuote" placeholder="Share your experience..." required></textarea>
+        <label for="testInfo">Riding Info (optional)</label>
+        <input type="text" id="testInfo" placeholder="e.g. Passenger, 3 years">
+        <div class="actions">
+          <button type="submit" class="btn btn-primary" id="testSubmitBtn">Submit</button>
+          <button type="button" class="btn btn-secondary" onclick="closeTestimonialModal()">Cancel</button>
+        </div>
+        <div class="status" id="testStatus"></div>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="assets/logo-nobg.png" alt="Lost Limb Riders">
+          <div>
+            <div class="brand-text">Lost Limb Riders</div>
+            <div class="brand-sub">Motorcycle Club &bull; Est. 2025</div>
+          </div>
+        </div>
+        <div class="footer-nav">
+          <a href="index.html">Home</a>
+          <a href="events.html">Events</a>
+          <a href="media.html">Media</a>
+          <a href="mission.html">Mission</a>
+          <a href="community.html">Community</a>
+        </div>
+        <div class="footer-contact">
+          <a href="mailto:john.thompson@lostlimbriders.org">john.thompson@lostlimbriders.org</a>
+          <a href="tel:5158905765">515-890-5765</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="copyright">&copy; 2026 Lost Limb Riders Motorcycle Club. All rights reserved.</div>
+        <div class="fine-print">Ride With Purpose &bull; Support Amputees &bull; Build Community &bull; Never Give Up</div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function escapeHtml(v) { return String(v||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+    let galleryImages = [];
+    let lightboxIndex = 0;
+
+    // LOAD GALLERY
+    async function loadGallery() {
+      try {
+        const res = await fetch('/assets/approved/manifest.json');
+        galleryImages = await res.json();
+      } catch { galleryImages = []; }
+      const grid = document.getElementById('galleryGrid');
+      if (!galleryImages.length) {
+        grid.innerHTML = '<div class="gallery-empty">No photos yet. Be the first to share a moment from the ride.</div>';
+        return;
+      }
+      grid.innerHTML = galleryImages.map((img, i) => `
+        <div class="gallery-card" onclick="openLightbox(${i})">
+          <img src="assets/approved/${escapeHtml(img.filename)}" alt="${escapeHtml(img.title || img.caption || '')}" loading="lazy">
+          <div class="caption">
+            <div class="name">${escapeHtml(img.title || img.name || '')}</div>
+            ${img.caption ? '<div class="desc">' + escapeHtml(img.caption) + '</div>' : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // LIGHTBOX
+    function openLightbox(i) {
+      lightboxIndex = i;
+      renderLightbox();
+      document.getElementById('lightbox').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox(e) {
+      if (e && e.target !== document.getElementById('lightbox') && !e.target.classList.contains('lightbox-close')) return;
+      document.getElementById('lightbox').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+    function navLightbox(dir, e) {
+      if (e) e.stopPropagation();
+      lightboxIndex = (lightboxIndex + dir + galleryImages.length) % galleryImages.length;
+      renderLightbox();
+    }
+    function renderLightbox() {
+      const img = galleryImages[lightboxIndex];
+      if (!img) return;
+      document.getElementById('lightboxImg').src = 'assets/approved/' + img.filename;
+      document.getElementById('lightboxImg').alt = img.title || img.caption || '';
+      document.getElementById('lightboxCaption').textContent = (img.title ? img.title + ' — ' : '') + (img.caption || '');
+    }
+    document.addEventListener('keydown', e => {
+      if (!document.getElementById('lightbox').classList.contains('active')) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') navLightbox(-1);
+      if (e.key === 'ArrowRight') navLightbox(1);
+    });
+
+    // LOAD TESTIMONIALS
+    async function loadTestimonials() {
+      let testimonials = [];
+      try {
+        const res = await fetch('/api/testimonials?action=list');
+        const data = await res.json();
+        testimonials = data.testimonials || [];
+      } catch {}
+      const grid = document.getElementById('testimonialsGrid');
+      if (!testimonials.length) {
+        grid.innerHTML = '<div class="testimonials-empty">No testimonials yet. Share your story and be the first.</div>';
+        return;
+      }
+      grid.innerHTML = testimonials.map(t => {
+        const initials = (t.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        return `
+        <div class="testimonial-card">
+          <div class="quote">${escapeHtml(t.quote)}</div>
+          <div class="author">
+            <div class="avatar">${escapeHtml(initials)}</div>
+            <div>
+              <div class="author-name">${escapeHtml(t.name)}</div>
+              ${t.ridingInfo ? '<div class="author-info">' + escapeHtml(t.ridingInfo) + '</div>' : ''}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // PHOTO MODAL
+    let selectedFile = null;
+    function openPhotoModal() { document.getElementById('photoModal').classList.add('active'); document.body.style.overflow = 'hidden'; }
+    function closePhotoModal(e) { if (e && e.target !== document.getElementById('photoModal')) return; document.getElementById('photoModal').classList.remove('active'); document.body.style.overflow = ''; resetPhotoForm(); }
+    function resetPhotoForm() {
+      document.getElementById('photoForm').reset();
+      document.getElementById('filePreview').style.display = 'none';
+      document.getElementById('fileLabel').textContent = 'Click or drag to upload';
+      document.getElementById('photoStatus').textContent = '';
+      document.getElementById('photoStatus').className = 'status';
+      selectedFile = null;
+    }
+    function handleFileSelect(e) { processFile(e.target.files[0]); }
+    function handleDrop(e) { e.preventDefault(); e.currentTarget.classList.remove('dragover'); processFile(e.dataTransfer.files[0]); }
+    function processFile(file) {
+      if (!file) return;
+      if (!['image/jpeg','image/png','image/webp'].includes(file.type)) {
+        document.getElementById('photoStatus').textContent = 'Please use JPEG, PNG, or WebP.';
+        document.getElementById('photoStatus').className = 'status error';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let w = img.width, h = img.height;
+          const maxW = 1200, maxH = 800;
+          if (w > maxW || h > maxH) {
+            const ratio = Math.min(maxW / w, maxH / h);
+            w = Math.round(w * ratio);
+            h = Math.round(h * ratio);
+          }
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          const sizeKB = Math.round(dataUrl.length * 3 / 4 / 1024);
+          if (sizeKB > 550) {
+            document.getElementById('photoStatus').textContent = 'Image too large after compression (' + sizeKB + 'KB). Try a smaller image.';
+            document.getElementById('photoStatus').className = 'status error';
+            return;
+          }
+          selectedFile = dataUrl;
+          const preview = document.getElementById('filePreview');
+          preview.src = dataUrl;
+          preview.style.display = 'block';
+          document.getElementById('fileLabel').textContent = file.name + ' (' + sizeKB + 'KB)';
+          document.getElementById('photoStatus').textContent = '';
+          document.getElementById('photoStatus').className = 'status';
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    async function submitPhoto(e) {
+      e.preventDefault();
+      if (!selectedFile) { document.getElementById('photoStatus').textContent = 'Please select a photo.'; document.getElementById('photoStatus').className = 'status error'; return; }
+      const btn = document.getElementById('photoSubmitBtn');
+      btn.disabled = true; btn.textContent = 'Submitting...';
+      try {
+        const res = await fetch('/api/gallery?action=submit', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ name: document.getElementById('photoName').value.trim(), caption: document.getElementById('photoCaption').value.trim(), image: selectedFile })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('photoStatus').textContent = 'Photo submitted! It will appear after review.';
+          document.getElementById('photoStatus').className = 'status success';
+          setTimeout(() => { closePhotoModal(); }, 2000);
+        } else {
+          document.getElementById('photoStatus').textContent = data.error || 'Something went wrong.';
+          document.getElementById('photoStatus').className = 'status error';
+        }
+      } catch {
+        document.getElementById('photoStatus').textContent = 'Network error. Try again.';
+        document.getElementById('photoStatus').className = 'status error';
+      }
+      btn.disabled = false; btn.textContent = 'Submit Photo';
+    }
+
+    // TESTIMONIAL MODAL
+    function openTestimonialModal() { document.getElementById('testimonialModal').classList.add('active'); document.body.style.overflow = 'hidden'; }
+    function closeTestimonialModal(e) { if (e && e.target !== document.getElementById('testimonialModal')) return; document.getElementById('testimonialModal').classList.remove('active'); document.body.style.overflow = ''; }
+    async function submitTestimonial(e) {
+      e.preventDefault();
+      const btn = document.getElementById('testSubmitBtn');
+      btn.disabled = true; btn.textContent = 'Submitting...';
+      try {
+        const res = await fetch('/api/testimonials?action=submit', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ name: document.getElementById('testName').value.trim(), quote: document.getElementById('testQuote').value.trim(), ridingInfo: document.getElementById('testInfo').value.trim() })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('testStatus').textContent = 'Submitted! It will appear after review.';
+          document.getElementById('testStatus').className = 'status success';
+          document.getElementById('testimonialForm').reset();
+          setTimeout(() => { closeTestimonialModal(); }, 2000);
+        } else {
+          document.getElementById('testStatus').textContent = data.error || 'Something went wrong.';
+          document.getElementById('testStatus').className = 'status error';
+        }
+      } catch {
+        document.getElementById('testStatus').textContent = 'Network error. Try again.';
+        document.getElementById('testStatus').className = 'status error';
+      }
+      btn.disabled = false; btn.textContent = 'Submit';
+    }
+
+    // INIT
+    document.addEventListener('DOMContentLoaded', () => {
+      loadGallery();
+      loadTestimonials();
+      fetch('/api/visit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          screen: screen.width + 'x' + screen.height,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          lang: navigator.language,
+          platform: navigator.platform,
+          cookies: navigator.cookieEnabled ? 'enabled' : 'disabled',
+          dnt: navigator.doNotTrack || 'unknown',
+          page: location.href
+        }),
+        keepalive: true
+      }).catch(() => {});
+    });
+  </script>
+</body>
+</html>

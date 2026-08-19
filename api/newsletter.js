@@ -99,7 +99,7 @@ async function sendWelcome(sub, auditLog) {
     return true;
   }
   sub.welcomeStatus = 'failed';
-  sub.welcomeError = String(result.reason || `status_${result.status}`);
+  sub.welcomeError = String(result.message || result.reason || `status_${result.status}`);
   sub.ebookLinkIssued = false;
   auditLog('welcome_failed');
   return false;

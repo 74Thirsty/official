@@ -649,12 +649,22 @@
       text-transform: uppercase;
     }
 
-    footer {
-      padding: 34px 7vw;
-      color: #858585;
-      text-align: center;
-      border-top: 1px solid var(--line);
-    }
+    footer { border-top:1px solid var(--line); padding:0; position:relative; z-index:1; }
+    .footer-inner { max-width:1180px; margin:0 auto; padding:48px 7vw; }
+    .footer-top { display:flex; align-items:flex-start; justify-content:space-between; gap:40px; flex-wrap:wrap; }
+    .footer-brand { display:flex; align-items:center; gap:14px; }
+    .footer-brand img { width:48px; height:48px; border-radius:10px; }
+    .footer-brand .brand-text { font-weight:900; font-size:15px; text-transform:uppercase; letter-spacing:.06em; }
+    .footer-brand .brand-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+    .footer-nav { display:flex; gap:20px; flex-wrap:wrap; }
+    .footer-nav a { color:#999; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; transition:color .2s; }
+    .footer-nav a:hover { color:var(--orange); }
+    .footer-contact { text-align:right; }
+    .footer-contact a { color:var(--muted); font-size:13px; display:block; transition:color .2s; }
+    .footer-contact a:hover { color:var(--orange); }
+    .footer-bottom { margin-top:32px; padding-top:24px; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .footer-bottom .copyright { font-size:12px; color:#666; }
+    .footer-bottom .fine-print { font-size:11px; color:#555; text-align:right; max-width:500px; line-height:1.5; }
 
     .toast {
       position: fixed;
@@ -861,6 +871,14 @@
       .hero-actions { flex-direction: column; }
       .hero-actions .btn { width: 100%; }
     }
+    @media(max-width:940px) {
+      .footer-top { flex-direction:column; align-items:center; text-align:center; }
+      .footer-contact { text-align:center; }
+      .footer-bottom { flex-direction:column; align-items:center; text-align:center; }
+    }
+    @media(max-width:560px) {
+      .footer-inner { padding:32px 22px; }
+    }
   </style>
 </head>
 <body>
@@ -873,6 +891,7 @@
       <a href="index.html">Home</a>
       <a href="events.html">Events</a>
       <a href="media.html" style="color:var(--orange)">Media</a>
+      <a href="community.html">Community</a>
       <a href="mission.html">Mission</a>
       <a href="index.html#guestbook">Guest Book</a>
       <a href="index.html#contact">Contact</a>
@@ -1076,7 +1095,32 @@
   </main>
 
   <footer>
-    Lost Limb Riders Motorcycle Club &bull; Ride With Purpose &bull; Support Amputees &bull; Build Community &bull; Never Give Up
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="assets/logo-nobg.png" alt="Lost Limb Riders">
+          <div>
+            <div class="brand-text">Lost Limb Riders</div>
+            <div class="brand-sub">Motorcycle Club &bull; Est. 2025</div>
+          </div>
+        </div>
+        <div class="footer-nav">
+          <a href="index.html">Home</a>
+          <a href="events.html">Events</a>
+          <a href="media.html">Media</a>
+          <a href="mission.html">Mission</a>
+          <a href="community.html">Community</a>
+        </div>
+        <div class="footer-contact">
+          <a href="mailto:john.thompson@lostlimbriders.org">john.thompson@lostlimbriders.org</a>
+          <a href="tel:5158905765">515-890-5765</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="copyright">&copy; 2026 Lost Limb Riders Motorcycle Club. All rights reserved.</div>
+        <div class="fine-print">Ride With Purpose &bull; Support Amputees &bull; Build Community &bull; Never Give Up</div>
+      </div>
+    </div>
   </footer>
 
   <!-- VIDEO MODAL -->
