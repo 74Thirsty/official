@@ -1,5 +1,5 @@
 import { getList, setList, KEYS, LIMITS } from '../lib/storage.js';
-import { sendJson, sendEmpty, readBody, clean, getClientIp, parseCookies } from '../lib/http.js';
+import { sendJson, sendEmpty, readBody, clean, getClientIp, parseCookies, setCors } from '../lib/http.js';
 import { geolocateIp } from '../lib/geo.js';
 import { randomBytes } from 'crypto';
 
@@ -59,6 +59,9 @@ export default function handler(req, res) {
     const trimmed = visitors.slice(0, LIMITS.visitors);
     await setList(KEYS.visitors, trimmed);
 
-    return sendJson(res, { ok: true }, 201);
+    setCors(res);
+    res.setHeader('Set-Cookie', visitorCookie(visitorId));
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    return res.status(201).send(JSON.stringify({ ok: true }));
   }).catch(() => sendJson(res, { error: 'Storage error.' }, 500));
 }
