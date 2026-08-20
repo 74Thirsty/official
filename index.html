@@ -779,10 +779,10 @@
               </div>
             </div>
 
-            <form id="newsletterForm">
-              <div class="newsletter-row">
-                <input id="nlName" autocomplete="name" placeholder="Full name" required>
-                <input id="nlEmail" type="email" autocomplete="email" placeholder="Email address" required>
+            <form id="newsletterForm" style="max-width:480px; margin-top:24px;">
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <input id="nlName" autocomplete="name" placeholder="Full name" required style="padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:#090909; color:var(--white); font-size:15px; font-family:inherit; width:100%;">
+                <input id="nlEmail" type="email" autocomplete="email" placeholder="Email address" required style="padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:#090909; color:var(--white); font-size:15px; font-family:inherit; width:100%;">
                 <button type="submit" class="offer-cta">Get My Free Autographed E-Book &amp; Join the Ride</button>
               </div>
               <div id="nlStatus" class="newsletter-status" role="status" aria-live="polite"></div>
