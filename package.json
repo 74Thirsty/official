@@ -11,6 +11,7 @@
     "deploy": "vercel --prod"
   },
   "dependencies": {
-    "@upstash/redis": "^1.38.1"
+    "@upstash/redis": "^1.38.1",
+    "@vercel/blob": "^2.8.0"
   }
 }

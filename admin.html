@@ -529,6 +529,7 @@
         <button class="tab-btn" onclick="switchTab('events')">Events</button>
         <button class="tab-btn" onclick="switchTab('gallery')">Gallery</button>
         <button class="tab-btn" onclick="switchTab('testimonials')">Testimonials</button>
+        <button class="tab-btn" onclick="switchTab('comments')">Comments</button>
       </div>
 
       <!-- Subscribers panel -->
@@ -919,11 +920,19 @@
         <div id="panel-gallery" class="tab-panel">
           <div class="panel-header">
             <h2>Gallery <span class="orange">Reviews</span></h2>
-            <p style="color:var(--muted); margin-top:4px;">Review and approve member photo submissions.</p>
+            <p style="color:var(--muted); margin-top:4px;">Review, approve, or reject member photo submissions.</p>
           </div>
-          <div style="margin-top:16px;">
+
+          <div style="margin-top:20px;">
+            <h3 style="font-size:14px; font-weight:700; color:var(--orange); margin-bottom:12px;">Pending Submissions</h3>
             <div id="galleryPendingList"></div>
             <div id="galleryEmpty" class="empty-state" style="display:none;">No pending photo submissions.</div>
+          </div>
+
+          <div style="margin-top:32px; border-top:1px solid var(--line); padding-top:24px;">
+            <h3 style="font-size:14px; font-weight:700; color:var(--orange); margin-bottom:12px;">Approved Gallery</h3>
+            <div id="galleryApprovedList"></div>
+            <div id="galleryApprovedEmpty" class="empty-state" style="display:none;">No approved photos yet.</div>
           </div>
         </div>
 
@@ -936,6 +945,18 @@
           <div style="margin-top:16px;">
             <div id="testimonialPendingList"></div>
             <div id="testimonialEmpty" class="empty-state" style="display:none;">No pending testimonials.</div>
+          </div>
+        </div>
+
+        <!-- Comments Panel -->
+        <div id="panel-comments" class="tab-panel">
+          <div class="panel-header">
+            <h2>Comment <span class="orange">Reviews</span></h2>
+            <p style="color:var(--muted); margin-top:4px;">Review and approve member comments on photos and testimonials.</p>
+          </div>
+          <div style="margin-top:16px;">
+            <div id="commentsPendingList"></div>
+            <div id="commentsEmpty" class="empty-state" style="display:none;">No pending comments.</div>
           </div>
         </div>
 
@@ -1005,8 +1026,9 @@
         }
         if (name === 'events') loadEvents();
         if (name === 'newsletter') loadSignedStatus();
-        if (name === 'gallery') loadGalleryPending();
+        if (name === 'gallery') { loadGalleryPending(); loadGalleryApproved(); }
         if (name === 'testimonials') loadTestimonialPending();
+        if (name === 'comments') loadCommentsPending();
       }
 
       async function loadSignedStatus() {
@@ -1928,14 +1950,18 @@
         list.innerHTML = data.pending.map(s => `
           <div style="border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; background:var(--card);">
             <div style="display:flex; gap:16px; align-items:flex-start;">
-              <img src="${escapeHtml(s.image)}" style="width:180px; height:120px; object-fit:cover; border-radius:10px; border:1px solid var(--line);">
+              <img src="${escapeHtml(s.image)}" style="width:220px; height:150px; object-fit:cover; border-radius:10px; border:1px solid var(--line); cursor:pointer;" onclick="window.open('${escapeHtml(s.image)}','_blank')">
               <div style="flex:1;">
                 <div style="font-weight:800;">${escapeHtml(s.name)}</div>
                 <div style="color:var(--muted); font-size:13px; margin-top:4px;">${escapeHtml(s.caption || 'No caption')}</div>
                 <div style="color:#666; font-size:12px; margin-top:4px;">Submitted ${formatDate(s.submittedAt)}</div>
+                <div style="margin-top:10px;">
+                  <label style="font-size:12px; color:var(--muted);">Display title (optional):</label>
+                  <input id="gallery-title-${escapeHtml(s.id)}" type="text" value="${escapeHtml(s.name)}" style="width:100%; max-width:280px; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--white); font-size:13px; margin-top:4px;">
+                </div>
                 <div style="margin-top:10px; display:flex; gap:8px;">
                   <button class="btn btn-sm btn-primary" onclick="approveGallery('${escapeHtml(s.id)}')">Approve</button>
-                  <button class="btn btn-sm" style="background:#ef4444; color:#fff;" onclick="deleteGallery('${escapeHtml(s.id)}')">Delete</button>
+                  <button class="btn btn-sm" style="background:#ef4444; color:#fff;" onclick="deleteGallery('${escapeHtml(s.id)}')">Reject</button>
                 </div>
               </div>
             </div>
@@ -1948,26 +1974,74 @@
     }
 
     async function approveGallery(id) {
-      if (!confirm('Approve this photo? Save the image to assets/approved/ and update manifest.json after.')) return;
+      const titleEl = document.getElementById('gallery-title-' + id);
+      const title = titleEl ? titleEl.value.trim() : '';
+      if (!confirm('Approve this photo and upload to the gallery?')) return;
       try {
         const res = await fetch('/api/community?type=gallery&action=approve&key=' + encodeURIComponent(adminKey), {
           method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ id })
+          body: JSON.stringify({ id, title })
         });
         const data = await res.json();
-        if (res.ok) { alert('Approved. Remember to add the image to assets/approved/ and update manifest.json.'); loadGalleryPending(); }
+        if (res.ok) { loadGalleryPending(); loadGalleryApproved(); }
         else { alert(data.error || 'Failed.'); }
       } catch { alert('Network error.'); }
     }
 
     async function deleteGallery(id) {
-      if (!confirm('Delete this submission?')) return;
+      if (!confirm('Reject this submission? It will be permanently deleted.')) return;
       try {
         const res = await fetch('/api/community?type=gallery&action=delete&key=' + encodeURIComponent(adminKey), {
           method: 'POST', headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ id })
         });
         if (res.ok) loadGalleryPending();
+      } catch { alert('Network error.'); }
+    }
+
+    async function loadGalleryApproved() {
+      const list = document.getElementById('galleryApprovedList');
+      const empty = document.getElementById('galleryApprovedEmpty');
+      try {
+        const res = await fetch('/api/community?type=gallery&action=list');
+        const data = await res.json();
+        const images = data.images || [];
+        if (!images.length) {
+          list.innerHTML = '';
+          empty.style.display = 'block';
+          return;
+        }
+        empty.style.display = 'none';
+        list.innerHTML = images.map(img => `
+          <div style="border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; background:var(--card);">
+            <div style="display:flex; gap:16px; align-items:flex-start;">
+              <img src="${escapeHtml(img.url)}" style="width:220px; height:150px; object-fit:cover; border-radius:10px; border:1px solid var(--line);">
+              <div style="flex:1;">
+                <div style="font-weight:800;">${escapeHtml(img.title || img.name)}</div>
+                ${img.caption ? '<div style="color:var(--muted); font-size:13px; margin-top:4px;">' + escapeHtml(img.caption) + '</div>' : ''}
+                <div style="color:#666; font-size:12px; margin-top:4px;">Approved ${formatDate(img.approvedAt)} · Submitted ${formatDate(img.submittedAt)}</div>
+                <div style="margin-top:10px;">
+                  <button class="btn btn-sm" style="background:#ef4444; color:#fff;" onclick="unapproveGallery('${escapeHtml(img.id)}')">Remove from Gallery</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch {
+        list.innerHTML = '';
+        empty.style.display = 'block';
+      }
+    }
+
+    async function unapproveGallery(id) {
+      if (!confirm('Remove this photo from the public gallery? The image will be deleted.')) return;
+      try {
+        const res = await fetch('/api/community?type=gallery&action=unapprove&key=' + encodeURIComponent(adminKey), {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) loadGalleryApproved();
+        else { const d = await res.json(); alert(d.error || 'Failed.'); }
       } catch { alert('Network error.'); }
     }
 
@@ -2021,6 +2095,63 @@
           body: JSON.stringify({ id })
         });
         if (res.ok) loadTestimonialPending();
+      } catch { alert('Network error.'); }
+    }
+
+    // --- Comments ---
+    async function loadCommentsPending() {
+      const list = document.getElementById('commentsPendingList');
+      const empty = document.getElementById('commentsEmpty');
+      try {
+        const res = await fetch('/api/community?type=comment&action=pending&key=' + encodeURIComponent(adminKey));
+        const data = await res.json();
+        if (!data.pending || !data.pending.length) {
+          list.innerHTML = '';
+          empty.style.display = 'block';
+          return;
+        }
+        empty.style.display = 'none';
+        list.innerHTML = data.pending.map(c => `
+          <div style="border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; background:var(--card);">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+              <div style="width:32px; height:32px; border-radius:50%; background:var(--orange); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:12px; color:#111; flex-shrink:0;">${escapeHtml((c.name||'?')[0].toUpperCase())}</div>
+              <div>
+                <div style="font-weight:800; font-size:14px;">${escapeHtml(c.name)}</div>
+                <div style="color:#666; font-size:12px;">${c.targetType === 'gallery' ? 'Photo' : 'Testimonial'} comment &bull; ${formatDate(c.submittedAt)}</div>
+              </div>
+            </div>
+            <div style="color:#ccc; font-size:14px; line-height:1.5; padding:8px 12px; background:rgba(255,255,255,.03); border-radius:10px; border:1px solid var(--line);">"${escapeHtml(c.text)}"</div>
+            <div style="margin-top:10px; display:flex; gap:8px;">
+              <button class="btn btn-sm btn-primary" onclick="approveComment('${escapeHtml(c.id)}')">Approve</button>
+              <button class="btn btn-sm" style="background:#ef4444; color:#fff;" onclick="deleteComment('${escapeHtml(c.id)}')">Reject</button>
+            </div>
+          </div>
+        `).join('');
+      } catch {
+        list.innerHTML = '';
+        empty.style.display = 'block';
+      }
+    }
+
+    async function approveComment(id) {
+      try {
+        const res = await fetch('/api/community?type=comment&action=approve&key=' + encodeURIComponent(adminKey), {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) loadCommentsPending();
+        else { const d = await res.json(); alert(d.error || 'Failed.'); }
+      } catch { alert('Network error.'); }
+    }
+
+    async function deleteComment(id) {
+      if (!confirm('Delete this comment?')) return;
+      try {
+        const res = await fetch('/api/community?type=comment&action=delete&key=' + encodeURIComponent(adminKey), {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) loadCommentsPending();
       } catch { alert('Network error.'); }
     }
 

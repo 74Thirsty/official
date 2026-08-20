@@ -10,136 +10,200 @@
     :root {
       --orange: #ff6a00;
       --orange-dark: #c94f00;
+      --orange-glow: rgba(255,106,0,.35);
       --black: #050505;
       --charcoal: #101010;
-      --card: #171717;
-      --line: rgba(255,255,255,.14);
-      --muted: #b7b7b7;
+      --card: #141414;
+      --card-hover: #1a1a1a;
+      --line: rgba(255,255,255,.10);
+      --muted: #9a9a9a;
       --white: #ffffff;
-      --shadow: 0 24px 70px rgba(0,0,0,.45);
+      --shadow: 0 24px 70px rgba(0,0,0,.5);
+      --radius: 18px;
     }
-    body { margin:0; background:var(--black); color:var(--white); font-family:Arial,Helvetica,sans-serif; overflow-x:hidden; }
-    body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse at 20% 20%, rgba(255,106,0,.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(255,106,0,.03) 0%, transparent 60%); pointer-events:none; z-index:0; }
-    a { color:var(--orange); text-decoration:none; }
-    .wrap { max-width:1180px; margin:0 auto; position:relative; z-index:1; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin:0; background:var(--black); color:var(--white); font-family:'Inter',system-ui,-apple-system,Helvetica,Arial,sans-serif; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+    body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse at 15% 10%, rgba(255,106,0,.07) 0%, transparent 55%), radial-gradient(ellipse at 85% 90%, rgba(255,106,0,.04) 0%, transparent 55%); pointer-events:none; z-index:0; }
+    a { color:var(--orange); text-decoration:none; transition:color .2s; }
+    a:hover { color:#ff8a33; }
+    .wrap { max-width:1200px; margin:0 auto; position:relative; z-index:1; }
     .orange { color:var(--orange); }
 
     /* NAV */
-    .nav { position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:14px 7vw; background:rgba(5,5,5,.88); border-bottom:1px solid var(--line); backdrop-filter:blur(16px); }
+    .nav { position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:14px 7vw; background:rgba(5,5,5,.92); border-bottom:1px solid var(--line); backdrop-filter:blur(20px) saturate(1.4); }
     .brand { display:flex; align-items:center; gap:12px; color:var(--white); font-weight:900; font-size:16px; letter-spacing:.08em; text-transform:uppercase; }
-    .brand img { width:54px; height:54px; min-width:54px; border-radius:12px; }
-    .nav-links { display:flex; gap:18px; align-items:center; }
-    .nav-links a { color:#dedede; font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+    .brand img { width:52px; height:52px; min-width:52px; border-radius:12px; }
+    .nav-links { display:flex; gap:22px; align-items:center; }
+    .nav-links a { color:#bbb; font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; position:relative; padding:4px 0; }
+    .nav-links a::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:var(--orange); border-radius:2px; transition:width .3s; }
+    .nav-links a:hover { color:var(--white); }
+    .nav-links a:hover::after, .nav-links a.active::after { width:100%; }
+    .nav-links a.active { color:var(--orange); }
 
     /* HERO */
-    .page-hero { position:relative; padding:110px 7vw 70px; text-align:center; background:linear-gradient(180deg, rgba(255,106,0,.08) 0%, transparent 100%); border-bottom:1px solid var(--line); }
-    .eyebrow { display:inline-block; padding:6px 18px; border:1px solid rgba(255,106,0,.75); border-radius:50px; font-size:12px; font-weight:900; letter-spacing:.22em; text-transform:uppercase; color:var(--orange); margin-bottom:20px; }
-    .page-hero h1 { font-size:clamp(38px,5.5vw,76px); line-height:.92; letter-spacing:-.04em; text-transform:uppercase; margin:0 0 16px; }
-    .page-hero .subtitle { color:var(--muted); font-size:clamp(17px,2vw,22px); line-height:1.45; max-width:700px; margin:0 auto; }
+    .page-hero { position:relative; padding:120px 7vw 80px; text-align:center; background:linear-gradient(180deg, rgba(255,106,0,.10) 0%, rgba(255,106,0,.02) 60%, transparent 100%); border-bottom:1px solid var(--line); overflow:hidden; }
+    .page-hero::before { content:''; position:absolute; top:-200px; left:50%; transform:translateX(-50%); width:800px; height:800px; background:radial-gradient(circle, rgba(255,106,0,.08) 0%, transparent 70%); pointer-events:none; }
+    .eyebrow { display:inline-block; padding:7px 20px; border:1px solid rgba(255,106,0,.6); border-radius:50px; font-size:11px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:var(--orange); margin-bottom:24px; background:rgba(255,106,0,.06); }
+    .page-hero h1 { font-size:clamp(42px,6vw,84px); line-height:.9; letter-spacing:-.04em; text-transform:uppercase; margin:0 0 20px; font-weight:900; }
+    .page-hero .subtitle { color:var(--muted); font-size:clamp(17px,2vw,21px); line-height:1.5; max-width:640px; margin:0 auto; }
 
-    /* SECTIONS */
-    section { padding:84px 7vw; position:relative; z-index:1; }
-    .section-heading { text-align:center; margin-bottom:48px; }
-    .section-title { font-size:clamp(32px,4.5vw,60px); line-height:.95; letter-spacing:-.03em; text-transform:uppercase; margin:0 0 12px; }
+    /* SECTION HEADINGS */
+    section { padding:90px 7vw; position:relative; z-index:1; }
+    .section-heading { text-align:center; margin-bottom:52px; }
+    .section-eyebrow { display:inline-block; padding:5px 14px; border:1px solid rgba(255,106,0,.4); border-radius:50px; font-size:10px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:var(--orange); margin-bottom:16px; background:rgba(255,106,0,.05); }
+    .section-title { font-size:clamp(34px,4.5vw,62px); line-height:.92; letter-spacing:-.03em; text-transform:uppercase; margin:0 0 14px; font-weight:900; }
 
-    /* STATEMENT BREAK */
-    .statement { padding:50px 7vw; text-align:center; background:linear-gradient(90deg, rgba(255,106,0,.12) 0%, rgba(255,106,0,.04) 100%); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
-    .statement p { font-size:clamp(16px,2vw,22px); font-weight:800; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin:0; }
+    /* DIVIDER */
+    .divider { height:1px; background:linear-gradient(90deg, transparent, var(--line), rgba(255,106,0,.2), var(--line), transparent); margin:0; }
+
+    /* STATEMENT */
+    .statement { padding:56px 7vw; text-align:center; background:linear-gradient(90deg, rgba(255,106,0,.10) 0%, rgba(255,106,0,.03) 100%); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+    .statement p { font-size:clamp(13px,1.6vw,17px); font-weight:900; text-transform:uppercase; letter-spacing:.18em; color:rgba(255,255,255,.45); margin:0; }
 
     /* GALLERY GRID */
     .gallery-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
-    .gallery-card { position:relative; border-radius:20px; overflow:hidden; cursor:pointer; border:2px solid var(--line); background:var(--card); transition:border-color .3s, box-shadow .3s, transform .3s; }
-    .gallery-card:hover { border-color:var(--orange); box-shadow:0 0 30px rgba(255,106,0,.2), 0 20px 50px rgba(0,0,0,.4); transform:translateY(-4px); }
-    .gallery-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, var(--orange), var(--orange-dark)); opacity:0; transition:opacity .3s; z-index:2; }
+    .gallery-card { position:relative; border-radius:var(--radius); overflow:hidden; cursor:pointer; border:1px solid var(--line); background:var(--card); transition:all .35s cubic-bezier(.4,0,.2,1); }
+    .gallery-card:hover { border-color:rgba(255,106,0,.5); box-shadow:0 0 40px rgba(255,106,0,.12), 0 24px 60px rgba(0,0,0,.5); transform:translateY(-6px); }
+    .gallery-card::before { content:''; position:absolute; inset:0; background:linear-gradient(180deg, transparent 50%, rgba(0,0,0,.7) 100%); z-index:1; opacity:0; transition:opacity .35s; pointer-events:none; }
     .gallery-card:hover::before { opacity:1; }
-    .gallery-card::after { content:'LLR'; position:absolute; top:12px; right:12px; padding:3px 8px; background:rgba(0,0,0,.65); backdrop-filter:blur(8px); border:1px solid rgba(255,106,0,.4); border-radius:6px; font-size:9px; font-weight:900; letter-spacing:.15em; color:var(--orange); opacity:0; transition:opacity .3s; z-index:2; }
-    .gallery-card:hover::after { opacity:1; }
-    .gallery-card img { width:100%; aspect-ratio:3/2; object-fit:cover; display:block; transition:transform .4s; }
-    .gallery-card:hover img { transform:scale(1.05); }
-    .gallery-card .caption { padding:14px 16px; }
+    .gallery-card img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; transition:transform .5s cubic-bezier(.4,0,.2,1); }
+    .gallery-card:hover img { transform:scale(1.06); }
+    .gallery-card .caption { padding:14px 16px; position:relative; z-index:2; margin-top:-40px; }
     .gallery-card .caption .name { font-weight:800; font-size:14px; color:var(--white); }
-    .gallery-card .caption .desc { font-size:13px; color:var(--muted); margin-top:4px; line-height:1.4; }
-
-    .gallery-empty { text-align:center; padding:60px 20px; color:var(--muted); font-size:16px; }
+    .gallery-card .caption .desc { font-size:12px; color:var(--muted); margin-top:3px; line-height:1.4; }
+    .gallery-card .comment-count { position:absolute; top:12px; right:12px; z-index:2; display:flex; align-items:center; gap:5px; padding:4px 10px; background:rgba(0,0,0,.6); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.12); border-radius:20px; font-size:11px; font-weight:700; color:rgba(255,255,255,.7); }
+    .gallery-card .comment-count svg { width:13px; height:13px; fill:currentColor; }
+    .gallery-empty, .testimonials-empty { text-align:center; padding:70px 20px; color:var(--muted); font-size:16px; border:1px dashed var(--line); border-radius:var(--radius); }
 
     /* LIGHTBOX */
-    .lightbox { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.92); backdrop-filter:blur(12px); align-items:center; justify-content:center; flex-direction:column; }
-    .lightbox.active { display:flex; }
-    .lightbox-img { max-width:90vw; max-height:80vh; border-radius:12px; box-shadow:0 20px 80px rgba(0,0,0,.6); object-fit:contain; }
-    .lightbox-caption { color:var(--muted); font-size:15px; margin-top:16px; text-align:center; max-width:700px; }
-    .lightbox-close { position:absolute; top:20px; right:24px; width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.2); background:rgba(0,0,0,.5); color:var(--white); font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .2s, border-color .2s; z-index:101; }
+    .lightbox { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.94); backdrop-filter:blur(16px); }
+    .lightbox.active { display:grid; grid-template-columns:1fr 400px; }
+    .lightbox-image-area { display:flex; align-items:center; justify-content:center; position:relative; padding:60px 80px; }
+    .lightbox-img { max-width:100%; max-height:85vh; border-radius:14px; box-shadow:0 30px 100px rgba(0,0,0,.7); object-fit:contain; }
+    .lightbox-close { position:absolute; top:20px; right:20px; width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.15); background:rgba(0,0,0,.5); color:var(--white); font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; z-index:110; backdrop-filter:blur(8px); }
     .lightbox-close:hover { background:var(--orange); border-color:var(--orange); color:#111; }
-    .lightbox-nav { position:absolute; top:50%; transform:translateY(-50%); width:48px; height:48px; border-radius:50%; border:1px solid rgba(255,255,255,.2); background:rgba(0,0,0,.4); color:var(--white); font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .2s, border-color .2s; }
+    .lightbox-nav { position:absolute; top:50%; transform:translateY(-50%); width:50px; height:50px; border-radius:50%; border:1px solid rgba(255,255,255,.15); background:rgba(0,0,0,.4); color:var(--white); font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; backdrop-filter:blur(8px); }
     .lightbox-nav:hover { background:var(--orange); border-color:var(--orange); color:#111; }
     .lightbox-prev { left:20px; }
     .lightbox-next { right:20px; }
 
+    /* LIGHTBOX COMMENTS PANEL */
+    .lightbox-comments { background:var(--charcoal); border-left:1px solid var(--line); display:flex; flex-direction:column; height:100vh; }
+    .lightbox-comments-header { padding:20px 24px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; }
+    .lightbox-comments-header h3 { font-size:15px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; margin:0; }
+    .lightbox-comments-header .count { font-size:12px; color:var(--muted); }
+    .lightbox-comments-list { flex:1; overflow-y:auto; padding:16px 24px; }
+    .lightbox-comments-empty { text-align:center; padding:40px 20px; color:var(--muted); font-size:13px; }
+
+    /* COMMENT */
+    .comment-item { padding:14px 0; border-bottom:1px solid var(--line); }
+    .comment-item:last-child { border-bottom:none; }
+    .comment-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+    .comment-avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, var(--orange), var(--orange-dark)); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:12px; color:#111; flex-shrink:0; }
+    .comment-meta { flex:1; }
+    .comment-author { font-weight:800; font-size:13px; }
+    .comment-time { font-size:11px; color:var(--muted); }
+    .comment-text { font-size:14px; line-height:1.55; color:#d0d0d0; }
+    .comment-pending-badge { display:inline-block; padding:2px 8px; background:rgba(255,106,0,.15); border:1px solid rgba(255,106,0,.3); border-radius:6px; font-size:10px; font-weight:700; color:var(--orange); letter-spacing:.05em; text-transform:uppercase; margin-left:8px; }
+
+    /* COMMENT FORM */
+    .comment-form { padding:16px 24px; border-top:1px solid var(--line); background:rgba(0,0,0,.3); }
+    .comment-form-row { display:flex; gap:8px; margin-bottom:8px; }
+    .comment-form input, .comment-form textarea { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.05); color:var(--white); font-size:13px; font-family:inherit; outline:none; transition:border-color .2s; }
+    .comment-form input:focus, .comment-form textarea:focus { border-color:var(--orange); }
+    .comment-form textarea { min-height:60px; resize:none; }
+    .comment-form .form-row { display:flex; gap:8px; }
+    .comment-form .form-row input { flex:1; }
+    .comment-form button { padding:10px 18px; border:none; border-radius:10px; background:var(--orange); color:#111; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; transition:all .2s; white-space:nowrap; }
+    .comment-form button:hover { background:#ff8533; transform:translateY(-1px); }
+    .comment-form button:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+    .comment-form .status { font-size:12px; margin-top:6px; min-height:18px; }
+    .comment-form .status.error { color:#ef4444; }
+    .comment-form .status.success { color:#22c55e; }
+
     /* TESTIMONIALS */
     .testimonials-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:24px; }
-    .testimonial-card { border:1px solid var(--line); border-radius:20px; background:linear-gradient(145deg, rgba(28,28,28,.92), rgba(9,9,9,.92)); padding:32px; position:relative; transition:border-color .3s, box-shadow .3s; }
-    .testimonial-card:hover { border-color:rgba(255,106,0,.4); box-shadow:0 12px 40px rgba(0,0,0,.3); }
-    .testimonial-card::before { content:'\201C'; position:absolute; top:16px; left:24px; font-size:60px; line-height:1; color:var(--orange); opacity:.25; font-family:Georgia,serif; }
-    .testimonial-card .quote { font-size:16px; line-height:1.55; color:#e0e0e0; margin-bottom:20px; padding-top:8px; }
-    .testimonial-card .author { display:flex; align-items:center; gap:12px; }
-    .testimonial-card .avatar { width:42px; height:42px; border-radius:50%; background:linear-gradient(135deg, var(--orange), var(--orange-dark)); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:16px; color:#111; flex-shrink:0; }
+    .testimonial-card { border:1px solid var(--line); border-radius:var(--radius); background:linear-gradient(155deg, rgba(22,22,22,.95), rgba(8,8,8,.95)); padding:0; position:relative; overflow:hidden; transition:all .35s cubic-bezier(.4,0,.2,1); }
+    .testimonial-card:hover { border-color:rgba(255,106,0,.4); box-shadow:0 16px 50px rgba(0,0,0,.4), 0 0 30px rgba(255,106,0,.06); }
+    .testimonial-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, var(--orange), transparent); opacity:0; transition:opacity .3s; }
+    .testimonial-card:hover::before { opacity:1; }
+    .testimonial-body { padding:32px 28px 24px; position:relative; }
+    .testimonial-body::before { content:'\201C'; position:absolute; top:14px; left:22px; font-size:56px; line-height:1; color:var(--orange); opacity:.18; font-family:Georgia,serif; pointer-events:none; }
+    .testimonial-card .quote { font-size:15px; line-height:1.6; color:#ddd; padding-top:4px; }
+    .testimonial-card .author { display:flex; align-items:center; gap:12px; margin-top:20px; }
+    .testimonial-card .avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg, var(--orange), var(--orange-dark)); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; color:#111; flex-shrink:0; }
     .testimonial-card .author-name { font-weight:800; font-size:14px; }
-    .testimonial-card .author-info { font-size:13px; color:var(--muted); margin-top:2px; }
-    .testimonials-empty { text-align:center; padding:60px 20px; color:var(--muted); font-size:16px; }
+    .testimonial-card .author-info { font-size:12px; color:var(--muted); margin-top:2px; }
+
+    /* TESTIMONIAL COMMENTS */
+    .testimonial-comments { border-top:1px solid var(--line); padding:0; }
+    .testimonial-comments-toggle { width:100%; padding:12px 28px; background:transparent; border:none; color:var(--muted); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; display:flex; align-items:center; gap:8px; transition:color .2s; }
+    .testimonial-comments-toggle:hover { color:var(--orange); }
+    .testimonial-comments-toggle svg { width:14px; height:14px; fill:currentColor; }
+    .testimonial-comments-body { display:none; padding:0 28px 20px; }
+    .testimonial-comments-body.open { display:block; }
+    .testimonial-comments-body .comment-form { padding:12px 0 0; border-top:none; background:transparent; }
 
     /* BUTTONS */
-    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:52px; padding:0 28px; border:none; border-radius:14px; font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; transition:all .2s; }
-    .btn-primary { background:var(--orange); color:#111; box-shadow:0 18px 36px rgba(255,106,0,.2); }
-    .btn-primary:hover { background:#ff8533; box-shadow:0 22px 44px rgba(255,106,0,.3); transform:translateY(-2px); }
-    .btn-secondary { border:1px solid rgba(255,255,255,.28); color:var(--white); background:rgba(255,255,255,.07); }
-    .btn-secondary:hover { background:rgba(255,255,255,.14); }
-    .btn-sm { min-height:40px; padding:0 18px; font-size:12px; border-radius:10px; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:52px; padding:0 28px; border:none; border-radius:14px; font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; transition:all .25s cubic-bezier(.4,0,.2,1); }
+    .btn-primary { background:var(--orange); color:#111; box-shadow:0 16px 40px rgba(255,106,0,.2); }
+    .btn-primary:hover { background:#ff8533; box-shadow:0 20px 50px rgba(255,106,0,.3); transform:translateY(-2px); }
+    .btn-secondary { border:1px solid rgba(255,255,255,.2); color:var(--white); background:rgba(255,255,255,.05); }
+    .btn-secondary:hover { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.35); }
+    .btn-sm { min-height:38px; padding:0 16px; font-size:11px; border-radius:10px; }
 
     /* FORMS / MODALS */
-    .modal-overlay { display:none; position:fixed; inset:0; z-index:90; background:rgba(0,0,0,.7); backdrop-filter:blur(8px); align-items:center; justify-content:center; }
+    .modal-overlay { display:none; position:fixed; inset:0; z-index:90; background:rgba(0,0,0,.75); backdrop-filter:blur(10px); align-items:center; justify-content:center; }
     .modal-overlay.active { display:flex; }
-    .modal { background:var(--charcoal); border:1px solid var(--line); border-radius:24px; padding:40px; width:90%; max-width:520px; max-height:90vh; overflow-y:auto; }
-    .modal h3 { font-size:24px; font-weight:900; text-transform:uppercase; letter-spacing:-.02em; margin:0 0 8px; }
-    .modal p.lead { color:var(--muted); font-size:15px; margin:0 0 24px; }
-    .modal label { display:block; font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; margin-top:18px; }
+    .modal { background:var(--charcoal); border:1px solid var(--line); border-radius:24px; padding:40px; width:92%; max-width:520px; max-height:90vh; overflow-y:auto; position:relative; }
+    .modal::before { content:''; position:absolute; inset:-1px; border-radius:24px; padding:1px; background:linear-gradient(135deg, rgba(255,106,0,.3), transparent 50%); -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; }
+    .modal h3 { font-size:26px; font-weight:900; text-transform:uppercase; letter-spacing:-.02em; margin:0 0 8px; }
+    .modal p.lead { color:var(--muted); font-size:14px; margin:0 0 24px; line-height:1.5; }
+    .modal label { display:block; font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; margin-top:18px; }
     .modal label:first-of-type { margin-top:0; }
-    .modal input, .modal textarea, .modal select { width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.05); color:var(--white); font-size:15px; font-family:inherit; outline:none; transition:border-color .2s; box-sizing:border-box; }
-    .modal input:focus, .modal textarea:focus { border-color:var(--orange); box-shadow:0 0 20px rgba(255,106,0,.1); }
+    .modal input, .modal textarea, .modal select { width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.04); color:var(--white); font-size:15px; font-family:inherit; outline:none; transition:border-color .2s, box-shadow .2s; }
+    .modal input:focus, .modal textarea:focus { border-color:var(--orange); box-shadow:0 0 24px rgba(255,106,0,.08); }
     .modal textarea { min-height:100px; resize:vertical; }
-    .modal .file-zone { border:2px dashed var(--line); border-radius:14px; padding:30px; text-align:center; cursor:pointer; transition:border-color .2s, background .2s; margin-top:6px; }
+    .modal .file-zone { border:2px dashed var(--line); border-radius:14px; padding:32px; text-align:center; cursor:pointer; transition:all .25s; margin-top:6px; }
     .modal .file-zone:hover, .modal .file-zone.dragover { border-color:var(--orange); background:rgba(255,106,0,.04); }
     .modal .file-zone p { margin:0; font-size:14px; color:var(--muted); }
-    .modal .file-zone .hint { font-size:12px; color:#777; margin-top:8px; }
+    .modal .file-zone .hint { font-size:11px; color:#666; margin-top:8px; }
     .modal .file-zone .preview { max-width:100%; max-height:200px; border-radius:10px; margin-top:12px; display:none; }
     .modal .actions { display:flex; gap:12px; margin-top:28px; }
-    .modal .status { margin-top:12px; font-size:14px; min-height:20px; }
+    .modal .status { margin-top:12px; font-size:13px; min-height:20px; }
     .modal .status.error { color:#ef4444; }
     .modal .status.success { color:#22c55e; }
-    .modal-close { position:absolute; top:16px; right:16px; width:36px; height:36px; border-radius:50%; border:1px solid var(--line); background:transparent; color:var(--white); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-    .modal-close:hover { background:rgba(255,255,255,.1); }
+    .modal-close { position:absolute; top:16px; right:16px; width:36px; height:36px; border-radius:50%; border:1px solid var(--line); background:transparent; color:var(--white); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+    .modal-close:hover { background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.3); }
 
     /* FOOTER */
-    footer { border-top:1px solid var(--line); padding:0; position:relative; z-index:1; }
-    .footer-inner { max-width:1180px; margin:0 auto; padding:48px 7vw; }
+    footer { border-top:1px solid var(--line); position:relative; z-index:1; }
+    .footer-inner { max-width:1200px; margin:0 auto; padding:48px 7vw; }
     .footer-top { display:flex; align-items:flex-start; justify-content:space-between; gap:40px; flex-wrap:wrap; }
     .footer-brand { display:flex; align-items:center; gap:14px; }
-    .footer-brand img { width:48px; height:48px; border-radius:10px; }
+    .footer-brand img { width:46px; height:46px; border-radius:10px; }
     .footer-brand .brand-text { font-weight:900; font-size:15px; text-transform:uppercase; letter-spacing:.06em; }
     .footer-brand .brand-sub { font-size:12px; color:var(--muted); margin-top:2px; }
     .footer-nav { display:flex; gap:20px; flex-wrap:wrap; }
-    .footer-nav a { color:#999; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; transition:color .2s; }
+    .footer-nav a { color:#888; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; transition:color .2s; }
     .footer-nav a:hover { color:var(--orange); }
     .footer-contact { text-align:right; }
     .footer-contact a { color:var(--muted); font-size:13px; display:block; transition:color .2s; }
     .footer-contact a:hover { color:var(--orange); }
     .footer-bottom { margin-top:32px; padding-top:24px; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-    .footer-bottom .copyright { font-size:12px; color:#666; }
-    .footer-bottom .fine-print { font-size:11px; color:#555; text-align:right; max-width:500px; line-height:1.5; }
+    .footer-bottom .copyright { font-size:12px; color:#555; }
+    .footer-bottom .fine-print { font-size:11px; color:#444; text-align:right; max-width:500px; line-height:1.5; }
 
     /* RESPONSIVE */
+    @media(max-width:1024px) {
+      .lightbox.active { grid-template-columns:1fr; grid-template-rows:1fr auto; }
+      .lightbox-image-area { padding:60px 20px; }
+      .lightbox-comments { height:45vh; border-left:none; border-top:1px solid var(--line); }
+    }
     @media(max-width:940px) {
-      .nav { position:static; flex-direction:column; }
+      .nav { position:static; flex-direction:column; padding:12px 20px; }
       .brand img { width:44px; height:44px; min-width:44px; }
-      .nav-links { flex-wrap:wrap; justify-content:center; }
+      .nav-links { flex-wrap:wrap; justify-content:center; gap:14px; }
       .gallery-grid { grid-template-columns:repeat(2,1fr); }
       .testimonials-grid { grid-template-columns:1fr; }
       .footer-top { flex-direction:column; align-items:center; text-align:center; }
@@ -147,11 +211,12 @@
       .footer-bottom { flex-direction:column; align-items:center; text-align:center; }
     }
     @media(max-width:560px) {
-      .nav-links a { font-size:12px; gap:12px; }
+      .nav-links a { font-size:11px; }
       .brand span { font-size:13px; }
       .gallery-grid { grid-template-columns:1fr; }
-      section { padding:48px 22px; }
-      .footer-inner { padding:32px 22px; }
+      section { padding:56px 20px; }
+      .footer-inner { padding:32px 20px; }
+      .modal { padding:28px 20px; }
     }
   </style>
 </head>
@@ -166,7 +231,7 @@
       <a href="events.html">Events</a>
       <a href="media.html">Media</a>
       <a href="mission.html">Mission</a>
-      <a href="community.html" style="color:var(--orange)">Community</a>
+      <a href="community.html" class="active">Community</a>
     </div>
   </nav>
 
@@ -181,26 +246,33 @@
     <section id="gallery">
       <div class="wrap">
         <div class="section-heading">
-          <h2 class="section-title">Photo <span class="orange">Gallery</span></h2>
-          <p style="color:var(--muted); font-size:16px; margin-top:10px;">Moments from the road, the rallies, and the community.</p>
+          <div class="section-eyebrow">Gallery</div>
+          <h2 class="section-title">Photo <span class="orange">Wall</span></h2>
+          <p style="color:var(--muted); font-size:15px; margin-top:12px;">Moments from the road, the rallies, and the community.</p>
         </div>
-        <div style="text-align:center; margin-bottom:36px;">
+        <div style="text-align:center; margin-bottom:40px;">
           <button class="btn btn-primary" onclick="openPhotoModal()">Submit a Photo</button>
         </div>
         <div id="galleryGrid" class="gallery-grid"></div>
       </div>
     </section>
 
+    <div class="divider"></div>
+
+    <!-- STATEMENT -->
     <div class="statement"><p>Ride With Purpose &bull; Support Amputees &bull; Build Community</p></div>
+
+    <div class="divider"></div>
 
     <!-- TESTIMONIALS -->
     <section id="testimonials">
       <div class="wrap">
         <div class="section-heading">
-          <h2 class="section-title">Rider <span class="orange">Voices</span></h2>
-          <p style="color:var(--muted); font-size:16px; margin-top:10px;">What our members have to say about the ride.</p>
+          <div class="section-eyebrow">Voices</div>
+          <h2 class="section-title">Rider <span class="orange">Stories</span></h2>
+          <p style="color:var(--muted); font-size:15px; margin-top:12px;">What our members have to say about the ride.</p>
         </div>
-        <div style="text-align:center; margin-bottom:36px;">
+        <div style="text-align:center; margin-bottom:40px;">
           <button class="btn btn-primary" onclick="openTestimonialModal()">Share Your Story</button>
         </div>
         <div id="testimonialsGrid" class="testimonials-grid"></div>
@@ -209,17 +281,34 @@
   </main>
 
   <!-- LIGHTBOX -->
-  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
-    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
-    <button class="lightbox-nav lightbox-prev" onclick="navLightbox(-1, event)">&#8249;</button>
-    <button class="lightbox-nav lightbox-next" onclick="navLightbox(1, event)">&#8250;</button>
-    <img class="lightbox-img" id="lightboxImg" src="" alt="">
-    <div class="lightbox-caption" id="lightboxCaption"></div>
+  <div class="lightbox" id="lightbox">
+    <div class="lightbox-image-area" onclick="closeLightbox(event)">
+      <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+      <button class="lightbox-nav lightbox-prev" onclick="navLightbox(-1, event)">&#8249;</button>
+      <button class="lightbox-nav lightbox-next" onclick="navLightbox(1, event)">&#8250;</button>
+      <img class="lightbox-img" id="lightboxImg" src="" alt="">
+    </div>
+    <div class="lightbox-comments">
+      <div class="lightbox-comments-header">
+        <h3>Comments</h3>
+        <span class="count" id="lightboxCommentCount">0</span>
+      </div>
+      <div class="lightbox-comments-list" id="lightboxComments"></div>
+      <div class="comment-form" id="lightboxCommentForm">
+        <input type="text" id="commentName" placeholder="Your name" style="margin-bottom:8px;">
+        <textarea id="commentText" placeholder="Leave a comment..."></textarea>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+          <div class="status" id="commentStatus"></div>
+          <button onclick="submitLightboxComment()" id="commentSubmitBtn">Post</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- PHOTO SUBMIT MODAL -->
   <div class="modal-overlay" id="photoModal" onclick="closePhotoModal(event)">
     <div class="modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closePhotoModal()">&times;</button>
       <h3>Submit a <span class="orange">Photo</span></h3>
       <p class="lead">Share a moment from your ride. Submissions are reviewed before appearing in the gallery.</p>
       <form id="photoForm" onsubmit="submitPhoto(event)">
@@ -230,7 +319,7 @@
         <label>Photo</label>
         <div class="file-zone" id="fileZone" onclick="document.getElementById('photoFile').click()" ondragover="event.preventDefault(); this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)">
           <p id="fileLabel">Click or drag to upload</p>
-          <p class="hint">JPEG or PNG &bull; 1200 &times; 800px recommended &bull; Max 500KB</p>
+          <p class="hint">JPEG, PNG, or WebP &bull; 1200 &times; 800px recommended &bull; Max 500KB</p>
           <img class="preview" id="filePreview">
         </div>
         <input type="file" id="photoFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleFileSelect(event)">
@@ -246,6 +335,7 @@
   <!-- TESTIMONIAL SUBMIT MODAL -->
   <div class="modal-overlay" id="testimonialModal" onclick="closeTestimonialModal(event)">
     <div class="modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeTestimonialModal()">&times;</button>
       <h3>Share Your <span class="orange">Story</span></h3>
       <p class="lead">Tell us what Lost Limb Riders means to you. Submissions are reviewed before appearing on the page.</p>
       <form id="testimonialForm" onsubmit="submitTestimonial(event)">
@@ -295,16 +385,40 @@
 
   <script>
     function escapeHtml(v) { return String(v||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+    function timeAgo(iso) {
+      const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+      if (s < 60) return 'just now';
+      if (s < 3600) return Math.floor(s/60) + 'm ago';
+      if (s < 86400) return Math.floor(s/3600) + 'h ago';
+      if (s < 2592000) return Math.floor(s/86400) + 'd ago';
+      return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    }
+    function commentCountBadge(n) {
+      if (!n) return '';
+      return '<div class="comment-count"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + n + '</div>';
+    }
 
     let galleryImages = [];
     let lightboxIndex = 0;
+    let galleryCommentCounts = {};
 
     // LOAD GALLERY
     async function loadGallery() {
       try {
-        const res = await fetch('/assets/approved/manifest.json');
-        galleryImages = await res.json();
+        const res = await fetch('/api/community?type=gallery&action=list');
+        const data = await res.json();
+        galleryImages = data.images || [];
       } catch { galleryImages = []; }
+
+      galleryCommentCounts = {};
+      await Promise.all(galleryImages.map(async (img) => {
+        try {
+          const r = await fetch('/api/community?type=comment&action=list&targetType=gallery&targetId=' + encodeURIComponent(img.id));
+          const d = await r.json();
+          galleryCommentCounts[img.id] = (d.comments || []).length;
+        } catch { galleryCommentCounts[img.id] = 0; }
+      }));
+
       const grid = document.getElementById('galleryGrid');
       if (!galleryImages.length) {
         grid.innerHTML = '<div class="gallery-empty">No photos yet. Be the first to share a moment from the ride.</div>';
@@ -312,7 +426,8 @@
       }
       grid.innerHTML = galleryImages.map((img, i) => `
         <div class="gallery-card" onclick="openLightbox(${i})">
-          <img src="assets/approved/${escapeHtml(img.filename)}" alt="${escapeHtml(img.title || img.caption || '')}" loading="lazy">
+          <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.title || img.caption || '')}" loading="lazy">
+          ${commentCountBadge(galleryCommentCounts[img.id] || 0)}
           <div class="caption">
             <div class="name">${escapeHtml(img.title || img.name || '')}</div>
             ${img.caption ? '<div class="desc">' + escapeHtml(img.caption) + '</div>' : ''}
@@ -325,11 +440,12 @@
     function openLightbox(i) {
       lightboxIndex = i;
       renderLightbox();
+      loadLightboxComments();
       document.getElementById('lightbox').classList.add('active');
       document.body.style.overflow = 'hidden';
     }
     function closeLightbox(e) {
-      if (e && e.target !== document.getElementById('lightbox') && !e.target.classList.contains('lightbox-close')) return;
+      if (e && e.target !== document.getElementById('lightbox') && !e.target.classList.contains('lightbox-close') && !e.target.closest('.lightbox-image-area')) return;
       document.getElementById('lightbox').classList.remove('active');
       document.body.style.overflow = '';
     }
@@ -337,13 +453,75 @@
       if (e) e.stopPropagation();
       lightboxIndex = (lightboxIndex + dir + galleryImages.length) % galleryImages.length;
       renderLightbox();
+      loadLightboxComments();
     }
     function renderLightbox() {
       const img = galleryImages[lightboxIndex];
       if (!img) return;
-      document.getElementById('lightboxImg').src = 'assets/approved/' + img.filename;
+      document.getElementById('lightboxImg').src = img.url;
       document.getElementById('lightboxImg').alt = img.title || img.caption || '';
-      document.getElementById('lightboxCaption').textContent = (img.title ? img.title + ' — ' : '') + (img.caption || '');
+    }
+    async function loadLightboxComments() {
+      const img = galleryImages[lightboxIndex];
+      if (!img) return;
+      const list = document.getElementById('lightboxComments');
+      const countEl = document.getElementById('lightboxCommentCount');
+      try {
+        const res = await fetch('/api/community?type=comment&action=list&targetType=gallery&targetId=' + encodeURIComponent(img.id));
+        const data = await res.json();
+        const comments = data.comments || [];
+        countEl.textContent = comments.length + ' comment' + (comments.length !== 1 ? 's' : '');
+        if (!comments.length) {
+          list.innerHTML = '<div class="lightbox-comments-empty">No comments yet. Be the first to share your thoughts.</div>';
+          return;
+        }
+        list.innerHTML = comments.map(c => {
+          const initials = (c.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+          return `
+          <div class="comment-item">
+            <div class="comment-header">
+              <div class="comment-avatar">${escapeHtml(initials)}</div>
+              <div class="comment-meta">
+                <div class="comment-author">${escapeHtml(c.name)}</div>
+                <div class="comment-time">${timeAgo(c.submittedAt)}</div>
+              </div>
+            </div>
+            <div class="comment-text">${escapeHtml(c.text)}</div>
+          </div>`;
+        }).join('');
+      } catch {
+        list.innerHTML = '<div class="lightbox-comments-empty">Could not load comments.</div>';
+      }
+    }
+    async function submitLightboxComment() {
+      const img = galleryImages[lightboxIndex];
+      if (!img) return;
+      const name = document.getElementById('commentName').value.trim();
+      const text = document.getElementById('commentText').value.trim();
+      const status = document.getElementById('commentStatus');
+      const btn = document.getElementById('commentSubmitBtn');
+      if (!name || !text) { status.textContent = 'Name and comment required.'; status.className = 'status error'; return; }
+      btn.disabled = true; btn.textContent = 'Posting...';
+      try {
+        const res = await fetch('/api/community?type=comment&action=submit', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ targetType: 'gallery', targetId: img.id, name, text })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          status.textContent = 'Comment submitted for review.';
+          status.className = 'status success';
+          document.getElementById('commentText').value = '';
+          setTimeout(() => { status.textContent = ''; status.className = 'status'; }, 3000);
+        } else {
+          status.textContent = data.error || 'Failed.';
+          status.className = 'status error';
+        }
+      } catch {
+        status.textContent = 'Network error.';
+        status.className = 'status error';
+      }
+      btn.disabled = false; btn.textContent = 'Post';
     }
     document.addEventListener('keydown', e => {
       if (!document.getElementById('lightbox').classList.contains('active')) return;
@@ -365,20 +543,111 @@
         grid.innerHTML = '<div class="testimonials-empty">No testimonials yet. Share your story and be the first.</div>';
         return;
       }
+
+      const commentCounts = {};
+      await Promise.all(testimonials.map(async (t) => {
+        try {
+          const r = await fetch('/api/community?type=comment&action=list&targetType=testimonial&targetId=' + encodeURIComponent(t.id));
+          const d = await r.json();
+          commentCounts[t.id] = (d.comments || []).length;
+        } catch { commentCounts[t.id] = 0; }
+      }));
+
       grid.innerHTML = testimonials.map(t => {
         const initials = (t.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        const cCount = commentCounts[t.id] || 0;
         return `
-        <div class="testimonial-card">
-          <div class="quote">${escapeHtml(t.quote)}</div>
-          <div class="author">
-            <div class="avatar">${escapeHtml(initials)}</div>
-            <div>
-              <div class="author-name">${escapeHtml(t.name)}</div>
-              ${t.ridingInfo ? '<div class="author-info">' + escapeHtml(t.ridingInfo) + '</div>' : ''}
+        <div class="testimonial-card" id="testimonial-${escapeHtml(t.id)}">
+          <div class="testimonial-body">
+            <div class="quote">${escapeHtml(t.quote)}</div>
+            <div class="author">
+              <div class="avatar">${escapeHtml(initials)}</div>
+              <div>
+                <div class="author-name">${escapeHtml(t.name)}</div>
+                ${t.ridingInfo ? '<div class="author-info">' + escapeHtml(t.ridingInfo) + '</div>' : ''}
+              </div>
+            </div>
+          </div>
+          <div class="testimonial-comments">
+            <button class="testimonial-comments-toggle" onclick="toggleTestimonialComments('${escapeHtml(t.id)}')">
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              ${cCount} Comment${cCount !== 1 ? 's' : ''}
+            </button>
+            <div class="testimonial-comments-body" id="tcomments-${escapeHtml(t.id)}">
+              <div class="tcomments-list" id="tclist-${escapeHtml(t.id)}"></div>
+              <div class="comment-form">
+                <input type="text" id="tname-${escapeHtml(t.id)}" placeholder="Your name" style="margin-bottom:8px;">
+                <textarea id="ttext-${escapeHtml(t.id)}" placeholder="Leave a comment..."></textarea>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+                  <div class="status" id="tstatus-${escapeHtml(t.id)}"></div>
+                  <button onclick="submitTestimonialComment('${escapeHtml(t.id)}')" id="tbtn-${escapeHtml(t.id)}">Post</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>`;
       }).join('');
+    }
+
+    async function toggleTestimonialComments(id) {
+      const body = document.getElementById('tcomments-' + id);
+      if (body.classList.contains('open')) { body.classList.remove('open'); return; }
+      body.classList.add('open');
+      const list = document.getElementById('tclist-' + id);
+      try {
+        const res = await fetch('/api/community?type=comment&action=list&targetType=testimonial&targetId=' + encodeURIComponent(id));
+        const data = await res.json();
+        const comments = data.comments || [];
+        if (!comments.length) {
+          list.innerHTML = '<div style="text-align:center; padding:16px; color:var(--muted); font-size:13px;">No comments yet.</div>';
+          return;
+        }
+        list.innerHTML = comments.map(c => {
+          const initials = (c.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+          return `
+          <div class="comment-item">
+            <div class="comment-header">
+              <div class="comment-avatar">${escapeHtml(initials)}</div>
+              <div class="comment-meta">
+                <div class="comment-author">${escapeHtml(c.name)}</div>
+                <div class="comment-time">${timeAgo(c.submittedAt)}</div>
+              </div>
+            </div>
+            <div class="comment-text">${escapeHtml(c.text)}</div>
+          </div>`;
+        }).join('');
+      } catch {
+        list.innerHTML = '<div style="text-align:center; padding:16px; color:var(--muted); font-size:13px;">Could not load comments.</div>';
+      }
+    }
+
+    async function submitTestimonialComment(id) {
+      const name = document.getElementById('tname-' + id).value.trim();
+      const text = document.getElementById('ttext-' + id).value.trim();
+      const status = document.getElementById('tstatus-' + id);
+      const btn = document.getElementById('tbtn-' + id);
+      if (!name || !text) { status.textContent = 'Name and comment required.'; status.className = 'status error'; return; }
+      btn.disabled = true; btn.textContent = 'Posting...';
+      try {
+        const res = await fetch('/api/community?type=comment&action=submit', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ targetType: 'testimonial', targetId: id, name, text })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          status.textContent = 'Comment submitted for review.';
+          status.className = 'status success';
+          document.getElementById('ttext-' + id).value = '';
+          setTimeout(() => { status.textContent = ''; status.className = 'status'; }, 3000);
+        } else {
+          status.textContent = data.error || 'Failed.';
+          status.className = 'status error';
+        }
+      } catch {
+        status.textContent = 'Network error.';
+        status.className = 'status error';
+      }
+      btn.disabled = false; btn.textContent = 'Post';
     }
 
     // PHOTO MODAL
