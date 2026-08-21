@@ -570,7 +570,27 @@
     .sub-icon.spotify { background: rgba(30,215,96,.12); color: #1ed760; }
     .sub-icon.youtube { background: rgba(255,0,0,.12); color: #ff0000; }
     .sub-icon.apple { background: rgba(167,129,255,.12); color: #a781ff; }
-    .sub-icon.rss { background: rgba(255,106,0,.12); color: var(--orange); }
+    .sub-icon.rss {
+      position: relative;
+      background: url('/assets/logo-nobg.png') center/cover no-repeat;
+      color: var(--orange);
+      overflow: visible;
+    }
+    .sub-icon.rss::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: var(--orange);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 11a9 9 0 0 1 9 9'/%3E%3Cpath d='M4 4a16 16 0 0 1 16 16'/%3E%3Ccircle cx='5' cy='19' r='1'/%3E%3C/svg%3E");
+      background-size: 14px;
+      background-position: center;
+      background-repeat: no-repeat;
+      border: 2px solid #111;
+    }
 
     .sub-info h3 { font-size: 18px; font-weight: 800; margin-bottom: 2px; }
     .sub-info p { font-size: 14px; color: var(--muted); margin: 0; }
@@ -649,12 +669,22 @@
       text-transform: uppercase;
     }
 
-    footer {
-      padding: 34px 7vw;
-      color: #858585;
-      text-align: center;
-      border-top: 1px solid var(--line);
-    }
+    footer { border-top:1px solid var(--line); padding:0; position:relative; z-index:1; }
+    .footer-inner { max-width:1180px; margin:0 auto; padding:48px 7vw; }
+    .footer-top { display:flex; align-items:flex-start; justify-content:space-between; gap:40px; flex-wrap:wrap; }
+    .footer-brand { display:flex; align-items:center; gap:14px; }
+    .footer-brand img { width:48px; height:48px; border-radius:10px; }
+    .footer-brand .brand-text { font-weight:900; font-size:15px; text-transform:uppercase; letter-spacing:.06em; }
+    .footer-brand .brand-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+    .footer-nav { display:flex; gap:20px; flex-wrap:wrap; }
+    .footer-nav a { color:#999; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; transition:color .2s; }
+    .footer-nav a:hover { color:var(--orange); }
+    .footer-contact { text-align:right; }
+    .footer-contact a { color:var(--muted); font-size:13px; display:block; transition:color .2s; }
+    .footer-contact a:hover { color:var(--orange); }
+    .footer-bottom { margin-top:32px; padding-top:24px; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .footer-bottom .copyright { font-size:12px; color:#666; }
+    .footer-bottom .fine-print { font-size:11px; color:#555; text-align:right; max-width:500px; line-height:1.5; }
 
     .toast {
       position: fixed;
@@ -861,6 +891,14 @@
       .hero-actions { flex-direction: column; }
       .hero-actions .btn { width: 100%; }
     }
+    @media(max-width:940px) {
+      .footer-top { flex-direction:column; align-items:center; text-align:center; }
+      .footer-contact { text-align:center; }
+      .footer-bottom { flex-direction:column; align-items:center; text-align:center; }
+    }
+    @media(max-width:560px) {
+      .footer-inner { padding:32px 22px; }
+    }
   </style>
 </head>
 <body>
@@ -873,7 +911,9 @@
       <a href="index.html">Home</a>
       <a href="events.html">Events</a>
       <a href="media.html" style="color:var(--orange)">Media</a>
+      <a href="community.html">Community</a>
       <a href="mission.html">Mission</a>
+      <a href="sponsors.html">Sponsors</a>
       <a href="index.html#guestbook">Guest Book</a>
       <a href="index.html#contact">Contact</a>
     </div>
@@ -931,17 +971,17 @@
 
         <div class="section-heading" style="margin-top:40px;">
           <h2 class="section-title">Never Miss A <span class="orange">Broadcast</span></h2>
-          <p style="color:var(--muted); font-size:18px; line-height:1.5;">Get the biweekly newsletter with upcoming events, scheduled livestream episodes, and mission updates — before the cameras roll.</p>
+          <p style="color:var(--muted); font-size:18px; line-height:1.5;">Get an email alert the moment we go live — rides, Coffee Talk, rallies, and community events.</p>
         </div>
         <div style="background:linear-gradient(135deg, rgba(255,106,0,.14), rgba(255,106,0,.04)); border:1px solid rgba(255,106,0,.25); border-radius:18px; padding:28px;">
-          <form id="nlMediaForm" style="display:flex; flex-direction:column; gap:14px; max-width:640px;">
+          <form id="broadcastForm" style="display:flex; flex-direction:column; gap:14px; max-width:640px;">
             <div style="display:flex; flex-direction:column; gap:14px;">
-              <input id="nlMediaName" autocomplete="name" placeholder="Full name" required style="padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.05); color:var(--white); font-size:15px; font-family:inherit;">
-              <input id="nlMediaEmail" type="email" autocomplete="email" placeholder="Email address" required style="padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.05); color:var(--white); font-size:15px; font-family:inherit;">
+              <input id="broadcastName" autocomplete="name" placeholder="Full name" required style="padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.05); color:var(--white); font-size:15px; font-family:inherit;">
+              <input id="broadcastEmail" type="email" autocomplete="email" placeholder="Email address" required style="padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.05); color:var(--white); font-size:15px; font-family:inherit;">
             </div>
             <div>
               <button type="submit" style="background:#ff6a00; color:#fff; font-weight:900; font-size:14px; text-transform:uppercase; letter-spacing:.06em; border:0; border-radius:10px; padding:14px 30px; cursor:pointer; font-family:inherit;">Get Broadcast Alerts</button>
-              <div id="nlMediaStatus" role="status" aria-live="polite" style="margin-top:10px; font-size:13px; min-height:18px; color:var(--muted);"></div>
+              <div id="broadcastStatus" role="status" aria-live="polite" style="margin-top:10px; font-size:13px; min-height:18px; color:var(--muted);"></div>
             </div>
           </form>
         </div>
@@ -1015,12 +1055,6 @@
       </div>
     </section>
 
-    <div class="statement" style="background: linear-gradient(135deg, rgba(217,119,6,.14), rgba(255,255,255,.03));">
-      <div class="wrap">
-        <h2>Pull Up a Chair.<br><span class="orange">Grab Some Coffee.</span></h2>
-      </div>
-    </div>
-
     <!-- COFFEE TALK -->
     <section id="coffeetalk">
       <div class="wrap">
@@ -1063,8 +1097,8 @@
             </div>
           </a>
 
-          <a class="sub-card" href="/api/podcast-rss" target="_blank" rel="noopener">
-            <div class="sub-icon rss">&#8942;</div>
+          <a class="sub-card" href="/api/media?action=podcast-rss" target="_blank" rel="noopener">
+            <div class="sub-icon rss"></div>
             <div class="sub-info">
               <h3>RSS Feed</h3>
               <p>Add to any podcast app</p>
@@ -1076,7 +1110,33 @@
   </main>
 
   <footer>
-    Lost Limb Riders Motorcycle Club &bull; Ride With Purpose &bull; Support Amputees &bull; Build Community &bull; Never Give Up
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="assets/logo-nobg.png" alt="Lost Limb Riders">
+          <div>
+            <div class="brand-text">Lost Limb Riders</div>
+            <div class="brand-sub">Motorcycle Club &bull; Est. 2025</div>
+          </div>
+        </div>
+        <div class="footer-nav">
+          <a href="index.html">Home</a>
+          <a href="events.html">Events</a>
+          <a href="media.html">Media</a>
+          <a href="mission.html">Mission</a>
+          <a href="community.html">Community</a>
+          <a href="sponsors.html">Sponsors</a>
+        </div>
+        <div class="footer-contact">
+          <a href="mailto:john.thompson@lostlimbriders.org">john.thompson@lostlimbriders.org</a>
+          <a href="tel:5158905765">515-890-5765</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="copyright">&copy; 2026 Lost Limb Riders Motorcycle Club. All rights reserved.</div>
+        <div class="fine-print">Ride With Purpose &bull; Support Amputees &bull; Build Community &bull; Never Give Up</div>
+      </div>
+    </div>
   </footer>
 
   <!-- VIDEO MODAL -->
@@ -1577,30 +1637,30 @@
     loadStream();
     loadArchive();
 
-    // --- Newsletter signup ---
-    const nlMediaForm = document.getElementById('nlMediaForm');
-    const nlMediaStatus = document.getElementById('nlMediaStatus');
-    nlMediaForm.addEventListener('submit', async e => {
+    // --- Broadcast alerts signup ---
+    const broadcastForm = document.getElementById('broadcastForm');
+    const broadcastStatus = document.getElementById('broadcastStatus');
+    broadcastForm.addEventListener('submit', async e => {
       e.preventDefault();
-      const name = document.getElementById('nlMediaName').value.trim();
-      const email = document.getElementById('nlMediaEmail').value.trim();
-      if (!name || !email) { nlMediaStatus.textContent = 'Please enter your name and email.'; return; }
-      nlMediaStatus.textContent = 'Subscribing...';
+      const name = document.getElementById('broadcastName').value.trim();
+      const email = document.getElementById('broadcastEmail').value.trim();
+      if (!name || !email) { broadcastStatus.textContent = 'Please enter your name and email.'; return; }
+      broadcastStatus.textContent = 'Signing up...';
       try {
-        const res = await fetch('/api/newsletter', {
+        const res = await fetch('/api/stream?action=subscribe-alerts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, page: 'media' })
+          body: JSON.stringify({ name, email })
         });
         const data = await res.json();
         if (res.ok && data.ok) {
-          nlMediaStatus.innerHTML = 'Welcome to the ride. Check your email for the welcome letter and your free copy of <strong>I Can. I Will.</strong>';
-          nlMediaForm.reset();
+          broadcastStatus.innerHTML = 'You\'re in. We\'ll email you the moment we go live.';
+          broadcastForm.reset();
         } else {
-          nlMediaStatus.textContent = data.message || 'Something went wrong.';
+          broadcastStatus.textContent = data.message || data.error || 'Something went wrong.';
         }
       } catch {
-        nlMediaStatus.textContent = 'Network error. Please try again.';
+        broadcastStatus.textContent = 'Network error. Please try again.';
       }
     });
   </script>

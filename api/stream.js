@@ -1,9 +1,10 @@
-import { getList, setList, KEYS } from '../lib/storage.js';
-import { sendJson, sendEmpty, readBody, isAdmin, clean, getParam } from '../lib/http.js';
+import { getList, setList, KEYS, LIMITS } from '../lib/storage.js';
+import { sendJson, sendEmpty, readBody, isAdmin, clean, getParam, getClientIp } from '../lib/http.js';
 import { seedStream } from '../lib/seed.js';
 import { autoArchive, normalizeKeep, publicArchive, checkLiveStatus, deriveLiveState, hasArchive } from '../lib/stream.js';
 import { validateEpisode, sanitizeSchedule, syncEpisodeEvent, removeLinkedEvent } from '../lib/episodes.js';
 import { stripStreamKeyRefs } from '../lib/streamconfig.js';
+import { sendEmail } from '../lib/email.js';
 
 const FIELDS = [
   ['platform', 20],
@@ -12,6 +13,22 @@ const FIELDS = [
   ['description', 2000],
   ['status', 20],
 ];
+
+async function sendBroadcastAlerts(stream) {
+  const entries = await getList(KEYS.broadcastAlerts);
+  const active = entries.filter((e) => e.active);
+  if (!active.length) return;
+  const platform = stream.platform || 'facebook';
+  const title = stream.title || 'Lost Limb Riders Live';
+  const subject = `🔴 LIVE NOW: ${title}`;
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0; padding:0; background:#111; font-family:Arial,sans-serif;"><div style="max-width:560px; margin:0 auto; padding:32px 24px;"><h1 style="color:#ff6a00; font-size:24px; margin:0 0 16px;">🔴 We're Live Now!</h1><p style="color:#d7d7d7; font-size:16px; line-height:1.6; margin:0 0 24px;"><strong>${title}</strong> is streaming live on ${platform} right now.</p><a href="${platform === 'youtube' ? 'https://youtube.com' : 'https://facebook.com'}" style="display:inline-block; background:#ff6a00; color:#fff; font-weight:900; font-size:14px; text-transform:uppercase; letter-spacing:.06em; text-decoration:none; padding:14px 30px; border-radius:10px;">Watch Now</a><p style="color:#8f8f8f; font-size:12px; margin:32px 0 0;">You're receiving this because you signed up for broadcast alerts at lostlimbriders.org.</p></div></body></html>`;
+  let sent = 0;
+  for (const sub of active) {
+    const result = await sendEmail(sub.email, subject, html);
+    if (result.ok) sent++;
+  }
+  console.log(`Broadcast alerts: ${sent}/${active.length} sent`);
+}
 
 function normalizeStream(s) {
   if (!s) return { ...seedStream };
@@ -99,6 +116,34 @@ export default function handler(req, res) {
     return;
   }
 
+  if (action === 'subscribe-alerts' && req.method === 'POST') {
+    return readBody(req).then(async (payload) => {
+      const email = String(payload.email ?? '').trim().toLowerCase();
+      const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !EMAIL_RE.test(email)) {
+        return sendJson(res, { error: 'Valid email required.' }, 422);
+      }
+      const entries = await getList(KEYS.broadcastAlerts);
+      const existing = entries.find((e) => e.email === email);
+      if (existing) {
+        if (existing.active) return sendJson(res, { ok: true, message: 'You are already signed up for broadcast alerts.' });
+        existing.active = true;
+        existing.resubscribedAt = new Date().toISOString();
+        await setList(KEYS.broadcastAlerts, entries);
+        return sendJson(res, { ok: true, message: 'Welcome back! You will be notified when we go live.' }, 201);
+      }
+      entries.unshift({
+        email,
+        name: clean(payload.name, 120) || '',
+        createdAt: new Date().toISOString(),
+        active: true,
+        ip: getClientIp(req),
+      });
+      await setList(KEYS.broadcastAlerts, entries.slice(0, LIMITS.broadcastAlerts));
+      return sendJson(res, { ok: true, message: 'You will be notified when we go live.' }, 201);
+    }).catch(() => sendJson(res, { error: 'Storage error.' }, 500));
+  }
+
   if (!isAdmin(req)) {
     return sendJson(res, { error: 'Admin access required.' }, 403);
   }
@@ -123,6 +168,7 @@ export default function handler(req, res) {
       if (cleaned) stream.schedule = cleaned;
       if (stream.status === 'live' && oldStream.status !== 'live') {
         stream.liveStartedAt = new Date().toISOString();
+        sendBroadcastAlerts(stream).catch(() => {});
       }
       if (stream.status !== 'live') delete stream.liveStartedAt;
       stream.updatedAt = new Date().toISOString();
