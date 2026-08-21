@@ -621,9 +621,11 @@
       .nav { position: static; align-items: flex-start; flex-direction: column; }
       .nav-links { flex-wrap: wrap; }
       .sidebar { grid-template-columns: 1fr; }
+      .sidebar > div:first-child { order: 2; }
+      .upcoming-panel { order: 1; max-height: none; margin-bottom: 20px; }
       .controls { flex-direction: column; align-items: stretch; }
       .controls-left, .controls-right { justify-content: center; }
-      .cal-cell { min-height: 90px; padding: 6px; }
+      .cal-cell { min-height: 80px; padding: 6px; }
       .day-num { width: 26px; height: 26px; font-size: 12px; }
       .cal-event { font-size: 10px; padding: 3px 5px; }
       .cal-header-cell { font-size: 10px; padding: 10px 4px; }
@@ -631,20 +633,23 @@
       .detail-meta { grid-template-columns: 1fr; }
     }
 
-    @media (max-width: 560px) {
+    @media (max-width: 600px) {
       .brand { min-width: 0; }
       .brand img { width: 44px; height: 44px; }
       .nav-links { gap: 12px; font-size: 12px; }
-      section, .page-hero { padding-left: 22px; padding-right: 22px; }
+      section, .page-hero { padding-left: 16px; padding-right: 16px; }
       h1 { letter-spacing: -.045em; }
       .month-label { min-width: 0; font-size: 17px; }
       .view-toggle button { padding: 8px 10px; font-size: 11px; }
       .modal { padding: 24px; }
-      .cal-cell { min-height: 60px; padding: 4px; }
-      .cal-header-cell { font-size: 9px; padding: 8px 2px; }
-      .day-num { width: 22px; height: 22px; font-size: 11px; }
-      .cal-event { font-size: 9px; padding: 2px 4px; }
-      .calendar-grid { border-radius: 12px; }
+      .calendar-grid { border-radius: 12px; overflow-x: auto; }
+      .cal-cell { min-height: 70px; padding: 4px; }
+      .cal-header-cell { font-size: 10px; padding: 8px 2px; letter-spacing: .08em; }
+      .day-num { width: 24px; height: 24px; font-size: 11px; border-radius: 8px; }
+      .cal-event { font-size: 9px; padding: 2px 3px; border-radius: 4px; }
+      .cal-event .ev-dot { display: none; }
+      .filter-chip { padding: 6px 10px; font-size: 11px; }
+      .controls { gap: 10px; }
     }
 
     .fade-in { animation: fadeIn .3s ease; }
@@ -804,9 +809,22 @@
       const now = new Date();
       currentYear = now.getFullYear();
       currentMonth = now.getMonth();
+      if (window.innerWidth <= 940) {
+        currentView = 'week';
+        document.querySelectorAll('.view-toggle button').forEach(b => {
+          b.classList.toggle('active', b.textContent.trim().toLowerCase() === 'week');
+        });
+      }
       renderFilters();
       fetchEvents();
     }
+
+    window.addEventListener('resize', () => {
+      const isMobile = window.innerWidth <= 940;
+      if (isMobile && currentView === 'month') {
+        setView('week');
+      }
+    });
 
     function navigateMonth(delta) {
       currentMonth += delta;
