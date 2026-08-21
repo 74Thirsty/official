@@ -444,6 +444,10 @@
     .form-field select option { background: #111; }
     .form-actions { display: flex; gap: 10px; margin-top: 22px; }
     .form-actions .btn { justify-content: center; }
+    #smPlatform option:disabled { color: #6b7280; font-style: italic; background: #111; }
+    #smPlatform option { background: #111; }
+    .stream-locked { opacity: .45; pointer-events: none; }
+    .platform-panel { margin-top: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.03); }
 
     @media (max-width: 768px) {
       section { padding: 24px 5vw; }
@@ -624,11 +628,11 @@
            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
               <div>
                 <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Platform</label>
-                <select id="smPlatform" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px; font-family:inherit;">
+                <select id="smPlatform" onchange="onPlatformChange()" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px; font-family:inherit;">
                   <option value="">Loading platforms&hellip;</option>
                 </select>
                 <div id="streamPlatformsEmpty" style="display:none; margin-top:10px; padding:12px 14px; border:1px solid rgba(252,211,77,.35); border-radius:10px; background:rgba(252,211,77,.08); font-size:13px; color:#fcd34d;">
-                  No streaming platforms are currently configured. Configure the streaming credentials as environment variables on the server (e.g. <code style="color:var(--white);">FB_STREAM_KEY</code>, <code style="color:var(--white);">YOUTUBE_STREAM_KEY</code>, <code style="color:var(--white);">TWITCH_STREAM_KEY</code>, <code style="color:var(--white);">OWNCAST_STREAM_KEY</code>) and redeploy. A platform appears here only when its credentials are configured and valid.
+                  No platform has a stream key yet. Select a platform above to add its key here, or set it as an environment variable on the server (e.g. <code style="color:var(--white);">FB_STREAM_KEY</code>, <code style="color:var(--white);">YOUTUBE_STREAM_KEY</code>, <code style="color:var(--white);">TWITCH_STREAM_KEY</code>, <code style="color:var(--white);">OWNCAST_STREAM_KEY</code>).
                 </div>
               </div>
               <div>
@@ -640,10 +644,14 @@
               </div>
             </div>
 
-           <div style="margin-bottom:14px;">
-             <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Stream ID (YouTube video ID or Facebook video URL)</label>
-             <input id="smStreamId" maxlength="200" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px;" placeholder="YouTube video ID or Facebook video URL">
-           </div>
+            <!-- Per-platform settings popup (key management + OBS setup) -->
+            <div id="smPlatformPanel" class="platform-panel" style="display:none;"></div>
+
+            <div id="smMetaFields">
+            <div style="margin-bottom:14px;">
+              <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Stream ID (YouTube video ID or Facebook video URL)</label>
+              <input id="smStreamId" maxlength="200" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px;" placeholder="YouTube video ID or Facebook video URL">
+            </div>
 
            <div style="margin-bottom:14px;">
              <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Title</label>
@@ -672,16 +680,19 @@
              <button class="btn btn-sm" style="width:100%; justify-content:center;" onclick="openScheduleModal()">+ Add Scheduled Stream</button>
            </div>
 
-           <div style="display:flex; gap:12px;">
-              <button class="btn btn-primary" onclick="saveStreamConfig()" style="flex:1; justify-content:center;">Save</button>
-              <button class="btn" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.2);flex:1; justify-content:center;" onclick="goLive()">Go Live Now</button>
-              <button class="btn" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.2);flex:1; justify-content:center;" onclick="checkStreamLive()">Check Live Status</button>
-            </div>
-            <div id="streamLiveStatus" style="margin-top:12px; font-size:13px; min-height:18px;"></div>
-            <div id="streamSaveStatus" style="margin-top:12px; font-size:13px; min-height:18px;"></div>
-          </div>
+            <div style="display:flex; gap:12px;">
+               <button class="btn btn-primary" id="smSaveBtn" onclick="saveStreamConfig()" style="flex:1; justify-content:center;">Save</button>
+               <button class="btn" id="smGoLiveBtn" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.2);flex:1; justify-content:center;" onclick="goLive()">Go Live Now</button>
+               <button class="btn" id="smCheckBtn" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.2);flex:1; justify-content:center;" onclick="checkStreamLive()">Check Live Status</button>
+             </div>
+             <div id="streamLiveStatus" style="margin-top:12px; font-size:13px; min-height:18px;"></div>
+             <div id="streamSaveStatus" style="margin-top:12px; font-size:13px; min-height:18px;"></div>
+            </div><!-- /smMetaFields -->
+           </div>
 
           <div class="panel" style="margin-top:20px;">
+            <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">OBS Studio Setup</h3>
+            <div id="obsPlatformSetup" style="margin-bottom:8px;"></div>
             <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">OBS Studio Status</h3>
             <p style="color:var(--muted); font-size:13px; margin-bottom:14px;">
               Connect to OBS Studio on this machine (Tools &rarr; WebSocket Server Settings &rarr; enable, port 4455) to verify it is running, see the current scene, and confirm the media source for a prerecorded broadcast. The password stays in memory for this session only — it is never sent to or stored by the website.
@@ -1185,31 +1196,174 @@
      }
 
      // --- Live Stream ---
-     function populatePlatformSelect(platforms, current) {
-       const select = document.getElementById('smPlatform');
-       const empty = document.getElementById('streamPlatformsEmpty');
-       select.innerHTML = '';
-       if (!Array.isArray(platforms) || !platforms.length) {
-         empty.style.display = 'block';
-         select.innerHTML = '<option value="">No platforms configured</option>';
-         return;
-       }
-       empty.style.display = 'none';
-       select.innerHTML = platforms.map(p => '<option value="' + escapeHtml(p.platform) + '">' + escapeHtml(p.label) + '</option>').join('');
-       if (current && platforms.some(p => p.platform === current)) select.value = current;
-     }
+      const OBS_SETUP = {
+        facebook: {
+          service: 'Facebook Live',
+          server: 'rtmps://live-api-s.facebook.com:443/rtmp/',
+          keyNote: 'Your Facebook stream key (starts with FB-). Use the persistent key from Facebook Live Producer \u2192 Go live \u2192 Use stream key \u2192 Settings.',
+          steps: ['In OBS: Settings \u2192 Stream \u2192 Service: Facebook Live.', 'Paste the stream key (same one saved above or in FB_STREAM_KEY).', 'Start Streaming in OBS, then set Status to Live here (or let the platform check flip it).'],
+        },
+        youtube: {
+          service: 'YouTube - RTMPS',
+          server: 'rtmps://a.rtmp.youtube.com/live2',
+          keyNote: 'Your YouTube stream key from YouTube Studio \u2192 Go Live \u2192 Stream settings \u2192 Stream key.',
+          steps: ['In OBS: Settings \u2192 Stream \u2192 Service: YouTube - RTMPS.', 'Paste the stream key (same one saved above or in YOUTUBE_STREAM_KEY).', 'Start Streaming in OBS, then set Status to Live here (or let the platform check flip it).'],
+        },
+        twitch: {
+          service: 'Twitch',
+          server: 'rtmps://live.twitch.tv/app',
+          keyNote: 'Your Twitch stream key from Twitch Creator Dashboard \u2192 Settings \u2192 Stream \u2192 Primary stream key.',
+          steps: ['In OBS: Settings \u2192 Stream \u2192 Service: Twitch.', 'Paste the stream key (same one saved above or in TWITCH_STREAM_KEY).', 'Start Streaming in OBS, then set Status to Live here (or let the platform check flip it).'],
+        },
+        owncast: {
+          service: 'Custom...',
+          server: '',
+          keyNote: 'The stream key configured on your Owncast server (OWNCAST_STREAM_KEY here).',
+          steps: ['In OBS: Settings \u2192 Stream \u2192 Service: Custom...', 'Server: your Owncast URL (OWNCAST_URL), path /stream.', 'Paste the stream key, Start Streaming in OBS, then set Status to Live here.'],
+        },
+      };
 
-     function populateDestinationSelect(current) {
-       const platforms = window.__availablePlatforms || [];
-       const select = document.getElementById('schDestination');
-       select.innerHTML = '';
-       if (!platforms.length) {
-         select.innerHTML = '<option value="">No platforms configured</option>';
-         return;
-       }
-       select.innerHTML = platforms.map(p => '<option value="' + escapeHtml(p.platform) + '">' + escapeHtml(p.label) + '</option>').join('');
-       if (current && platforms.some(p => p.platform === current)) select.value = current;
-     }
+      function getSelectedPlatformStatus() {
+        const platforms = window.__platformStatuses || [];
+        const value = document.getElementById('smPlatform').value;
+        return platforms.find(p => p.platform === value) || null;
+      }
+
+      function anyAvailablePlatform() {
+        return (window.__platformStatuses || []).some(p => p.available);
+      }
+
+      function populatePlatformSelect(platforms, current) {
+        const select = document.getElementById('smPlatform');
+        const empty = document.getElementById('streamPlatformsEmpty');
+        window.__platformStatuses = Array.isArray(platforms) ? platforms : [];
+        if (!Array.isArray(platforms) || !platforms.length) {
+          empty.style.display = 'block';
+          select.innerHTML = '<option value="">No platforms available</option>';
+          renderPlatformPanel();
+          refreshStreamFormLock();
+          renderObsSetup();
+          return;
+        }
+        empty.style.display = !anyAvailablePlatform() ? 'block' : 'none';
+        select.innerHTML = platforms.map(p =>
+          '<option value="' + escapeHtml(p.platform) + '"' + (p.available ? '' : ' disabled') + '>' +
+          escapeHtml(p.label) + (p.available ? '' : ' \u2014 no stream key') + '</option>'
+        ).join('');
+        let chosen = '';
+        if (current && platforms.some(p => p.platform === current && p.available)) chosen = current;
+        else if (current && platforms.some(p => p.platform === current)) chosen = current;
+        else {
+          const firstAvail = platforms.find(p => p.available);
+          chosen = firstAvail ? firstAvail.platform : '';
+        }
+        if (chosen) select.value = chosen;
+        renderPlatformPanel();
+        refreshStreamFormLock();
+        renderObsSetup();
+      }
+
+      function onPlatformChange() {
+        renderPlatformPanel();
+        refreshStreamFormLock();
+        renderObsSetup();
+      }
+
+      function renderPlatformPanel() {
+        const wrap = document.getElementById('smPlatformPanel');
+        const status = getSelectedPlatformStatus();
+        if (!status) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+        wrap.style.display = 'block';
+        const spec = OBS_SETUP[status.platform] || {};
+        const envVar = { youtube: 'YOUTUBE_STREAM_KEY', facebook: 'FB_STREAM_KEY', twitch: 'TWITCH_STREAM_KEY', owncast: 'OWNCAST_STREAM_KEY' }[status.platform] || '';
+        let stateLine;
+        if (status.available && status.source === 'env') {
+          stateLine = '<span style="color:#22c55e;">&#10003; Ready \u2014 stream key loaded from environment (' + escapeHtml(envVar) + ').</span>';
+        } else if (status.available && status.source === 'stored') {
+          stateLine = '<span style="color:#22c55e;">&#10003; Ready \u2014 stream key saved from this panel.</span>';
+        } else {
+          stateLine = '<span style="color:#fcd34d;">&#10007; Not configured \u2014 add the stream key below or set <code style="color:var(--white);">' + escapeHtml(envVar) + '</code> in .env.local / Vercel environment variables.</span>';
+        }
+        wrap.innerHTML =
+          '<div style="font-size:13px; margin-bottom:10px;">' + stateLine + '</div>' +
+          '<label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">' + escapeHtml(status.label) + ' Stream Key (add or update)</label>' +
+          '<div style="display:flex; gap:10px; flex-wrap:wrap;">' +
+            '<input id="smKeyInput" type="password" autocomplete="off" placeholder="Paste ' + escapeHtml(status.label) + ' stream key" style="flex:1; min-width:220px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px;">' +
+            '<button class="btn btn-sm btn-primary" onclick="saveStreamKey()">Save Key</button>' +
+          '</div>' +
+          '<div style="font-size:12px; color:var(--muted); margin-top:8px;">Saved keys are stored server-side and are never displayed or returned by the API. A key saved here overrides the environment variable. You can also set <code style="color:var(--white);">' + escapeHtml(envVar) + '</code> directly in the environment.</div>';
+      }
+
+      function refreshStreamFormLock() {
+        const status = getSelectedPlatformStatus();
+        const locked = !(status && status.available);
+        const meta = document.getElementById('smMetaFields');
+        if (meta) meta.classList.toggle('stream-locked', locked);
+        ['smSaveBtn', 'smGoLiveBtn', 'smCheckBtn'].forEach(function (id) {
+          const btn = document.getElementById(id);
+          if (btn) btn.disabled = locked;
+        });
+      }
+
+      async function saveStreamKey() {
+        const statusEl = document.getElementById('streamSaveStatus');
+        const platform = document.getElementById('smPlatform').value;
+        const input = document.getElementById('smKeyInput');
+        if (!platform || !input || !input.value.trim()) {
+          statusEl.textContent = 'Paste a stream key first.';
+          return;
+        }
+        statusEl.textContent = 'Saving key...';
+        try {
+          const res = await fetch(apiUrl('set-stream-key'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ platform: platform, streamKey: input.value.trim() })
+          });
+          const data = await res.json();
+          if (!res.ok) { statusEl.textContent = data.error || 'Could not save stream key.'; return; }
+          input.value = '';
+          statusEl.textContent = 'Stream key saved.';
+          setTimeout(() => { statusEl.textContent = ''; }, 2500);
+          loadStreamConfig();
+        } catch {
+          statusEl.textContent = 'Connection error.';
+        }
+      }
+
+      function renderObsSetup() {
+        const wrap = document.getElementById('obsPlatformSetup');
+        const status = getSelectedPlatformStatus();
+        if (!status) { wrap.innerHTML = ''; return; }
+        const setup = OBS_SETUP[status.platform];
+        if (!setup) { wrap.innerHTML = ''; return; }
+        const server = setup.server
+          ? escapeHtml(setup.server)
+          : 'your Owncast URL (<code>OWNCAST_URL</code>)';
+        const keyState = status.available
+          ? 'Use the ' + escapeHtml(status.label) + ' stream key already saved for this site.'
+          : 'Add the ' + escapeHtml(status.label) + ' stream key first (panel above or environment variable).';
+        wrap.innerHTML =
+          '<div style="padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.03); font-size:13px; color:var(--muted); line-height:1.7;">' +
+            '<div style="color:var(--white); font-weight:800; margin-bottom:6px;">' + escapeHtml(status.label) + ' \u2014 OBS Settings \u2192 Stream</div>' +
+            '<div>Service: <span style="color:var(--white);">' + escapeHtml(setup.service) + '</span></div>' +
+            '<div>Server: <span style="color:var(--white);">' + server + '</span></div>' +
+            '<div>Stream Key: <span style="color:var(--white);">' + keyState + '</span></div>' +
+            '<div style="margin-top:6px;">' + setup.steps.map(s => '\u2022 ' + escapeHtml(s)).join('<br>') + '</div>' +
+          '</div>';
+      }
+
+      function populateDestinationSelect(current) {
+        const platforms = (window.__platformStatuses || []).filter(p => p.available);
+        const select = document.getElementById('schDestination');
+        select.innerHTML = '';
+        if (!platforms.length) {
+          select.innerHTML = '<option value="">No platforms configured</option>';
+          return;
+        }
+        select.innerHTML = platforms.map(p => '<option value="' + escapeHtml(p.platform) + '">' + escapeHtml(p.label) + '</option>').join('');
+        if (current && platforms.some(p => p.platform === current)) select.value = current;
+      }
 
      async function loadStreamConfig() {
        const status = document.getElementById('streamSaveStatus');
@@ -1218,10 +1372,9 @@
          const res = await fetch(apiUrl('stream'));
          if (!res.ok) return;
          const data = await res.json();
-         const stream = data.stream || {};
-         const platforms = Array.isArray(data.platforms) ? data.platforms : [];
-         window.__availablePlatforms = platforms;
-         populatePlatformSelect(platforms, stream.platform);
+          const stream = data.stream || {};
+          const platforms = Array.isArray(data.platforms) ? data.platforms : [];
+          populatePlatformSelect(platforms, stream.platform);
          document.getElementById('smStreamId').value = stream.streamId || '';
          document.getElementById('smTitle').value = stream.title || '';
          document.getElementById('smDesc').value = stream.description || '';
@@ -1266,20 +1419,20 @@
        }).join('');
      }
 
-     async function saveStreamConfig() {
-       const status = document.getElementById('streamSaveStatus');
-       const platform = document.getElementById('smPlatform').value;
-       if (!platform) {
-         status.textContent = 'No streaming platform configured. Add the platform credentials (e.g. FB_STREAM_KEY) to the server environment and reload.';
-         return;
-       }
+      async function saveStreamConfig() {
+        const status = document.getElementById('streamSaveStatus');
+        const platformStatus = getSelectedPlatformStatus();
+        if (!platformStatus || !platformStatus.available) {
+          status.textContent = 'That platform has no stream key yet. Add its key in the platform panel above (or set the environment variable) first.';
+          return;
+        }
        status.textContent = 'Saving...';
        try {
          const res = await fetch(apiUrl('update-stream'), {
            method: 'POST',
            headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({
-             platform: platform,
+            body: JSON.stringify({
+              platform: platformStatus.platform,
              streamId: document.getElementById('smStreamId').value.trim(),
              title: document.getElementById('smTitle').value.trim(),
              description: document.getElementById('smDesc').value.trim(),
@@ -1345,7 +1498,8 @@
        scheduleEditingId = editingId || '';
        document.getElementById('scheduleModalTitle').textContent = editingId ? 'Edit Scheduled Broadcast' : 'Add Scheduled Broadcast';
        document.getElementById('scheduleModalSaveBtn').textContent = editingId ? 'Save Changes' : 'Add';
-       const defaultDest = (window.__availablePlatforms && window.__availablePlatforms[0]) ? window.__availablePlatforms[0].platform : '';
+        const availPlatforms = (window.__platformStatuses || []).filter(p => p.available);
+        const defaultDest = availPlatforms.length ? availPlatforms[0].platform : '';
        if (editingId) {
          const item = window.__streamSchedule ? window.__streamSchedule.find(s => s.id === editingId) : null;
          if (item) {
@@ -1407,7 +1561,7 @@
        if (!title) return;
        const destination = document.getElementById('schDestination').value;
        if (!destination) {
-         document.getElementById('streamSaveStatus').textContent = 'No streaming platform configured. Add the platform credentials (e.g. FB_STREAM_KEY) to the server environment first.';
+          document.getElementById('streamSaveStatus').textContent = 'No platform with a stream key yet. Add a stream key in the Stream Configuration panel first.';
          return;
        }
        const item = {

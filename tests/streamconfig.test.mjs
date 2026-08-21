@@ -6,6 +6,7 @@ import {
   validateStreamKey,
   validatePlatform,
   availablePlatforms,
+  platformStatuses,
   stripStreamKeyRefs,
 } from '../lib/streamconfig.js';
 import { validateEpisode, publicEpisode } from '../lib/episodes.js';
@@ -103,6 +104,63 @@ test('availability responses never contain the secret or any credential field', 
 test('stripStreamKeyRefs removes the field recursively (defense for legacy data)', () => {
   const input = { a: 1, streamKeyRef: 'FB_STREAM_KEY', schedule: [{ id: 'x', streamKeyRef: 'FB_STREAM_KEY' }] };
   assert.deepEqual(stripStreamKeyRefs(input), { a: 1, schedule: [{ id: 'x' }] });
+});
+
+test('platformStatuses lists every platform as missing when no keys exist anywhere', () => {
+  withEnv({ FB_STREAM_KEY: undefined, YOUTUBE_STREAM_KEY: undefined, TWITCH_STREAM_KEY: undefined, OWNCAST_STREAM_KEY: undefined }, () => {
+    assert.deepEqual(platformStatuses({}), [
+      { platform: 'youtube', label: 'YouTube Live', available: false, source: 'missing' },
+      { platform: 'facebook', label: 'Facebook Live', available: false, source: 'missing' },
+      { platform: 'twitch', label: 'Twitch', available: false, source: 'missing' },
+      { platform: 'owncast', label: 'Owncast', available: false, source: 'missing' },
+    ]);
+  });
+});
+
+test('platformStatuses marks env-configured platforms available with source env', () => {
+  withEnv({ FB_STREAM_KEY: FB_SECRET, YOUTUBE_STREAM_KEY: undefined, TWITCH_STREAM_KEY: undefined, OWNCAST_STREAM_KEY: undefined }, () => {
+    const statuses = platformStatuses({});
+    const fb = statuses.find((p) => p.platform === 'facebook');
+    assert.equal(fb.available, true);
+    assert.equal(fb.source, 'env');
+    assert.equal(statuses.find((p) => p.platform === 'youtube').source, 'missing');
+    assert.equal(statuses.find((p) => p.platform === 'youtube').available, false);
+  });
+});
+
+test('platformStatuses treats a panel-saved key as available (source stored) without env', () => {
+  withEnv({ FB_STREAM_KEY: undefined, YOUTUBE_STREAM_KEY: undefined, TWITCH_STREAM_KEY: undefined, OWNCAST_STREAM_KEY: undefined }, () => {
+    const statuses = platformStatuses({ facebook: FB_SECRET + '-stored' });
+    const fb = statuses.find((p) => p.platform === 'facebook');
+    assert.equal(fb.available, true);
+    assert.equal(fb.source, 'stored');
+  });
+});
+
+test('platformStatuses prefers the panel-saved key over the environment variable', () => {
+  withEnv({ FB_STREAM_KEY: FB_SECRET, YOUTUBE_STREAM_KEY: undefined, TWITCH_STREAM_KEY: undefined, OWNCAST_STREAM_KEY: undefined }, () => {
+    const fb = platformStatuses({ facebook: YT_SECRET }).find((p) => p.platform === 'facebook');
+    assert.equal(fb.source, 'stored');
+  });
+});
+
+test('platformStatuses falls back to env when the panel-saved key is malformed', () => {
+  withEnv({ FB_STREAM_KEY: FB_SECRET, YOUTUBE_STREAM_KEY: undefined, TWITCH_STREAM_KEY: undefined, OWNCAST_STREAM_KEY: undefined }, () => {
+    const fb = platformStatuses({ facebook: 'short' }).find((p) => p.platform === 'facebook');
+    assert.equal(fb.available, true);
+    assert.equal(fb.source, 'env');
+  });
+});
+
+test('platformStatuses handles null/undefined stored maps and never leaks secrets', () => {
+  withEnv({ FB_STREAM_KEY: FB_SECRET, YOUTUBE_STREAM_KEY: undefined, TWITCH_STREAM_KEY: undefined, OWNCAST_STREAM_KEY: undefined }, () => {
+    for (const stored of [undefined, null]) {
+      const json = JSON.stringify(platformStatuses(stored));
+      assert.ok(!json.includes(FB_SECRET));
+      assert.ok(!json.includes('key'));
+      assert.ok(!json.includes('streamKey'));
+    }
+  });
 });
 
 test('episodes no longer persist or expose streamKeyRef', () => {

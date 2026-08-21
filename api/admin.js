@@ -8,7 +8,8 @@ import { seedStream } from '../lib/seed.js';
 import { parseBrowser } from '../lib/ua.js';
 import { autoArchive, normalizeKeep, adminArchive, purgeExpired, checkLiveStatus, hasArchive } from '../lib/stream.js';
 import { sanitizeSchedule } from '../lib/episodes.js';
-import { availablePlatforms, stripStreamKeyRefs } from '../lib/streamconfig.js';
+import { platformStatuses, validateStreamKey, stripStreamKeyRefs } from '../lib/streamconfig.js';
+import { getStoredStreamKeys, setStoredStreamKey } from '../lib/streamkeys.js';
 
 function getBrowserStats(visitors) {
   const stats = { Chrome: 0, Firefox: 0, Safari: 0, Edge: 0, Other: 0 };
@@ -95,9 +96,34 @@ export default function handler(req, res) {
   }
 
   if (action === 'stream') {
-    getList(KEYS.stream).then((arr) => {
+    Promise.all([getList(KEYS.stream), getStoredStreamKeys()]).then(([arr, storedKeys]) => {
       const stream = arr.length ? arr[0] : seedStream;
-      sendJson(res, { stream: stripStreamKeyRefs(stream), platforms: availablePlatforms() });
+      sendJson(res, { stream: stripStreamKeyRefs(stream), platforms: platformStatuses(storedKeys) });
+    }).catch(fail);
+    return;
+  }
+
+  if (action === 'set-stream-key' && req.method === 'POST') {
+    readBody(req).then(async (payload) => {
+      const platform = String(payload.platform ?? '').toLowerCase();
+      const key = String(payload.streamKey ?? '').trim();
+      if (!['youtube', 'facebook', 'twitch', 'owncast'].includes(platform)) {
+        return sendJson(res, { error: 'Unknown platform.' }, 422);
+      }
+      const validation = validateStreamKey(platform, key);
+      if (!validation.available) {
+        const reasons = {
+          empty: 'Stream key is empty.',
+          malformed: 'Stream key is too short or contains invalid characters.',
+          missing: 'Stream key is required.',
+          unsupported: 'Unsupported platform.',
+        };
+        return sendJson(res, { error: reasons[validation.status] || 'Invalid stream key.' }, 422);
+      }
+      const result = await setStoredStreamKey(platform, key);
+      if (!result.ok) return sendJson(res, { error: 'Could not save stream key.' }, 500);
+      const storedKeys = await getStoredStreamKeys();
+      sendJson(res, { ok: true, platforms: platformStatuses(storedKeys) });
     }).catch(fail);
     return;
   }
