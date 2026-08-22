@@ -1400,7 +1400,7 @@
         }
         empty.style.display = !anyAvailablePlatform() ? 'block' : 'none';
         select.innerHTML = platforms.map(p =>
-          '<option value="' + escapeHtml(p.platform) + '"' + (p.available ? '' : ' disabled') + '>' +
+          '<option value="' + escapeHtml(p.platform) + '"' + (p.available ? '' : ' style="color:#6b7280; font-style:italic;"') + '>' +
           escapeHtml(p.label) + (p.available ? '' : ' \u2014 no stream key') + '</option>'
         ).join('');
         let chosen = '';
