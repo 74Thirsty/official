@@ -1,6 +1,6 @@
 # Lost Limb Riders — Admin User Manual
 
-Complete reference for managing the website: events, live streaming (OBS → Facebook/YouTube/Twitch/Owncast), newsletter, community moderation, guestbook, and visitor data.
+Complete reference for managing the website: events, live streaming (Facebook Live), newsletter, community moderation, guestbook, and visitor data.
 
 **Stack:** static HTML/CSS/JS frontend · Vercel serverless functions (Node) · Vercel KV (Redis) storage · Resend email · deployed at `lostlimbriders.org`. There are no PHP endpoints and no `data/*.json` files anymore — all data lives in KV under `llr:*` keys.
 
@@ -11,19 +11,18 @@ Complete reference for managing the website: events, live streaming (OBS → Fac
 1. [Site Overview](#site-overview)
 2. [Accessing Admin](#accessing-admin)
 3. [Admin Dashboard Tour](#admin-dashboard-tour)
-4. [Live Streaming & Going Live with OBS](#live-streaming--going-live-with-obs)
+4. [Live Streaming — Facebook Live](#live-streaming--facebook-live)
 5. [Scheduled Broadcasts](#scheduled-broadcasts)
-6. [Stream Archive](#stream-archive)
-7. [Events Calendar](#events-calendar)
-8. [Newsletter System](#newsletter-system)
-9. [Community Moderation (Gallery / Testimonials / Comments)](#community-moderation)
-10. [Guestbook](#guestbook)
-11. [API Reference](#api-reference)
-12. [Storage (Vercel KV)](#storage-vercel-kv)
-13. [Environment Variables](#environment-variables)
-14. [Cron](#cron)
-15. [Troubleshooting](#troubleshooting)
-16. [Quick Reference Card](#quick-reference-card)
+6. [Events Calendar](#events-calendar)
+7. [Newsletter System](#newsletter-system)
+8. [Community Moderation (Gallery / Testimonials / Comments)](#community-moderation)
+9. [Guestbook](#guestbook)
+10. [API Reference](#api-reference)
+11. [Storage (Vercel KV)](#storage-vercel-kv)
+12. [Environment Variables](#environment-variables)
+13. [Cron](#cron)
+14. [Troubleshooting](#troubleshooting)
+15. [Quick Reference Card](#quick-reference-card)
 
 ---
 
@@ -53,11 +52,11 @@ There is no hidden admin mode anywhere (the old press-A toggle is gone). Events 
 | `/api/guestbook` | mixed | list/add (public), download/clear (admin) |
 | `/api/contact` | No | Contact form (sends via Resend) |
 | `/api/media` | mixed | Podcast/vlog/coffeetalk episodes; `action=podcast-rss` serves the RSS feed |
-| `/api/stream` | mixed | Stream status/config, schedule CRUD, archive, broadcast-alert signup |
+| `/api/stream` | mixed | Facebook Live status, config + schedule CRUD, broadcast-alert signup |
 | `/api/ebook` | Token | One-time e-book download links (`?token=...`) |
 | `/api/unsubscribe` | Token | Newsletter unsubscribe links |
 | `/api/community` | mixed | Gallery/testimonials/comments list+submit (public), pending/approve/delete (admin) |
-| `/api/admin` | Yes | Stats, subscribers, visitors, newsletter preview + blast, stream config, stream keys, archive, audit |
+| `/api/admin` | Yes | Stats, subscribers, visitors, newsletter preview + blast, stream config, audit |
 | `/api/cron-newsletter` | Cron | Automated weekly sender (gated by `CRON_SECRET`) |
 
 Admin auth everywhere: `?key=YOUR_ADMIN_KEY` query param or `X-Admin-Key` header, timing-safe compared against the `ADMIN_KEY` env var.
@@ -88,112 +87,48 @@ If login fails with "Invalid admin key," the `ADMIN_KEY` env var on Vercel is th
 | Subscribers | Full marketing profiles: name, email, geo, ISP, device, proxy/hosting badges, welcome-email status |
 | Visitor Log | Paginated (25/page) raw visit log with browser parsing |
 | Send Newsletter | Build preview, **send real blast**, resend welcome emails (see [Newsletter](#newsletter-system)) |
-| Live Stream | Platform selection, stream keys, OBS setup, schedule, go-live controls, archive — see next section |
+ | Live Stream | Facebook Live status, page URL, schedule, broadcast alerts — see next section |
 | Events | Create/edit/delete calendar events (same data as the public calendar) |
 | Gallery / Testimonials / Comments | Moderate visitor submissions — approve/unapprove/delete |
 | Guestbook | Read entries, download JSON backup, clear |
 
 ---
 
-## Live Streaming & Going Live with OBS
+## Live Streaming — Facebook Live
 
-This is the full workflow: configure a platform once, then go live from OBS Studio each week.
+Streaming is simple now: **Facebook Live is the only platform**, and the website is just the viewing layer.
 
-### 1. How platform availability works
+### Going live (the whole workflow)
 
-The **Platform** dropdown always shows all four supported platforms:
+1. Open **Facebook on your phone**
+2. Press **Go Live** on the Lost Limb Riders page
+3. That's it. `media.html` detects the broadcast within ~60 seconds, shows a big **LIVE NOW** player, and riders who signed up for **broadcast alerts** get an email
 
-- **YouTube Live**
-- **Facebook Live**
-- **Twitch**
-- **Owncast**
+No OBS, no stream keys, no RTMP, nothing to configure. When you end the broadcast, the site returns to its offline state (with a link to the replay on Facebook).
 
-A platform is *available* when its stream key exists. Platforms without a key appear **greyed out and italic** with "— no stream key" — but they are still selectable so you can add their key right there. You never need to redeploy just to add a key.
+### One-time setup (already done? skip this)
 
-Where keys come from (in priority order):
+Automatic detection needs two environment variables on Vercel: `FACEBOOK_PAGE_ID` and `FACEBOOK_ACCESS_TOKEN` (a Page access token). Facebook offers no public way to detect a live Page without them. Without them the site still works but always shows the offline view with a link to your Facebook page — the admin panel's Live Stream tab tells you when they're missing.
 
-1. **Saved from this panel** — stored server-side in KV (`llr:stream-keys`); overrides the env var until removed
-2. **Environment variables** — `FB_STREAM_KEY`, `YOUTUBE_STREAM_KEY`, `TWITCH_STREAM_KEY`, `OWNCAST_STREAM_KEY`
-
-Stream keys are secrets: they are validated server-side, never displayed again, never returned by any API, and never logged. Minimum length is 20 chars for Facebook/YouTube, 10 for Twitch/Owncast, no spaces.
-
-### 2. Adding or updating a stream key
-
-1. Live Stream tab → select the platform in the dropdown (greyed ones work too)
-2. The **platform panel** opens showing its status:
-   - `✓ Ready — stream key loaded from environment (FB_STREAM_KEY)`
-   - `✓ Ready — stream key saved from this panel`
-   - `✗ Not configured — add the stream key below or set <ENV_VAR>`
-3. Paste the key into the **Stream Key** field (password-masked)
-4. Click **Save Key**
-5. The panel reloads — the platform unlocks and the rest of the form becomes editable
-
-While a platform has no key, the stream config form (Status, Stream ID, Title, etc.) is **locked** — only the key field is active.
-
-### 3. Configure the stream
-
-Once the platform is ready, fill in:
+### Live Stream tab
 
 | Field | Notes |
 |-------|-------|
-| Status | `Offline` / `Live` (manual control; the platform check can also set this) |
-| Stream ID | Viewer-facing URL — **Facebook video/page URL** or **YouTube video ID**. Never paste a secret key here. |
-| Title / Description | Shown on `media.html` |
-| Viewer Count | Optional display number |
-| Keep Last N Recordings | Archive retention (default 20, max 500) |
+| Status card | Shows what Facebook reports right now + **Refresh Status** |
+| Facebook Page URL | Used for the "Follow on Facebook" button in the offline view |
+| Default Title / Description | Shown around the player |
+| Scheduled Broadcasts | See below |
 
-Click **Save**.
-
-### 4. OBS setup (per platform)
-
-When a platform is selected, the **OBS Studio Setup** panel below shows *only that platform's* settings:
-
-| Platform | OBS Service | Server URL |
-|----------|-------------|------------|
-| Facebook Live | Facebook Live | `rtmps://live-api-s.facebook.com:443/rtmp/` |
-| YouTube Live | YouTube - RTMPS | `rtmps://a.rtmp.youtube.com/live2` |
-| Twitch | Twitch | `rtmps://live.twitch.tv/app` |
-| Owncast | Custom… | your Owncast URL (`OWNCAST_URL`) |
-
-In OBS Studio:
-
-1. **Settings → Stream** → pick the Service / Server above
-2. **Stream Key** = the same key you saved in step 2 (OBS needs it locally; the site never displays it — get it from the platform's dashboard, e.g. Facebook Live Producer)
-3. Recommended output: 1080p @ ~4500–6000 Kbps, keyframe interval **2 s**
-
-Optional — let the admin panel watch OBS itself: in OBS enable **Tools → WebSocket Server Settings** (port 4455). Then in the **OBS Studio Status** section of the admin panel enter `ws://localhost:4455` (+ password) and click **Connect**. This verifies OBS is running, shows the current scene, and confirms the media source for prerecorded broadcasts. The WebSocket password stays in your browser memory only.
-
-### 5. Going live (weekly routine)
-
-1. Get your stream key from the platform (Facebook: **Live Producer → Use stream key** — use the persistent key)
-2. In OBS: confirm Service/Server/Key are set for the platform you chose in the admin panel → **Start Streaming**
-3. Back in the admin panel: click **Check Live Status**
-   - If platform status-check credentials are configured (see [Environment Variables](#environment-variables)), the site asks the platform directly and flips the public state automatically
-   - Otherwise click **Go Live Now** to set Status = Live manually
-4. `media.html` switches to the live embed automatically; riders who signed up for **broadcast alerts** get notified by email
-5. When you stop streaming in OBS, run **Check Live Status** again (or set Status = Offline) — the broadcast is archived automatically
-
-### 6. Ending a stream
-
-When status goes live → offline, the stream is auto-archived (requires a Stream ID/viewer URL to be set). See [Stream Archive](#stream-archive).
+Click **Save** after editing.
 
 ---
 
 ## Scheduled Broadcasts
 
-The **Scheduled Streams** list (inside the Live Stream tab) drives the "upcoming" display on `media.html`, the newsletter, and linked calendar events.
+The **Scheduled Broadcasts** list (inside the Live Stream tab) drives the "upcoming" display on `media.html`, the newsletter, and linked calendar events.
 
-- **+ Add Scheduled Stream** — title, day/time or one-off date, recurring flag, realtime vs prerecorded mode, destination platform (only platforms with keys are offered), description, host/guest, thumbnail
-- Prerecorded mode lets you declare a media file + duration and verify it plays
-- Editing or deleting a scheduled stream keeps its linked calendar event in sync automatically
-
----
-
-## Stream Archive
-
-- Ended streams land in the archive automatically (newest first)
-- Only the most recent **Keep Last N** recordings are publicly visible; older ones are hidden immediately
-- Nothing is deleted silently: hidden recordings are purged permanently only after you click **Approve & Purge**
+- **+ Add Scheduled Broadcast** — title, day/time or one-off date, recurring flag, description, host/guest, thumbnail
+- Editing or deleting a scheduled broadcast keeps its linked calendar event in sync automatically
 
 ---
 
@@ -264,12 +199,8 @@ Server-side persisted in KV (cap 500) — entries survive across browsers and de
 | `subscribers` | GET | Full subscriber profiles |
 | `send-newsletter` | POST | Build preview HTML (no send) |
 | `blast-newsletter` | POST | Send real newsletter (cap 100) |
-| `stream` | GET | Stream config + platform availability (keys never included) |
-| `set-stream-key` | POST | Add/update a platform stream key (`{platform, streamKey}`) |
-| `stream-check` | POST | Query the platform's live status |
-| `archive` | GET | Admin archive view with pending-purge count |
-| `purge-archive` | POST | Permanently delete expired recordings |
-| `update-stream` | POST | Save stream metadata/schedule |
+| `stream` | GET | Stream config + Facebook live-detection state (no secrets) |
+| `update-stream` | POST | Save Facebook page URL / title / description |
 | `resend-welcome` | POST | Re-send welcome email to one subscriber |
 | `audit` | GET | Audit trail (blasts, welcome resends, …) |
 
@@ -277,9 +208,8 @@ Server-side persisted in KV (cap 500) — entries survive across browsers and de
 
 | Action | Method | Auth | Purpose |
 |--------|--------|------|---------|
-| `get` | GET | No | Public stream state (sanitized) |
-| `archive` | GET | No | Public archive (respects Keep N) |
-| `check` | POST | Yes | Same as admin stream-check |
+| `get` | GET | No | Public stream state (Facebook live/replay/offline) |
+| `check` | POST | Yes | Force a fresh Facebook live-status check |
 | `subscribe-alerts` | POST | No | Sign an email up for go-live alerts |
 | `update` | POST | Yes | Update stream fields / status |
 | `add-schedule` / `update-schedule` / `delete-schedule` | POST | Yes | Manage scheduled broadcasts (syncs calendar events) |
@@ -306,8 +236,7 @@ JSON arrays under `llr:*` — access goes through `lib/storage.js` only.
 | `llr:events` | — | Calendar events (auto-seeds) |
 | `llr:media` | — | Episodes: podcast / vlog / coffeetalk (auto-seeds) |
 | `llr:stream` | — | Single stream object + schedule (auto-seeds) |
-| `llr:stream-archive` | 500 | Archived broadcasts |
-| `llr:stream-keys` | 8 | Panel-saved platform stream keys (secrets, write-only from the UI) |
+| `llr:fb-live-cache` | — | Cached Facebook live check (~60s TTL) |
 | `llr:broadcast-alerts` | 5000 | Go-live alert opt-ins |
 | `llr:subscribers` | 5000 | Newsletter profiles |
 | `llr:visitors` | 5000 | Visit log |
@@ -332,12 +261,8 @@ Full checklist with priorities lives in [`VERCEL_ENV_CHECKLIST.md`](VERCEL_ENV_C
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | **Yes** | Auto-created by `vercel link` |
 | `CRON_SECRET` | **Yes** | Bearer auth for `/api/cron-newsletter` |
 | `RESEND_API_KEY` / `RESEND_FROM` | **Yes** | All outgoing email (100/day free tier) |
-| `FB_STREAM_KEY` | Optional | Facebook Live stream key (dropdown availability) |
-| `YOUTUBE_STREAM_KEY` / `TWITCH_STREAM_KEY` / `OWNCAST_STREAM_KEY` | Optional | Same, other platforms |
-| `FACEBOOK_ACCESS_TOKEN` + `FACEBOOK_PAGE_ID` | Optional | Automatic "is the page really live?" checks |
-| `YOUTUBE_API_KEY` + `YOUTUBE_VIDEO_ID` | Optional | Same for YouTube |
-| `TWITCH_CLIENT_ID` / `TWITCH_ACCESS_TOKEN` / `TWITCH_USER_LOGIN` | Optional | Same for Twitch |
-| `OWNCAST_URL` | Optional | Owncast server for status checks |
+| `FACEBOOK_ACCESS_TOKEN` + `FACEBOOK_PAGE_ID` | Optional | Automatic "is the page live?" detection via Graph API |
+| `FACEBOOK_PAGE_URL` | Optional | Fallback "Follow on Facebook" link when page ID isn't set |
 | `NEWSLETTER_MESSAGE` | Optional | Default cron newsletter intro |
 | `EBOOK_SIGNED` + `EBOOK_STORAGE_*` (or `EBOOK_DOWNLOAD_URL`) | Optional | Signed-copy e-book delivery |
 
@@ -365,12 +290,9 @@ No system crontab involved — Vercel runs it.
 | Symptom | Cause / Fix |
 |---------|-------------|
 | "Invalid admin key" / 403 | `ADMIN_KEY` on Vercel is the truth — check for typos/case; header `X-Admin-Key` also works |
-| A platform is greyed out | No stream key yet — select it and use **Save Key** (or set its `*_STREAM_KEY` env var) |
-| "Stream key is too short or contains invalid characters" | Keys: 20+ chars for Facebook/YouTube, 10+ for Twitch/Owncast, no spaces |
-| Saved a key but behavior didn't change | Panel keys override env vars — make sure you saved for the correct platform, then reopen the tab |
-| OBS Status says "Could not connect" | Start OBS, enable Tools → WebSocket Server Settings (port 4455), confirm URL `ws://localhost:4455` |
-| Check Live Status says "manual status" | Optional platform status-check credentials aren't set — use Go Live Now instead |
-| Stream went offline but isn't in the archive | Auto-archive needs a viewer URL in **Stream ID**; set one before going live |
+| Site stays "offline" during a Facebook broadcast | Detection creds missing/wrong — set `FACEBOOK_ACCESS_TOKEN` + `FACEBOOK_PAGE_ID` on Vercel (page access token, numeric page ID) |
+| Live state lags behind Facebook | Results cached ~60s in `llr:fb-live-cache` — admin **Check** forces a fresh check |
+| Replay link missing after a stream | Facebook didn't expose the replay yet, or the previous live URL wasn't recorded — check the page directly |
 | Newsletter blast stopped at 100 | Hard cap per run — run again for the next batch |
 | Cron replies `too_soon` | Working as intended — sends at most every 13 days |
 | Cron replies 401 | `CRON_SECRET` mismatch between Vercel env and what Vercel Cron sends |
@@ -383,15 +305,12 @@ No system crontab involved — Vercel runs it.
 
 | Task | How |
 |------|-----|
-| Add/update a stream key | admin.html → Live Stream → select platform → paste key → **Save Key** |
-| Configure OBS for Facebook | OBS Settings → Stream → Service: Facebook Live → `rtmps://live-api-s.facebook.com:443/rtmp/` → paste FB key |
-| Go live | Start Streaming in OBS → admin panel → **Check Live Status** (or **Go Live Now**) |
-| End a stream | Stop OBS stream → **Check Live Status** → auto-archives |
+| Update page link/title | admin.html → Live Stream → edit → Save |
+| Go live | Start a live broadcast on the Lost Limb Riders Facebook page (phone or Creator Studio) — site auto-detects within ~60s |
+| End a stream | End the broadcast on Facebook — site returns to offline state with replay link |
+| Force a live check | admin.html → Live Stream → **Check** |
 | Schedule a broadcast | Live Stream → + Add Scheduled Stream (auto-creates calendar event) |
 | Add an event | admin.html → Events tab → create |
 | Send a newsletter now | Send Newsletter → Preview → Send to All Subscribers → confirm |
 | Approve community photos/testimonials/comments | Gallery/Testimonials/Comments tabs → Approve |
 | Back up guestbook | Guestbook tab → Download |
-| Change archive retention | Live Stream → Keep Last N Recordings → Save |
-| Purge old recordings | Stream Archive → Approve & Purge |
-| Watch OBS from the panel | Enable OBS WebSocket server (4455) → Connect |

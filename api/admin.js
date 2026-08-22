@@ -4,12 +4,8 @@ import { buildNewsletter, getUpcomingEvents, getUpcomingStreams, buildWelcomeEma
 import { sendEmail } from '../lib/email.js';
 import { addAudit } from '../lib/audit.js';
 import { randomBytes } from 'crypto';
-import { seedStream } from '../lib/seed.js';
 import { parseBrowser } from '../lib/ua.js';
-import { autoArchive, normalizeKeep, adminArchive, purgeExpired, checkLiveStatus, hasArchive } from '../lib/stream.js';
-import { sanitizeSchedule } from '../lib/episodes.js';
-import { platformStatuses, validateStreamKey, stripStreamKeyRefs } from '../lib/streamconfig.js';
-import { getStoredStreamKeys, setStoredStreamKey } from '../lib/streamkeys.js';
+import { facebookDetectionConfigured } from '../lib/stream.js';
 
 function getBrowserStats(visitors) {
   const stats = { Chrome: 0, Firefox: 0, Safari: 0, Edge: 0, Other: 0 };
@@ -158,94 +154,34 @@ export default function handler(req, res) {
   }
 
   if (action === 'stream') {
-    Promise.all([getList(KEYS.stream), getStoredStreamKeys()]).then(([arr, storedKeys]) => {
-      const stream = arr.length ? arr[0] : seedStream;
-      sendJson(res, { stream: stripStreamKeyRefs(stream), platforms: platformStatuses(storedKeys) });
-    }).catch(fail);
-    return;
-  }
-
-  if (action === 'set-stream-key' && req.method === 'POST') {
-    readBody(req).then(async (payload) => {
-      const platform = String(payload.platform ?? '').toLowerCase();
-      const key = String(payload.streamKey ?? '').trim();
-      if (!['youtube', 'facebook', 'twitch', 'owncast'].includes(platform)) {
-        return sendJson(res, { error: 'Unknown platform.' }, 422);
-      }
-      const validation = validateStreamKey(platform, key);
-      if (!validation.available) {
-        const reasons = {
-          empty: 'Stream key is empty.',
-          malformed: 'Stream key is too short or contains invalid characters.',
-          missing: 'Stream key is required.',
-          unsupported: 'Unsupported platform.',
-        };
-        return sendJson(res, { error: reasons[validation.status] || 'Invalid stream key.' }, 422);
-      }
-      const result = await setStoredStreamKey(platform, key);
-      if (!result.ok) return sendJson(res, { error: 'Could not save stream key.' }, 500);
-      const storedKeys = await getStoredStreamKeys();
-      sendJson(res, { ok: true, platforms: platformStatuses(storedKeys) });
-    }).catch(fail);
-    return;
-  }
-
-  if (action === 'stream-check' && req.method === 'POST') {
-    readBody(req).then(async () => {
-      const arr = await getList(KEYS.stream);
-      const stream = arr.length ? { ...arr[0] } : { ...seedStream };
-      const archive = await hasArchive();
-      const result = await checkLiveStatus(stream, { hasArchive: archive });
-      result.stream.updatedAt = new Date().toISOString();
-      await setList(KEYS.stream, [result.stream]);
+    getList(KEYS.stream).then((arr) => {
+      const raw = arr.length ? arr[0] : {};
       sendJson(res, {
-        ok: true,
-        platform: result.platformResult,
-        liveState: result.state.liveState,
-        status: result.stream.status,
+        stream: {
+          pageUrl: raw.pageUrl || '',
+          title: raw.title || 'Lost Limb Riders Live',
+          description: raw.description || '',
+          schedule: Array.isArray(raw.schedule) ? raw.schedule : [],
+        },
+        detection: facebookDetectionConfigured() ? 'ok' : 'unconfigured',
       });
     }).catch(fail);
-    return;
-  }
-
-  if (action === 'archive') {
-    adminArchive().then((data) => sendJson(res, data)).catch(fail);
-    return;
-  }
-
-  if (action === 'purge-archive' && req.method === 'POST') {
-    purgeExpired().then((data) => sendJson(res, data)).catch(fail);
     return;
   }
 
   if (action === 'update-stream' && req.method === 'POST') {
     readBody(req).then(async (payload) => {
       const arr = await getList(KEYS.stream);
-      const oldStream = arr.length ? { ...arr[0] } : { ...seedStream };
-      const stream = { ...oldStream };
-      const FIELDS = [['platform', 20], ['streamId', 200], ['title', 200], ['description', 2000], ['status', 20]];
+      const stream = arr.length ? arr[0] : {};
+      const FIELDS = [['pageUrl', 300], ['title', 200], ['description', 2000]];
       for (const [field, limit] of FIELDS) {
         if (payload[field] !== undefined) {
           stream[field] = clean(String(payload[field] ?? ''), limit);
         }
       }
-      if (payload.viewerCount !== undefined) stream.viewerCount = parseInt(payload.viewerCount, 10) || 0;
-      if (payload.archiveKeep !== undefined) stream.archiveKeep = normalizeKeep(payload.archiveKeep);
-      if (stream.platform && !['youtube', 'facebook', 'twitch', 'owncast'].includes(stream.platform)) {
-        return sendJson(res, { error: 'Platform must be youtube, facebook, twitch, or owncast.' }, 422);
-      }
-      if (stream.status === 'live' && oldStream.status !== 'live') {
-        stream.liveStartedAt = new Date().toISOString();
-      }
-      if (stream.status !== 'live') delete stream.liveStartedAt;
-      if (payload.schedule !== undefined) {
-        const cleaned = sanitizeSchedule(payload.schedule);
-        if (cleaned) stream.schedule = cleaned;
-      }
       stream.updatedAt = new Date().toISOString();
-      await autoArchive(oldStream, stream);
       await setList(KEYS.stream, [stream]);
-      sendJson(res, { stream: stripStreamKeyRefs(stream) });
+      sendJson(res, { ok: true });
     }).catch(fail);
     return;
   }

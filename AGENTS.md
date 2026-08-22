@@ -33,7 +33,7 @@ Static vanilla HTML/CSS/JS frontend (no build step, no bundler, no framework) wi
 
 ## Verification reality
 
-- Test suite: `node --test tests/streamconfig.test.mjs` (stream-key/platform availability logic; extend it when touching `lib/streamconfig.js`).
+- Test suite: `node --test tests/facebook.test.mjs` (Facebook live-detection logic in `lib/stream.js`; extend it when touching that file).
 - Syntax: `node --check <file>` for every JS file changed; for inline JS in HTML pages, extract `<script>` blocks to temp files and `node --check` them.
 - No lint, no formatter, no CI, no bundler.
 - `npm run dev` = `vercel dev` (serves site + functions at `localhost:3000`; requires linked project / `.env.local`). Note: invoking `vercel dev` from inside this repo can trip the CLI's recursive-invocation guard because the `dev` script itself is `vercel dev`.
@@ -43,7 +43,7 @@ Static vanilla HTML/CSS/JS frontend (no build step, no bundler, no framework) wi
 
 - `index.html` — hero, book offering, newsletter signup (welcome email delivers one-time e-book link), guestbook, contact. Calls `/api/newsletter`, `/api/visit`, `/api/guestbook`, `/api/contact`.
 - `events.html` — **public-only** interactive calendar (month/week views, category filters). Calls `/api/events?action=list`. No admin mode anywhere.
-- `media.html` — podcast player, YouTube vlogs, Coffee Talk, live stream player + schedule/archive display, broadcast-alert signup. Calls `/api/media`, `/api/stream`, `/api/media?action=podcast-rss` (RSS subscribe link), `/api/stream?action=subscribe-alerts`.
+- `media.html` — podcast player, YouTube vlogs, Coffee Talk, Facebook Live embed (auto-detects go-live, shows replay when offline) + schedule display, broadcast-alert signup. Calls `/api/media`, `/api/stream`, `/api/media?action=podcast-rss` (RSS subscribe link), `/api/stream?action=subscribe-alerts`.
 - `mission.html` — mission, board, programs, donate. No API calls.
 - `community.html` — community hub: photo gallery, testimonials, comments. Public submit goes to a pending queue; calls `/api/community`.
 - `sponsors.html` — sponsor wall (Title/Major/Supporting tiers). Static.
@@ -59,11 +59,11 @@ There is **no hidden admin mode** anywhere — all admin UI lives in `admin.html
 - `/api/guestbook` — `list`/`add` (public), `download`/`clear` (admin). Server-side persisted in KV.
 - `/api/contact` — POST (public) contact form via Resend.
 - `/api/media` — `list` (public, auto-seeds `llr:media`) and `podcast-rss` (public RSS 2.0 feed built from podcast episodes — the old `/api/podcast-rss` function was consolidated into here); `add|update|delete` (admin POST).
-- `/api/stream` — `get` (public), `archive` (public), `subscribe-alerts` (public POST — go-live email opt-ins); `update`, `add-schedule`, `update-schedule`, `delete-schedule`, `check` (admin). Scheduled streams stay in sync with linked calendar events.
+- `/api/stream` — `get` (public), `subscribe-alerts` (public POST — go-live email opt-ins); `update`, `add-schedule`, `update-schedule`, `delete-schedule`, `check` (admin). Live state comes from the Facebook Graph API (`/{page}/live_videos`, 60s KV cache); scheduled streams stay in sync with linked calendar events.
 - `/api/community` — gallery/testimonials/comments: `list|submit` (public), `pending|approve|unapprove|delete` (admin). Photos persist to Vercel Blob.
 - `/api/ebook` — one-time tokenized e-book download links.
 - `/api/unsubscribe` — tokenized newsletter unsubscribe.
-- `/api/admin` — admin-only. Actions: `stats`, `visitors`, `subscribers`, `send-newsletter` (preview HTML only), `blast-newsletter` (real send, cap 100), `stream` (config + sanitized platform availability), `set-stream-key` (add/update platform stream key → `llr:stream-keys`), `stream-check`, `archive`, `purge-archive`, `update-stream`, `resend-welcome`, `audit`.
+- `/api/admin` — admin-only. Actions: `stats`, `visitors`, `subscribers`, `send-newsletter` (preview HTML only), `blast-newsletter` (real send, cap 100), `stream` (config + Facebook live-detection state), `update-stream` (Facebook page URL/title/description), `resend-welcome`, `audit`.
 - `/api/cron-newsletter` — Vercel Cron sender (see Deployment). Refuses requests without `Authorization: Bearer $CRON_SECRET`.
 
 Response conventions: JSON, errors as `{ "error": "..." }` with proper status (403 admin, 422 validation, 404 not found/unsupported, 500 storage). 201 on create, 204 on delete/OPTIONS.
@@ -75,10 +75,7 @@ Response conventions: JSON, errors as `{ "error": "..." }` with proper status (4
 - `lib/geo.js` — ip-api.com lookup (~45 req/min free tier). Returns `{ status:'unavailable' }` on failure; localhost returns empty.
 - `lib/newsletter.js` — `buildNewsletter(userMessage, events, streams, name, unsubscribeUrl)`, `getUpcomingEvents`, `getUpcomingStreams`, `buildWelcomeEmail`, unsubscribe URL builder. Template placeholders: `{{DATE_RANGE}}`, `{{EVENTS_LIST}}`, `{{MESSAGE}}`, `{{NAME}}`.
 - `lib/seed.js` — source of truth for `seedEvents`, `seedMedia`, `seedStream`, `podcastLinks`, and the embedded `newsletterTemplate`. Edit here to change them; do not read `data/`.
-- `lib/stream.js` — auto-archiving (live→offline), `publicArchive`, `adminArchive`, `purgeExpired`, keep-amount normalization, live-state derivation.
-- `lib/platform.js` — optional per-platform "is it really live?" checks (YouTube Data API, Facebook Graph, Twitch Helix, Owncast status) driven by status-check credentials; separate concern from stream keys.
-- `lib/streamconfig.js` — pure/sync platform registry. Stream keys are secrets read only from env (`FB_STREAM_KEY`, `YOUTUBE_STREAM_KEY`, `TWITCH_STREAM_KEY`, `OWNCAST_STREAM_KEY`) or an injected stored-keys map; `platformStatuses(storedKeys)` emits sanitized availability `{platform,label,available,source}` (stored key overrides env). Never return keys or env names of secrets to the browser beyond these fields.
-- `lib/streamkeys.js` — KV-backed store (`llr:stream-keys`) for keys saved from the admin panel; write-only from the UI's perspective, never echoed back.
+- `lib/stream.js` — Facebook-only live detection: Graph API `/{page}/live_videos` (60s KV cache in `llr:fb-live-cache`), live/replay/offline state derivation, broadcast-alert dedupe (`lastAlertedLiveUrl`). Requires optional `FACEBOOK_ACCESS_TOKEN` + `FACEBOOK_PAGE_ID`; page URL falls back to `FACEBOOK_PAGE_URL`.
 - `lib/episodes.js` — scheduled-broadcast validation/normalization + calendar event syncing + live-state computation.
 - `lib/email.js` — Resend sender wrapper (`RESEND_API_KEY`, `RESEND_FROM`).
 - `lib/download.js` — e-book delivery: presigned S3/R2 URLs (`EBOOK_STORAGE_*`) or static fallback (`EBOOK_DOWNLOAD_URL`).
@@ -92,8 +89,7 @@ Response conventions: JSON, errors as `{ "error": "..." }` with proper status (4
 | `llr:events` | — | auto-seeds |
 | `llr:media` | — | auto-seeds |
 | `llr:stream` | — | single object in array, auto-seeds |
-| `llr:stream-archive` | 500 | archived broadcasts |
-| `llr:stream-keys` | 8 | panel-saved platform stream keys (secrets; override env vars) |
+| `llr:fb-live-cache` | — | cached Facebook live check (~60s TTL) |
 | `llr:broadcast-alerts` | 5000 | go-live alert opt-ins |
 | `llr:subscribers` | 5000 | includes e-book/unsubscribe tokens |
 | `llr:visitors` | 5000 | visit log |
@@ -111,13 +107,13 @@ Re-seeding tip: deleting `llr:events`/`llr:media`/`llr:stream` in the Vercel KV 
 - CSS is **inline in each HTML file** (no shared stylesheet). All pages share the same `:root` custom properties (`--orange`, `--black`, `--charcoal`, `--card`, `--white`, `--muted`, `--line`, `--shadow`) — keep them consistent across all pages.
 - Admin auth: `ADMIN_KEY` env var on Vercel is the source of truth. Frontend stores it in `sessionStorage` under `llr-admin-key` and sends it as `?key=` (API also accepts `X-Admin-Key` header). Timing-safe compare only.
 - Every visitor page load hits `/api/visit` → one ip-api.com lookup; newsletter signup does another. Keep this in mind re: geo rate limits.
-- Stream keys are secrets: validated server-side (min length, charset), never displayed, never returned by any endpoint, never logged. Panel-saved keys override their env var until removed from KV.
+- Streaming is **Facebook-only**: go live on the Facebook page, the site auto-detects and embeds it. No OBS/RTMP/stream keys anywhere. Detection creds are secrets (`FACEBOOK_ACCESS_TOKEN`, `FACEBOOK_PAGE_ID`) — server-side only, never returned to browsers.
 - The site was a PHP→Node migration; do not add `.php` files. Hobby plan limits Vercel functions — endpoints were deliberately consolidated to ~12; don't split them back out casually.
 
 ## Environment variables (Vercel dashboard — `.env.local` only affects local dev)
 
 - Required: `ADMIN_KEY`, `CRON_SECRET`, `RESEND_API_KEY`, `RESEND_FROM`, `KV_*` (auto-created by `vercel link`), `BLOB_READ_WRITE_TOKEN` (gallery uploads).
-- Optional streaming: `FB_STREAM_KEY`, `YOUTUBE_STREAM_KEY`, `TWITCH_STREAM_KEY`, `OWNCAST_STREAM_KEY` (dropdown availability); status-check creds `FACEBOOK_ACCESS_TOKEN`+`FACEBOOK_PAGE_ID`, `YOUTUBE_API_KEY`+`YOUTUBE_VIDEO_ID` (alias `STREAM_VIDEO_ID`), `TWITCH_CLIENT_ID`+`TWITCH_ACCESS_TOKEN`(+`TWITCH_USER_LOGIN`), `OWNCAST_URL`, default platform `STREAM_PLATFORM`.
+- Optional streaming: `FACEBOOK_ACCESS_TOKEN` + `FACEBOOK_PAGE_ID` (auto live detection), `FACEBOOK_PAGE_URL` (fallback "Follow on Facebook" link).
 - Optional other: `NEWSLETTER_MESSAGE` (cron intro), `EBOOK_SIGNED`, `EBOOK_LINK_TTL_DAYS`, `EBOOK_DOWNLOAD_URL`, `EBOOK_STORAGE_*`.
 
 Full details: [`VERCEL_ENV_CHECKLIST.md`](VERCEL_ENV_CHECKLIST.md). User-facing operations guide: [`ADMIN_MANUAL.md`](ADMIN_MANUAL.md) (tracked in git).

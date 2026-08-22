@@ -444,10 +444,6 @@
     .form-field select option { background: #111; }
     .form-actions { display: flex; gap: 10px; margin-top: 22px; }
     .form-actions .btn { justify-content: center; }
-    #smPlatform option:disabled { color: #6b7280; font-style: italic; background: #111; }
-    #smPlatform option { background: #111; }
-    .stream-locked { opacity: .45; pointer-events: none; }
-    .platform-panel { margin-top: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.03); }
 
     @media (max-width: 768px) {
       section { padding: 24px 5vw; }
@@ -634,107 +630,46 @@
        <!-- Live Stream panel -->
        <div id="panel-stream" class="tab-panel">
          <div class="panel">
-            <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px;">Stream Configuration</h3>
-            <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">OBS Studio is the broadcast producer; this panel manages the public-facing stream metadata. When a platform check confirms the broadcast is live, the media page shows the embedded player with the correct status label.</p>
+            <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px;">Facebook Live</h3>
+            <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">Streaming is simple now: go live from the Facebook app on your phone, and this site automatically shows the broadcast. There are no stream keys, no OBS, and nothing to configure to go live.</p>
 
-           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-              <div>
-                <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Platform</label>
-                <select id="smPlatform" onchange="onPlatformChange()" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px; font-family:inherit;">
-                  <option value="">Loading platforms&hellip;</option>
-                </select>
-                <div id="streamPlatformsEmpty" style="display:none; margin-top:10px; padding:12px 14px; border:1px solid rgba(252,211,77,.35); border-radius:10px; background:rgba(252,211,77,.08); font-size:13px; color:#fcd34d;">
-                  No platform has a stream key yet. Select a platform above to add its key here, or set it as an environment variable on the server (e.g. <code style="color:var(--white);">FB_STREAM_KEY</code>, <code style="color:var(--white);">YOUTUBE_STREAM_KEY</code>, <code style="color:var(--white);">TWITCH_STREAM_KEY</code>, <code style="color:var(--white);">OWNCAST_STREAM_KEY</code>).
-                </div>
-              </div>
-              <div>
-                <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Status</label>
-                <select id="smStatus" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px; font-family:inherit;">
-                  <option value="offline">Offline</option>
-                  <option value="live">Live</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Per-platform settings popup (key management + OBS setup) -->
-            <div id="smPlatformPanel" class="platform-panel" style="display:none;"></div>
-
-            <div id="smMetaFields">
-            <div style="margin-bottom:14px;">
-              <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Stream ID (YouTube video ID or Facebook video URL)</label>
-              <input id="smStreamId" maxlength="200" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px;" placeholder="YouTube video ID or Facebook video URL">
-            </div>
-
-           <div style="margin-bottom:14px;">
-             <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Title</label>
-             <input id="smTitle" maxlength="200" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px;" placeholder="e.g. Live from the Fall Rally">
-           </div>
-
-           <div style="margin-bottom:14px;">
-             <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Description</label>
-             <textarea id="smDesc" maxlength="2000" style="width:100%; min-height:80px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px; font-family:inherit; resize:vertical;" placeholder="What are you streaming?"></textarea>
-           </div>
-
-           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-             <div>
-               <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Viewer Count</label>
-               <input id="smViewers" type="number" min="0" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px;" placeholder="0">
-             </div>
-             <div>
-               <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Keep Last N Recordings</label>
-               <input id="smArchiveKeep" type="number" min="1" max="500" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px;" placeholder="20">
+           <div id="fbStatusCard" style="padding:14px 16px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.03); margin-bottom:16px;">
+             <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+               <div id="fbStatusLine" style="font-size:13px;">Checking Facebook&hellip;</div>
+               <button class="btn btn-sm" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.2);" onclick="refreshStreamStatus()">Refresh Status</button>
              </div>
            </div>
 
-           <div style="margin-bottom:20px;">
-             <h4 style="color:var(--white); font-size:14px; font-weight:800; margin:0 0 12px;">Scheduled Streams</h4>
-             <div id="scheduleListAdmin" style="display:flex; flex-direction:column; gap:10px; margin-bottom:12px;"></div>
-             <button class="btn btn-sm" style="width:100%; justify-content:center;" onclick="openScheduleModal()">+ Add Scheduled Stream</button>
+           <div id="smMetaFields">
+           <div style="margin-bottom:14px;">
+             <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Facebook Page URL</label>
+             <input id="smPageUrl" maxlength="300" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px;" placeholder="https://www.facebook.com/YourPage">
            </div>
+
+          <div style="margin-bottom:14px;">
+            <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Default Title</label>
+            <input id="smTitle" maxlength="200" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px;" placeholder="Lost Limb Riders Live">
+          </div>
+
+          <div style="margin-bottom:14px;">
+            <label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">Description</label>
+            <textarea id="smDesc" maxlength="2000" style="width:100%; min-height:80px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px; font-family:inherit; resize:vertical;" placeholder="What do you usually stream?"></textarea>
+          </div>
+
+          <div style="margin-bottom:20px;">
+            <h4 style="color:var(--white); font-size:14px; font-weight:800; margin:0 0 12px;">Scheduled Broadcasts</h4>
+            <p style="color:var(--muted); font-size:12px; margin:0 0 12px;">Shown on the media page and included in the newsletter. One-time broadcasts also appear on the events calendar.</p>
+            <div id="scheduleListAdmin" style="display:flex; flex-direction:column; gap:10px; margin-bottom:12px;"></div>
+            <button class="btn btn-sm" style="width:100%; justify-content:center;" onclick="openScheduleModal()">+ Add Scheduled Broadcast</button>
+          </div>
 
             <div style="display:flex; gap:12px;">
                <button class="btn btn-primary" id="smSaveBtn" onclick="saveStreamConfig()" style="flex:1; justify-content:center;">Save</button>
-               <button class="btn" id="smGoLiveBtn" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.2);flex:1; justify-content:center;" onclick="goLive()">Go Live Now</button>
-               <button class="btn" id="smCheckBtn" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.2);flex:1; justify-content:center;" onclick="checkStreamLive()">Check Live Status</button>
              </div>
-             <div id="streamLiveStatus" style="margin-top:12px; font-size:13px; min-height:18px;"></div>
              <div id="streamSaveStatus" style="margin-top:12px; font-size:13px; min-height:18px;"></div>
-            </div><!-- /smMetaFields -->
-           </div>
-
-          <div class="panel" style="margin-top:20px;">
-            <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">OBS Studio Setup</h3>
-            <div id="obsPlatformSetup" style="margin-bottom:8px;"></div>
-            <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">OBS Studio Status</h3>
-            <p style="color:var(--muted); font-size:13px; margin-bottom:14px;">
-              Connect to OBS Studio on this machine (Tools &rarr; WebSocket Server Settings &rarr; enable, port 4455) to verify it is running, see the current scene, and confirm the media source for a prerecorded broadcast. The password stays in memory for this session only — it is never sent to or stored by the website.
-            </p>
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:14px;">
-              <input id="obsUrl" value="ws://localhost:4455" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:13px;">
-              <input id="obsPassword" type="password" autocomplete="off" placeholder="OBS WebSocket password (in-memory)" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:13px;">
-              <input id="obsMediaSource" placeholder="Media source name (prerecorded)" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:13px;">
-            </div>
-            <div style="display:flex; gap:12px; margin-bottom:14px;">
-              <button class="btn btn-sm btn-primary" onclick="connectOBS()">Connect</button>
-              <button class="btn btn-sm" onclick="disconnectOBS()" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.2);">Disconnect</button>
-            </div>
-            <div id="obsStatus" style="font-size:13px; line-height:1.7;"></div>
+           </div><!-- /smMetaFields -->
           </div>
-
-         <div class="panel" style="margin-top:20px;">
-           <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">Stream Archive</h3>
-           <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">
-             Ended live streams are archived automatically. You keep the most recent <span id="arcKeepLabel">20</span> recordings;
-             older ones are hidden from the public immediately and are removed permanently only after you approve the purge below.
-           </p>
-           <div id="archiveListAdmin" style="display:flex; flex-direction:column; gap:10px;"></div>
-           <div id="archiveEmpty" class="empty-state" style="display:none;">No archived streams yet.</div>
-           <div id="archivePurgeWrap" style="display:none; margin-top:16px;">
-             <button class="btn btn-danger" id="archivePurgeBtn" onclick="confirmPurgeArchive()">Approve &amp; Purge</button>
-           </div>
-           <div id="archiveStatus" style="margin-top:12px; font-size:13px; min-height:18px;"></div>
-         </div>
-       </div>
+        </div>
 
        <!-- Schedule item modal -->
        <div id="scheduleModal" style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.75); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:20px;">
@@ -744,40 +679,16 @@
              <label>Title</label>
              <input id="schTitle" maxlength="200" placeholder="e.g. Weekly Wednesday Ride">
            </div>
-           <div class="form-row">
-             <div class="form-field">
-               <label>Broadcast Mode</label>
-               <select id="schMode" onchange="toggleSchMedia()">
-                 <option value="realtime">Real-Time Live</option>
-                 <option value="prerecorded">Prerecorded File Broadcast</option>
-               </select>
-             </div>
-             <div class="form-field">
-               <label>Destination</label>
-               <select id="schDestination">
-                 <option value="youtube">YouTube Live</option>
-                 <option value="facebook">Facebook Live</option>
-                 <option value="twitch">Twitch</option>
-                 <option value="owncast">Owncast</option>
-               </select>
-             </div>
-           </div>
-           <div id="schMediaWrap" style="display:none;">
-             <div class="form-row">
-               <div class="form-field">
-                 <label>Media File (on the OBS machine)</label>
-                 <input id="schMediaFile" maxlength="200" placeholder="e.g. LLR-CoffeeTalk-Encore.mp4">
-               </div>
-               <div class="form-field">
-                 <label>Expected Duration (min)</label>
-                 <input id="schDurationMin" type="number" min="0" max="600" placeholder="e.g. 45">
-               </div>
-             </div>
-             <label style="display:flex; align-items:flex-start; gap:8px; font-size:12px; color:var(--muted); margin-bottom:14px; cursor:pointer;">
-               <input id="schMediaVerified" type="checkbox" style="margin-top:2px;">
-               <span>Confirmed: the media file exists and plays in OBS (verify with the OBS Studio Status panel above).</span>
-             </label>
-           </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label>Time</label>
+                <input id="schTime" maxlength="10" placeholder="e.g. 09:00">
+              </div>
+              <div class="form-field">
+                <label>Duration Window (min, optional)</label>
+                <input id="schDurationMin" type="number" min="0" max="600" placeholder="e.g. 60">
+              </div>
+            </div>
            <div class="form-row">
              <div class="form-field">
                <label>Day</label>
@@ -809,19 +720,16 @@
                </select>
              </div>
            </div>
-           <div class="form-row">
-             <div class="form-field">
-               <label>Visibility</label>
-               <select id="schVisibility">
-                 <option value="public">Public</option>
-                 <option value="private">Private</option>
-               </select>
-             </div>
-             <div class="form-field">
-               <label>OBS Scene</label>
-               <input id="schScene" maxlength="60" placeholder="e.g. LLR — Live Show">
-             </div>
-           </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label>Visibility</label>
+                <select id="schVisibility">
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+              <div class="form-field"></div>
+            </div>
             <div class="form-row">
               <div class="form-field">
                 <label>Featured Topic</label>
@@ -1053,7 +961,6 @@
         if (name === 'visitors') loadVisitors(1);
         if (name === 'stream') {
           loadStreamConfig();
-          loadArchive();
           checkStreamLive();
           streamCheckTimer = setInterval(checkStreamLive, 60000);
         }
@@ -1348,176 +1255,7 @@
       }
      }
 
-     // --- Live Stream ---
-      const OBS_SETUP = {
-        facebook: {
-          service: 'Facebook Live',
-          server: 'rtmps://live-api-s.facebook.com:443/rtmp/',
-          keyNote: 'Your Facebook stream key (starts with FB-). Use the persistent key from Facebook Live Producer \u2192 Go live \u2192 Use stream key \u2192 Settings.',
-          steps: ['In OBS: Settings \u2192 Stream \u2192 Service: Facebook Live.', 'Paste the stream key (same one saved above or in FB_STREAM_KEY).', 'Start Streaming in OBS, then set Status to Live here (or let the platform check flip it).'],
-        },
-        youtube: {
-          service: 'YouTube - RTMPS',
-          server: 'rtmps://a.rtmp.youtube.com/live2',
-          keyNote: 'Your YouTube stream key from YouTube Studio \u2192 Go Live \u2192 Stream settings \u2192 Stream key.',
-          steps: ['In OBS: Settings \u2192 Stream \u2192 Service: YouTube - RTMPS.', 'Paste the stream key (same one saved above or in YOUTUBE_STREAM_KEY).', 'Start Streaming in OBS, then set Status to Live here (or let the platform check flip it).'],
-        },
-        twitch: {
-          service: 'Twitch',
-          server: 'rtmps://live.twitch.tv/app',
-          keyNote: 'Your Twitch stream key from Twitch Creator Dashboard \u2192 Settings \u2192 Stream \u2192 Primary stream key.',
-          steps: ['In OBS: Settings \u2192 Stream \u2192 Service: Twitch.', 'Paste the stream key (same one saved above or in TWITCH_STREAM_KEY).', 'Start Streaming in OBS, then set Status to Live here (or let the platform check flip it).'],
-        },
-        owncast: {
-          service: 'Custom...',
-          server: '',
-          keyNote: 'The stream key configured on your Owncast server (OWNCAST_STREAM_KEY here).',
-          steps: ['In OBS: Settings \u2192 Stream \u2192 Service: Custom...', 'Server: your Owncast URL (OWNCAST_URL), path /stream.', 'Paste the stream key, Start Streaming in OBS, then set Status to Live here.'],
-        },
-      };
-
-      function getSelectedPlatformStatus() {
-        const platforms = window.__platformStatuses || [];
-        const value = document.getElementById('smPlatform').value;
-        return platforms.find(p => p.platform === value) || null;
-      }
-
-      function anyAvailablePlatform() {
-        return (window.__platformStatuses || []).some(p => p.available);
-      }
-
-      function populatePlatformSelect(platforms, current) {
-        const select = document.getElementById('smPlatform');
-        const empty = document.getElementById('streamPlatformsEmpty');
-        window.__platformStatuses = Array.isArray(platforms) ? platforms : [];
-        if (!Array.isArray(platforms) || !platforms.length) {
-          empty.style.display = 'block';
-          select.innerHTML = '<option value="">No platforms available</option>';
-          renderPlatformPanel();
-          refreshStreamFormLock();
-          renderObsSetup();
-          return;
-        }
-        empty.style.display = !anyAvailablePlatform() ? 'block' : 'none';
-        select.innerHTML = platforms.map(p =>
-          '<option value="' + escapeHtml(p.platform) + '"' + (p.available ? '' : ' style="color:#6b7280; font-style:italic;"') + '>' +
-          escapeHtml(p.label) + (p.available ? '' : ' \u2014 no stream key') + '</option>'
-        ).join('');
-        let chosen = '';
-        if (current && platforms.some(p => p.platform === current && p.available)) chosen = current;
-        else if (current && platforms.some(p => p.platform === current)) chosen = current;
-        else {
-          const firstAvail = platforms.find(p => p.available);
-          chosen = firstAvail ? firstAvail.platform : '';
-        }
-        if (chosen) select.value = chosen;
-        renderPlatformPanel();
-        refreshStreamFormLock();
-        renderObsSetup();
-      }
-
-      function onPlatformChange() {
-        renderPlatformPanel();
-        refreshStreamFormLock();
-        renderObsSetup();
-      }
-
-      function renderPlatformPanel() {
-        const wrap = document.getElementById('smPlatformPanel');
-        const status = getSelectedPlatformStatus();
-        if (!status) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
-        wrap.style.display = 'block';
-        const spec = OBS_SETUP[status.platform] || {};
-        const envVar = { youtube: 'YOUTUBE_STREAM_KEY', facebook: 'FB_STREAM_KEY', twitch: 'TWITCH_STREAM_KEY', owncast: 'OWNCAST_STREAM_KEY' }[status.platform] || '';
-        let stateLine;
-        if (status.available && status.source === 'env') {
-          stateLine = '<span style="color:#22c55e;">&#10003; Ready \u2014 stream key loaded from environment (' + escapeHtml(envVar) + ').</span>';
-        } else if (status.available && status.source === 'stored') {
-          stateLine = '<span style="color:#22c55e;">&#10003; Ready \u2014 stream key saved from this panel.</span>';
-        } else {
-          stateLine = '<span style="color:#fcd34d;">&#10007; Not configured \u2014 add the stream key below or set <code style="color:var(--white);">' + escapeHtml(envVar) + '</code> in .env.local / Vercel environment variables.</span>';
-        }
-        wrap.innerHTML =
-          '<div style="font-size:13px; margin-bottom:10px;">' + stateLine + '</div>' +
-          '<label style="display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px;">' + escapeHtml(status.label) + ' Stream Key (add or update)</label>' +
-          '<div style="display:flex; gap:10px; flex-wrap:wrap;">' +
-            '<input id="smKeyInput" type="password" autocomplete="off" placeholder="Paste ' + escapeHtml(status.label) + ' stream key" style="flex:1; min-width:220px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px;">' +
-            '<button class="btn btn-sm btn-primary" onclick="saveStreamKey()">Save Key</button>' +
-          '</div>' +
-          '<div style="font-size:12px; color:var(--muted); margin-top:8px;">Saved keys are stored server-side and are never displayed or returned by the API. A key saved here overrides the environment variable. You can also set <code style="color:var(--white);">' + escapeHtml(envVar) + '</code> directly in the environment.</div>';
-      }
-
-      function refreshStreamFormLock() {
-        const status = getSelectedPlatformStatus();
-        const locked = !(status && status.available);
-        const meta = document.getElementById('smMetaFields');
-        if (meta) meta.classList.toggle('stream-locked', locked);
-        ['smSaveBtn', 'smGoLiveBtn', 'smCheckBtn'].forEach(function (id) {
-          const btn = document.getElementById(id);
-          if (btn) btn.disabled = locked;
-        });
-      }
-
-      async function saveStreamKey() {
-        const statusEl = document.getElementById('streamSaveStatus');
-        const platform = document.getElementById('smPlatform').value;
-        const input = document.getElementById('smKeyInput');
-        if (!platform || !input || !input.value.trim()) {
-          statusEl.textContent = 'Paste a stream key first.';
-          return;
-        }
-        statusEl.textContent = 'Saving key...';
-        try {
-          const res = await fetch(apiUrl('set-stream-key'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ platform: platform, streamKey: input.value.trim() })
-          });
-          const data = await res.json();
-          if (!res.ok) { statusEl.textContent = data.error || 'Could not save stream key.'; return; }
-          input.value = '';
-          statusEl.textContent = 'Stream key saved.';
-          setTimeout(() => { statusEl.textContent = ''; }, 2500);
-          loadStreamConfig();
-        } catch {
-          statusEl.textContent = 'Connection error.';
-        }
-      }
-
-      function renderObsSetup() {
-        const wrap = document.getElementById('obsPlatformSetup');
-        const status = getSelectedPlatformStatus();
-        if (!status) { wrap.innerHTML = ''; return; }
-        const setup = OBS_SETUP[status.platform];
-        if (!setup) { wrap.innerHTML = ''; return; }
-        const server = setup.server
-          ? escapeHtml(setup.server)
-          : 'your Owncast URL (<code>OWNCAST_URL</code>)';
-        const keyState = status.available
-          ? 'Use the ' + escapeHtml(status.label) + ' stream key already saved for this site.'
-          : 'Add the ' + escapeHtml(status.label) + ' stream key first (panel above or environment variable).';
-        wrap.innerHTML =
-          '<div style="padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.03); font-size:13px; color:var(--muted); line-height:1.7;">' +
-            '<div style="color:var(--white); font-weight:800; margin-bottom:6px;">' + escapeHtml(status.label) + ' \u2014 OBS Settings \u2192 Stream</div>' +
-            '<div>Service: <span style="color:var(--white);">' + escapeHtml(setup.service) + '</span></div>' +
-            '<div>Server: <span style="color:var(--white);">' + server + '</span></div>' +
-            '<div>Stream Key: <span style="color:var(--white);">' + keyState + '</span></div>' +
-            '<div style="margin-top:6px;">' + setup.steps.map(s => '\u2022 ' + escapeHtml(s)).join('<br>') + '</div>' +
-          '</div>';
-      }
-
-      function populateDestinationSelect(current) {
-        const platforms = (window.__platformStatuses || []).filter(p => p.available);
-        const select = document.getElementById('schDestination');
-        select.innerHTML = '';
-        if (!platforms.length) {
-          select.innerHTML = '<option value="">No platforms configured</option>';
-          return;
-        }
-        select.innerHTML = platforms.map(p => '<option value="' + escapeHtml(p.platform) + '">' + escapeHtml(p.label) + '</option>').join('');
-        if (current && platforms.some(p => p.platform === current)) select.value = current;
-      }
-
+     // --- Live Stream (Facebook Live) ---
      async function loadStreamConfig() {
        const status = document.getElementById('streamSaveStatus');
        status.textContent = 'Loading...';
@@ -1525,22 +1263,74 @@
          const res = await fetch(apiUrl('stream'));
          if (!res.ok) return;
          const data = await res.json();
-          const stream = data.stream || {};
-          const platforms = Array.isArray(data.platforms) ? data.platforms : [];
-          populatePlatformSelect(platforms, stream.platform);
-         document.getElementById('smStreamId').value = stream.streamId || '';
+         const stream = data.stream || {};
+         document.getElementById('smPageUrl').value = stream.pageUrl || '';
          document.getElementById('smTitle').value = stream.title || '';
          document.getElementById('smDesc').value = stream.description || '';
-         document.getElementById('smStatus').value = stream.status || 'offline';
-         document.getElementById('smViewers').value = stream.viewerCount || 0;
-          document.getElementById('smArchiveKeep').value = stream.archiveKeep || 20;
-          window.__streamSchedule = stream.schedule || [];
-          renderScheduleAdmin(stream.schedule || []);
-          status.textContent = '';
-        } catch {
-          status.textContent = 'Connection error.';
-        }
-      }
+         window.__streamSchedule = Array.isArray(stream.schedule) ? stream.schedule : [];
+         renderScheduleAdmin(window.__streamSchedule);
+         status.textContent = '';
+       } catch {
+         status.textContent = 'Connection error.';
+       }
+     }
+
+     function renderFbStatus(data) {
+       const line = document.getElementById('fbStatusLine');
+       if (!line) return;
+       if (data.detection === 'unconfigured') {
+         line.innerHTML = '<span style="color:#fcd34d;">&#10007; Automatic live detection is not set up on the server yet.</span><br>' +
+           '<span style="color:var(--muted);">Add <code style="color:var(--white);">FACEBOOK_PAGE_ID</code> and <code style="color:var(--white);">FACEBOOK_ACCESS_TOKEN</code> environment variables on Vercel. Until then the site shows its offline view with a link to your Facebook page \u2014 going live itself needs zero setup.</span>';
+         return;
+       }
+       if (data.stream && data.stream.live) {
+         const viewers = parseInt(data.stream.viewers, 10) || 0;
+         let html = '<span style="color:#22c55e;">&#9679; LIVE NOW on Facebook</span>';
+         if (viewers > 0) html += ' <span style="color:var(--muted);">\u2022 ' + viewers + ' watching</span>';
+         if (data.stream.liveUrl) html += ' \u2022 <a href="' + escapeHtml(data.stream.liveUrl) + '" target="_blank" rel="noopener" style="color:#fca5a5;">open broadcast</a>';
+         line.innerHTML = html;
+         return;
+       }
+       const checked = data.stream && data.stream.lastCheckedAt ? new Date(data.stream.lastCheckedAt).toLocaleTimeString() : null;
+       line.innerHTML = '<span style="color:var(--muted);">Not live right now.' + (checked ? ' Last checked ' + escapeHtml(checked) + '.' : '') + '</span>';
+     }
+
+     async function checkStreamLive() {
+       try {
+         const res = await fetch('/api/stream?action=check&key=' + encodeURIComponent(adminKey), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+         if (!res.ok) { return; }
+         const data = await res.json();
+         renderFbStatus(data);
+       } catch {}
+     }
+
+     async function refreshStreamStatus() {
+       const line = document.getElementById('fbStatusLine');
+       if (line) line.textContent = 'Checking Facebook\u2026';
+       await checkStreamLive();
+     }
+
+     async function saveStreamConfig() {
+       const status = document.getElementById('streamSaveStatus');
+       status.textContent = 'Saving...';
+       try {
+         const res = await fetch(apiUrl('update-stream'), {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({
+             pageUrl: document.getElementById('smPageUrl').value.trim(),
+             title: document.getElementById('smTitle').value.trim(),
+             description: document.getElementById('smDesc').value.trim(),
+           })
+         });
+         const data = await res.json().catch(() => ({}));
+         if (!res.ok) { status.textContent = data.error || 'Save failed.'; return; }
+         status.textContent = 'Saved!';
+         setTimeout(() => status.textContent = '', 2000);
+       } catch {
+         status.textContent = 'Connection error.';
+       }
+     }
 
      function renderScheduleAdmin(schedule) {
        const list = document.getElementById('scheduleListAdmin');
@@ -1550,19 +1340,11 @@
        }
        list.innerHTML = schedule.map(item => {
          const recurring = item.recurring !== false ? ' (recurring)' : '';
-         const modeBadge = item.mode === 'prerecorded'
-           ? '<span class="badge" style="background:rgba(252,211,77,.15); color:#fcd34d;">Prerecorded</span>'
-           : '<span class="badge badge-clean">Real-Time</span>';
-         const media = item.mode === 'prerecorded'
-           ? '<div style="font-size:12px; color:var(--muted); margin-top:2px;">File: ' + escapeHtml(item.mediaFile || '') +
-             (item.mediaVerified ? ' \u2713 verified' : ' \u2717 NOT verified') + '</div>'
-           : '';
          const privateBadge = item.visibility === 'private' ? ' \u2022 <span style="color:#fca5a5;">private</span>' : '';
          return '<div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.03);">' +
            '<div style="flex:1; min-width:0;">' +
-             '<div style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:2px;">' + escapeHtml(item.title || '') + ' ' + modeBadge + privateBadge + '</div>' +
-             '<div style="font-size:12px; color:var(--muted);">' + escapeHtml(item.day || '') + ' ' + escapeHtml(item.time || '') + (item.date ? ' \u2022 ' + escapeHtml(item.date) : '') + recurring + ' \u2022 ' + escapeHtml(item.destination || 'facebook') + '</div>' +
-             media +
+             '<div style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:2px;">' + escapeHtml(item.title || '') + privateBadge + '</div>' +
+             '<div style="font-size:12px; color:var(--muted);">' + escapeHtml(item.day || '') + ' ' + escapeHtml(item.time || '') + (item.date ? ' \u2022 ' + escapeHtml(item.date) : '') + recurring + '</div>' +
            '</div>' +
            '<div style="display:flex; gap:8px; margin-left:12px; flex-shrink:0;">' +
              '<button class="btn btn-sm" onclick="editScheduleItem(\'' + item.id + '\')" style="background:transparent;color:var(--muted);border-color:rgba(255,255,255,.2);">Edit</button>' +
@@ -1572,102 +1354,22 @@
        }).join('');
      }
 
-      async function saveStreamConfig() {
-        const status = document.getElementById('streamSaveStatus');
-        const platformStatus = getSelectedPlatformStatus();
-        if (!platformStatus || !platformStatus.available) {
-          status.textContent = 'That platform has no stream key yet. Add its key in the platform panel above (or set the environment variable) first.';
-          return;
-        }
-       status.textContent = 'Saving...';
-       try {
-         const res = await fetch(apiUrl('update-stream'), {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              platform: platformStatus.platform,
-             streamId: document.getElementById('smStreamId').value.trim(),
-             title: document.getElementById('smTitle').value.trim(),
-             description: document.getElementById('smDesc').value.trim(),
-             status: document.getElementById('smStatus').value,
-             viewerCount: parseInt(document.getElementById('smViewers').value, 10) || 0,
-             archiveKeep: parseInt(document.getElementById('smArchiveKeep').value, 10) || 20,
-           })
-         });
-         if (!res.ok) { status.textContent = 'Save failed.'; return; }
-         status.textContent = 'Saved!';
-         setTimeout(() => status.textContent = '', 2000);
-       } catch {
-         status.textContent = 'Connection error.';
-       }
-     }
-
-     async function goLive() {
-       document.getElementById('smStatus').value = 'live';
-       await saveStreamConfig();
-       await checkStreamLive();
-     }
-
-     let streamCheckInFlight = false;
-
-     async function checkStreamLive() {
-       if (streamCheckInFlight) return;
-       streamCheckInFlight = true;
-       const el = document.getElementById('streamLiveStatus');
-       el.textContent = 'Checking broadcast status...';
-       try {
-         const res = await fetch(apiUrl('stream-check'), {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({})
-         });
-         if (!res.ok) { el.textContent = 'Check failed.'; return; }
-         const data = await res.json();
-         const p = data.platform || {};
-         const liveLabel = { 'live-realtime': 'LIVE NOW — REAL-TIME', 'live-prerecorded': 'LIVE NOW — PRERECORDED BROADCAST', 'starting-soon': 'Starting Soon', scheduled: 'Upcoming', replay: 'Offline — Replay Available', offline: 'Offline' };
-         let text = 'State: ' + (liveLabel[data.liveState] || data.liveState);
-         if (p.configured) {
-           text += ' \u2022 Platform (' + (p.platform || '') + '): ' + (p.live ? 'LIVE' : 'not live') + ' \u2022 ' + (p.reason || '');
-         } else {
-           text += ' \u2022 Platform check not configured \u2014 using manual status.';
-         }
-         el.textContent = text;
-         loadStreamConfig();
-       } catch {
-         el.textContent = 'Connection error.';
-       } finally {
-         streamCheckInFlight = false;
-       }
-     }
-
-     function toggleSchMedia() {
-       const wrap = document.getElementById('schMediaWrap');
-       wrap.style.display = document.getElementById('schMode').value === 'prerecorded' ? 'block' : 'none';
-     }
-
      let scheduleEditingId = '';
 
      function openScheduleModal(editingId) {
        scheduleEditingId = editingId || '';
        document.getElementById('scheduleModalTitle').textContent = editingId ? 'Edit Scheduled Broadcast' : 'Add Scheduled Broadcast';
        document.getElementById('scheduleModalSaveBtn').textContent = editingId ? 'Save Changes' : 'Add';
-        const availPlatforms = (window.__platformStatuses || []).filter(p => p.available);
-        const defaultDest = availPlatforms.length ? availPlatforms[0].platform : '';
        if (editingId) {
          const item = window.__streamSchedule ? window.__streamSchedule.find(s => s.id === editingId) : null;
          if (item) {
            document.getElementById('schTitle').value = item.title || '';
-           document.getElementById('schMode').value = item.mode || 'realtime';
-           populateDestinationSelect(item.destination || defaultDest);
-           document.getElementById('schMediaFile').value = item.mediaFile || '';
            document.getElementById('schDurationMin').value = item.durationMin || 0;
-           document.getElementById('schMediaVerified').checked = item.mediaVerified === true;
            document.getElementById('schDay').value = item.day || 'Wednesday';
            document.getElementById('schTime').value = item.time || '';
            document.getElementById('schDate').value = item.date || '';
            document.getElementById('schRecurring').value = item.recurring === false ? 'false' : 'true';
            document.getElementById('schVisibility').value = item.visibility || 'public';
-           document.getElementById('schScene').value = item.scene || '';
            document.getElementById('schTopic').value = item.featuredTopic || '';
            document.getElementById('schHost').value = item.host || '';
            document.getElementById('schGuest').value = item.guest || '';
@@ -1675,9 +1377,8 @@
            document.getElementById('schDesc').value = item.description || '';
          }
        } else {
-         populateDestinationSelect(defaultDest);
+         closeScheduleModalFields();
        }
-       toggleSchMedia();
        document.getElementById('scheduleModal').style.display = 'flex';
        document.getElementById('scheduleModal').querySelector('input, select, textarea').focus();
      }
@@ -1686,37 +1387,30 @@
        openScheduleModal(id);
      }
 
-     function closeScheduleModal() {
-       document.getElementById('scheduleModal').style.display = 'none';
-       scheduleEditingId = '';
+     function closeScheduleModalFields() {
        document.getElementById('schTitle').value = '';
        document.getElementById('schTime').value = '';
        document.getElementById('schDate').value = '';
        document.getElementById('schDesc').value = '';
        document.getElementById('schDay').value = 'Wednesday';
        document.getElementById('schRecurring').value = 'true';
-       document.getElementById('schMode').value = 'realtime';
-       populateDestinationSelect('');
-       document.getElementById('schMediaFile').value = '';
        document.getElementById('schDurationMin').value = '';
-       document.getElementById('schMediaVerified').checked = false;
        document.getElementById('schVisibility').value = 'public';
-       document.getElementById('schScene').value = '';
        document.getElementById('schTopic').value = '';
        document.getElementById('schHost').value = '';
        document.getElementById('schGuest').value = '';
        document.getElementById('schThumbnail').value = '';
-       toggleSchMedia();
+     }
+
+     function closeScheduleModal() {
+       document.getElementById('scheduleModal').style.display = 'none';
+       scheduleEditingId = '';
+       closeScheduleModalFields();
      }
 
      async function saveScheduledItem() {
        const title = document.getElementById('schTitle').value.trim();
        if (!title) return;
-       const destination = document.getElementById('schDestination').value;
-       if (!destination) {
-          document.getElementById('streamSaveStatus').textContent = 'No platform with a stream key yet. Add a stream key in the Stream Configuration panel first.';
-         return;
-       }
        const item = {
          id: scheduleEditingId,
          title: title,
@@ -1725,13 +1419,8 @@
          date: document.getElementById('schDate').value.trim(),
          recurring: document.getElementById('schRecurring').value !== 'false',
          description: document.getElementById('schDesc').value.trim(),
-         mode: document.getElementById('schMode').value,
-         destination: destination,
-         mediaFile: document.getElementById('schMediaFile').value.trim(),
-         mediaVerified: document.getElementById('schMediaVerified').checked,
          durationMin: parseInt(document.getElementById('schDurationMin').value, 10) || 0,
          visibility: document.getElementById('schVisibility').value,
-         scene: document.getElementById('schScene').value.trim(),
          featuredTopic: document.getElementById('schTopic').value.trim(),
          host: document.getElementById('schHost').value.trim(),
          guest: document.getElementById('schGuest').value.trim(),
@@ -1768,189 +1457,7 @@
          if (!res.ok) return;
          loadStreamConfig();
        } catch {}
-     }
-
-     // --- OBS Studio status (local WebSocket, obs-websocket v5) ---
-     let obsSocket = null;
-     let obsRequestSeq = 0;
-
-     function obsSendRequest(requestType, requestData, cb) {
-       if (!obsSocket || obsSocket.readyState !== 1) return;
-       const id = 'obs-' + (++obsRequestSeq);
-       obsRequestCallbacks[id] = cb;
-       obsSocket.send(JSON.stringify({ op: 6, d: { requestType, requestId: id, requestData: requestData || {} } }));
-     }
-     let obsRequestCallbacks = {};
-
-     function obsAuthString(password, challenge, salt) {
-       const enc = new TextEncoder();
-       const sha = (str) => crypto.subtle.digest('SHA-256', enc.encode(str));
-       return sha(password + salt).then(buf => {
-         const secret = btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
-         return sha(challenge + secret).then(buf2 => btoa(String.fromCharCode.apply(null, new Uint8Array(buf2))));
-       });
-     }
-
-     function connectOBS() {
-       const status = document.getElementById('obsStatus');
-       const url = document.getElementById('obsUrl').value.trim() || 'ws://localhost:4455';
-       const password = document.getElementById('obsPassword').value;
-       if (obsSocket) { try { obsSocket.close(); } catch (e) {} obsSocket = null; }
-       status.innerHTML = '<span style="color:var(--muted);">Connecting to OBS at ' + escapeHtml(url) + '...</span>';
-       let ws;
-       try {
-         ws = new WebSocket(url);
-       } catch (e) {
-         status.innerHTML = '<span style="color:#fca5a5;">Could not connect to OBS. Start OBS Studio and enable Tools &rarr; WebSocket Server Settings (default ws://localhost:4455).</span>';
-         return;
-       }
-       obsSocket = ws;
-       ws.onopen = () => {};
-       ws.onmessage = (ev) => {
-         let msg;
-         try { msg = JSON.parse(ev.data); } catch (e) { return; }
-         const d = msg.d || {};
-         if (msg.op === 0) {
-           const auth = d.authentication;
-           const identify = { op: 1, d: { rpcVersion: 1 } };
-           if (auth && auth.challenge && auth.salt) {
-             if (!password) {
-               status.innerHTML = '<span style="color:#fcd34d;">OBS requires a WebSocket password. Enter it and reconnect.</span>';
-               ws.close();
-               return;
-             }
-             obsAuthString(password, auth.challenge, auth.salt).then(authStr => {
-               identify.d.authentication = authStr;
-               ws.send(JSON.stringify(identify));
-             });
-           } else {
-             ws.send(JSON.stringify(identify));
-           }
-         } else if (msg.op === 2) {
-           status.innerHTML = '<span style="color:#22c55e;">OBS connected.</span>';
-           obsRefreshOBS();
-         } else if (msg.op === 7) {
-           const cb = obsRequestCallbacks[d.requestId];
-           delete obsRequestCallbacks[d.requestId];
-           if (cb) cb(d);
-         } else if (msg.op === 5) {
-           status.innerHTML = '<span style="color:#fca5a5;">OBS connection failed: ' + escapeHtml((d.error || {}).message || 'unknown error') + '</span>';
-         }
-       };
-       ws.onclose = () => {
-         if (obsSocket === ws) {
-           obsSocket = null;
-           status.innerHTML = '<span style="color:var(--muted);">OBS disconnected. If you expected it running, start OBS Studio and enable the WebSocket server.</span>';
-         }
-       };
-       ws.onerror = () => {
-         status.innerHTML = '<span style="color:#fca5a5;">OBS not detected at ' + escapeHtml(url) + '. Start OBS Studio and enable Tools &rarr; WebSocket Server Settings.</span>';
-       };
-     }
-
-     function obsRefreshOBS() {
-       obsSendRequest('GetCurrentProgramScene', {}, (d) => {
-         const scene = (d.responseData || {}).currentProgramSceneName || 'unknown';
-         obsSendRequest('GetStreamStatus', {}, (d2) => {
-           const streaming = (d2.responseData || {}).outputActive === true;
-           const parts = ['<div style="color:var(--white);">Current scene: <strong>' + escapeHtml(scene) + '</strong></div>',
-             '<div>' + (streaming ? '<span style="color:#fca5a5;">\u25cf Streaming to platform</span>' : '<span style="color:var(--muted);">Not streaming</span>') + '</div>'];
-           const mediaSource = document.getElementById('obsMediaSource').value.trim();
-           if (mediaSource) {
-             obsSendRequest('GetMediaInputStatus', { inputName: mediaSource }, (d3) => {
-               const st = d3.requestStatus;
-               const ms = (d3.responseData || {}).mediaState || 'unknown';
-               const ok = st && st.result;
-               parts.push('<div>' + (ok ? '<span style="color:#fcd34d;">Media source "' + escapeHtml(mediaSource) + '": ' + escapeHtml(ms) + '</span>' : '<span style="color:#fca5a5;">Media source "' + escapeHtml(mediaSource) + '" not found in OBS</span>') + '</div>');
-               document.getElementById('obsStatus').innerHTML = parts.join('');
-             });
-           } else {
-             document.getElementById('obsStatus').innerHTML = parts.join('');
-           }
-         });
-       });
-     }
-
-     function disconnectOBS() {
-       if (obsSocket) { try { obsSocket.close(); } catch (e) {} }
-       obsSocket = null;
-       document.getElementById('obsStatus').innerHTML = '<span style="color:var(--muted);">Disconnected.</span>';
-     }
-
-     // --- Stream Archive ---
-     async function loadArchive() {
-       const status = document.getElementById('archiveStatus');
-       status.textContent = 'Loading archive...';
-       try {
-         const res = await fetch(apiUrl('archive'));
-         if (!res.ok) { status.textContent = ''; return; }
-         const data = await res.json();
-         renderArchiveAdmin(data);
-         status.textContent = '';
-       } catch {
-         status.textContent = 'Connection error.';
-       }
-     }
-
-     function renderArchiveAdmin(data) {
-       const list = document.getElementById('archiveListAdmin');
-       const empty = document.getElementById('archiveEmpty');
-       const keep = data.keep || 20;
-       document.getElementById('arcKeepLabel').textContent = keep;
-       const archive = data.archive || [];
-       if (!archive.length) {
-         list.innerHTML = '';
-         empty.style.display = 'block';
-       } else {
-         empty.style.display = 'none';
-         list.innerHTML = archive.map(item => {
-           const badge = item.expired
-             ? '<span class="badge" style="background:rgba(239,68,68,.2); color:#ef4444;">Pending Purge</span>'
-             : '<span class="badge badge-clean">Active</span>';
-           const watchUrl = item.url ? (item.platform === 'youtube'
-             ? 'https://www.youtube.com/watch?v=' + encodeURIComponent(item.url)
-             : item.url) : '#';
-           return '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.03);">' +
-             '<div style="flex:1; min-width:0;">' +
-               '<div style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:2px;">' + escapeHtml(item.title || '') + '</div>' +
-               '<div style="font-size:12px; color:var(--muted);">' + escapeHtml(formatDate(item.date)) + ' \u2022 ' + escapeHtml(item.platform || '') + ' \u2022 ' + badge + '</div>' +
-             '</div>' +
-             (item.url ? '<a class="btn btn-sm" href="' + escapeHtml(watchUrl) + '" target="_blank" rel="noopener" style="white-space:nowrap;">Watch</a>' : '') +
-           '</div>';
-         }).join('');
-       }
-       const purgeWrap = document.getElementById('archivePurgeWrap');
-       const purgeBtn = document.getElementById('archivePurgeBtn');
-       if (data.pendingPurge > 0) {
-         purgeWrap.style.display = 'block';
-          purgeBtn.textContent = 'Approve & Purge ' + data.pendingPurge + ' old recording' + (data.pendingPurge > 1 ? 's' : '');
-       } else {
-         purgeWrap.style.display = 'none';
-       }
-     }
-
-     async function confirmPurgeArchive() {
-       const status = document.getElementById('archiveStatus');
-       const match = (document.getElementById('archivePurgeBtn').textContent.match(/\d+/) || ['0']);
-       const count = parseInt(match[0], 10);
-       if (!count) return;
-       if (!confirm('This permanently removes ' + count + ' expired recording(s) from the archive. This cannot be undone. Approve the purge?')) return;
-       status.textContent = 'Purging...';
-       try {
-         const res = await fetch(apiUrl('purge-archive'), {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({})
-         });
-         if (!res.ok) { status.textContent = 'Purge failed.'; return; }
-         const data = await res.json();
-         status.textContent = 'Purged ' + data.purged + ' recording(s).';
-         loadArchive();
-       } catch {
-         status.textContent = 'Connection error.';
-       }
-     }
-
+}
       function loadAll() {
         loadStats();
         loadSubscribers();

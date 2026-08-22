@@ -70,37 +70,29 @@ The Vercel dashboard path is: **Project → Settings → Environment Variables**
 
 ---
 
-## OPTIONAL — Live Streaming Platform Credentials (stream keys)
+## OPTIONAL — Facebook Live (automatic live detection)
 
-These control which platforms appear as available in the admin Live Stream panel.
-Set only the platforms you use. `lib/streamconfig.js:20-24`.
+Facebook Live is the only streaming platform. Going live needs **zero setup**:
+open the Facebook app and press Go Live. The website detects the broadcast and
+plays it automatically — but only if these two variables are set, because
+Facebook offers no public way to detect a live Page without them.
 
 | Variable | Required | Value | Notes |
 |---|---|---|---|
-| `FB_STREAM_KEY` | Optional | Facebook stream key | Facebook Live — min 20 chars |
-| `YOUTUBE_STREAM_KEY` | Optional | YouTube stream key | YouTube Live — min 20 chars |
-| `TWITCH_STREAM_KEY` | Optional | Twitch stream key | Twitch — min 10 chars |
-| `OWNCAST_STREAM_KEY` | Optional | Owncast stream key | Owncast — min 10 chars |
+| `FACEBOOK_PAGE_ID` | Optional (needed for auto-detection) | Numeric page ID | `lib/stream.js`. Graph API `/{page}/live_videos` read. |
+| `FACEBOOK_ACCESS_TOKEN` | Optional (needed for auto-detection) | Page access token | `lib/stream.js`. Server-side only; never sent to browsers. |
+| `FACEBOOK_PAGE_URL` | Optional | `https://www.facebook.com/YourPage` | Offline-state "Follow on Facebook" link. The admin panel field overrides this. |
+
+Without the first two, the site still works but always shows its offline state.
 
 ---
 
-## OPTIONAL — Live Streaming Platform Status Checks
+## REMOVED — old streaming variables
 
-These let the admin panel verify whether a broadcast is actually live on the
-platform. `lib/platform.js` + `lib/stream.js`.
-
-| Variable | Required | Value | Notes |
-|---|---|---|---|
-| `YOUTUBE_API_KEY` | Optional | YouTube Data API v3 key | `lib/platform.js:13` |
-| `YOUTUBE_VIDEO_ID` | Optional | YouTube video/live ID | `lib/platform.js:14`. Also reads `STREAM_VIDEO_ID`. |
-| `STREAM_VIDEO_ID` | Optional | Legacy alias for `YOUTUBE_VIDEO_ID` | `lib/platform.js:14`, `lib/stream.js:83` |
-| `FACEBOOK_ACCESS_TOKEN` | Optional | Facebook Graph API token | `lib/platform.js:38` |
-| `FACEBOOK_PAGE_ID` | Optional | Facebook page ID | `lib/platform.js:39` |
-| `TWITCH_CLIENT_ID` | Optional | Twitch app client ID | `lib/platform.js:61` |
-| `TWITCH_ACCESS_TOKEN` | Optional | Twitch OAuth token | `lib/platform.js:62` |
-| `TWITCH_USER_LOGIN` | Optional | Twitch channel login | `lib/platform.js:63` |
-| `OWNCAST_URL` | Optional | Owncast server URL | `lib/platform.js:83` |
-| `STREAM_PLATFORM` | Optional | Default platform name | `lib/platform.js:99` |
+`FB_STREAM_KEY`, `YOUTUBE_STREAM_KEY`, `TWITCH_STREAM_KEY`, `OWNCAST_STREAM_KEY`,
+`YOUTUBE_API_KEY`, `YOUTUBE_VIDEO_ID`, `STREAM_VIDEO_ID`, `TWITCH_*`, `OWNCAST_URL`
+and `STREAM_PLATFORM` are no longer read by any code and can be deleted from
+the Vercel dashboard. OBS/RTMP streaming was replaced by Facebook Live.
 
 ---
 
@@ -122,7 +114,7 @@ RESEND_FROM=<your-verified-sender>
 - **Do NOT** commit `.env` or `.env.local` to git.
 - **Do NOT** set `GUESTBOOK_ADMIN_KEY` — it is obsolete. Only `ADMIN_KEY` is read.
 - `KV_*` variables are created automatically by `vercel link` when attaching a KV store.
-- Streaming platform credentials are optional — the admin panel shows a helpful
-  message when none are configured.
+- Streaming: Facebook Live only. Stream keys/OBS are gone; `FACEBOOK_PAGE_ID` +
+  `FACEBOOK_ACCESS_TOKEN` enable automatic live detection (optional).
 - E-book variables are optional — the welcome email honestly offers a free digital
   copy until `EBOOK_SIGNED=1` is set with valid storage config.

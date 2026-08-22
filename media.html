@@ -849,21 +849,8 @@
        flex-shrink: 0;
      }
       .schedule-item .schedule-info { flex: 1; min-width: 0; }
-      .schedule-item .schedule-info h4 { font-size: 15px; font-weight: 700; margin: 0 0 6px; }
-      .schedule-item .schedule-info p { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.4; }
-      .mode-chip {
-        display: inline-block;
-        font-size: 10px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: .06em;
-        padding: 3px 10px;
-        border-radius: 999px;
-        margin-left: 8px;
-        vertical-align: 2px;
-      }
-      .mode-chip.realtime { background: rgba(239,68,68,.15); color: #fca5a5; }
-      .mode-chip.prerecorded { background: rgba(252,211,77,.15); color: #fcd34d; }
+       .schedule-item .schedule-info h4 { font-size: 15px; font-weight: 700; margin: 0 0 6px; }
+       .schedule-item .schedule-info p { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.4; }
 
      @media (max-width: 940px) {
        .nav { position: static; align-items: flex-start; flex-direction: column; }
@@ -949,8 +936,9 @@
           <div class="live-frame" id="liveFrame">
             <div class="live-placeholder" id="livePlaceholder">
               <div class="placeholder-icon">&#127911;</div>
-              <h3>Live Streams Coming Soon</h3>
-              <p>We stream weekly rides, podcast recordings, and community events. Check back during scheduled times or subscribe to get notified when we go live.</p>
+              <h3 id="offlineTitle">We're Not Live Right Now</h3>
+              <p id="offlineText">When we go live on Facebook, the broadcast plays right here. Follow us on Facebook so you never miss a ride, a podcast recording, or a community event.</p>
+              <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;" id="offlineActions"></div>
             </div>
           </div>
         </div>
@@ -961,13 +949,6 @@
         </div>
 
         <div class="schedule-list" id="scheduleList"></div>
-
-        <div class="section-heading" style="margin-top:40px;">
-          <h2 class="section-title">Past <span class="orange">Streams</span></h2>
-          <p style="color:var(--muted); font-size:18px; line-height:1.5;">Replays of recent live streams. Recordings are kept for a limited time before being retired.</p>
-        </div>
-
-        <div class="schedule-list" id="archiveList"></div>
 
         <div class="section-heading" style="margin-top:40px;">
           <h2 class="section-title">Never Miss A <span class="orange">Broadcast</span></h2>
@@ -1200,89 +1181,80 @@
       renderCoffeeTalk();
     }
 
-    // --- Live Stream ---
+    // --- Live Stream (Facebook Live) ---
+    let lastRenderedStreamKey = null;
+    const POLL_MS = 60000;
+
+    function streamStateKey(s) {
+      return JSON.stringify([!!s.live, s.liveUrl || '', s.title || '', s.replayUrl || '', s.pageUrl || '']);
+    }
+
+    function facebookEmbed(url) {
+      return '<iframe src="https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(url) +
+        '&show_text=false&autoplay=true" frameborder="0" ' +
+        'allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="Lost Limb Riders live on Facebook"></iframe>';
+    }
+
     async function loadStream() {
       try {
         const res = await fetch('/api/stream?action=get');
         if (!res.ok) return;
         const data = await res.json();
-        const stream = data.stream || {};
-        renderLive(stream);
-        renderSchedule(stream.schedule || []);
+        renderLive(data.stream || {});
+        renderSchedule((data.stream && data.stream.schedule) || []);
       } catch (e) {}
     }
 
     function renderLive(stream) {
-      const liveState = stream.liveState || (stream.status === 'live' && stream.streamId ? 'live-realtime' : 'offline');
-      const isLive = liveState === 'live-realtime' || liveState === 'live-prerecorded';
-      const hasEmbed = isLive && stream.streamId;
+      const isLive = stream.live === true && !!stream.liveUrl;
+      const key = streamStateKey(stream);
+      if (key === lastRenderedStreamKey) return;
+      lastRenderedStreamKey = key;
+
       const badge = document.getElementById('liveBadge');
-      const badgeText = {
-        'live-realtime': 'LIVE NOW — REAL-TIME',
-        'live-prerecorded': 'LIVE NOW — PRERECORDED BROADCAST',
-        'starting-soon': 'Starting Soon',
-        scheduled: 'Upcoming',
-        replay: 'Offline',
-        offline: 'Offline'
-      };
-      const badgeClass = {
-        'live-realtime': 'live',
-        'live-prerecorded': 'prerecorded',
-        'starting-soon': 'soon',
-        scheduled: 'offline',
-        replay: 'offline',
-        offline: 'offline'
-      };
-      badge.textContent = badgeText[liveState] || 'Offline';
-      badge.className = 'live-badge ' + (badgeClass[liveState] || 'offline');
-
-      const activeTitle = isLive && stream.currentEpisode && stream.currentEpisode.title
-        ? stream.currentEpisode.title
-        : (stream.title || 'Lost Limb Riders Live');
-      document.getElementById('liveTitle').textContent = activeTitle;
-
-      const descParts = [];
-      if (isLive && stream.currentEpisode) {
-        descParts.push(stream.currentEpisode.description || '');
-        if (liveState === 'live-prerecorded') {
-          descParts.push('This is a scheduled prerecorded broadcast playing live — not a real-time event.');
-        }
+      if (isLive) {
+        badge.textContent = 'LIVE NOW';
+        badge.className = 'live-badge live';
+      } else if ((stream.schedule || []).some(item => item.state === 'starting-soon')) {
+        badge.textContent = 'Starting Soon';
+        badge.className = 'live-badge soon';
       } else {
-        descParts.push(stream.description || '');
+        badge.textContent = 'Offline';
+        badge.className = 'live-badge offline';
       }
-      document.getElementById('liveDesc').textContent = descParts.filter(Boolean).join(' ');
+      document.getElementById('liveTitle').textContent = isLive && stream.title ? stream.title : 'Lost Limb Riders Live';
+      document.getElementById('liveDesc').textContent = stream.description || '';
 
       const frame = document.getElementById('liveFrame');
-      const placeholder = document.getElementById('livePlaceholder');
-
-      if (hasEmbed) {
-        let embed = '';
-        if (stream.platform === 'youtube') {
-          embed = '<iframe src="https://www.youtube.com/embed/' + encodeURIComponent(stream.streamId) + '?autoplay=1" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
-        } else if (stream.platform === 'facebook') {
-          embed = '<iframe src="https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(stream.streamId) + '&show_text=false&autoplay=true" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
-        } else if (stream.platform === 'twitch') {
-          embed = '<iframe src="https://player.twitch.tv/?channel=' + encodeURIComponent(stream.streamId) + '&parent=' + encodeURIComponent(window.location.hostname) + '" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
-        } else if (stream.platform === 'owncast' && stream.streamId) {
-          embed = '<iframe src="' + encodeURIComponent(stream.streamId) + '" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
-        }
-        if (embed) {
-          const showViewers = stream.platformVerified === true;
-          const viewers = parseInt(stream.viewerCount, 10) || 0;
-          placeholder.style.display = 'none';
-          frame.innerHTML =
-            embed +
-            '<div class="live-overlay">' +
-              '<span class="live-dot"></span>' +
-              '<span class="status-text live-now">' + (liveState === 'live-prerecorded' ? 'LIVE — PRERECORDED BROADCAST' : 'LIVE NOW — REAL-TIME') + '</span>' +
-              (showViewers ? '<span class="viewer-count">' + viewers + ' watching</span>' : '') +
-            '</div>';
-          return;
-        }
+      if (isLive) {
+        const viewers = parseInt(stream.viewers, 10) || 0;
+        frame.innerHTML =
+          facebookEmbed(stream.liveUrl) +
+          '<div class="live-overlay">' +
+            '<span class="live-dot"></span>' +
+            '<span class="status-text live-now">LIVE NOW</span>' +
+            (viewers > 0 ? '<span class="viewer-count">' + viewers + ' watching</span>' : '') +
+          '</div>';
+        return;
       }
 
-      placeholder.style.display = 'flex';
-      frame.innerHTML = '';
+      const actions = [];
+      if (stream.replayUrl) {
+        actions.push('<a class="btn btn-secondary btn-sm" href="' + escapeHtml(stream.replayUrl) + '" target="_blank" rel="noopener">&#9654; Watch Our Latest Broadcast</a>');
+      }
+      if (stream.pageUrl) {
+        actions.push('<a class="btn btn-primary btn-sm" href="' + escapeHtml(stream.pageUrl) + '" target="_blank" rel="noopener">Follow on Facebook</a>');
+      }
+      const offlineText = stream.replayUrl
+        ? 'The broadcast ended. Catch the replay on Facebook \u2014 and check back soon for the next live ride or recording.'
+        : 'When we go live on Facebook, the broadcast plays right here. Follow us on Facebook so you never miss a ride, a podcast recording, or a community event.';
+      frame.innerHTML =
+        '<div class="live-placeholder">' +
+          '<div class="placeholder-icon">&#127911;</div>' +
+          '<h3>We\u2019re Not Live Right Now</h3>' +
+          '<p>' + escapeHtml(offlineText) + '</p>' +
+          '<div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">' + actions.join('') + '</div>' +
+        '</div>';
     }
 
     function renderSchedule(schedule) {
@@ -1294,16 +1266,12 @@
       list.innerHTML = schedule.map(item => {
         const recurring = item.recurring !== false;
         const day = recurring ? 'Every ' + (item.day || '') : (item.date ? formatShortDate(item.date) : (item.day || ''));
-        const isPrerecorded = item.mode === 'prerecorded';
-        const chip = isPrerecorded
-          ? '<span class="mode-chip prerecorded">Prerecorded Broadcast</span>'
-          : '<span class="mode-chip realtime">Live · Real-Time</span>';
         return '' +
           '<div class="schedule-item">' +
             '<div class="schedule-day">' + escapeHtml(day) + '</div>' +
             '<div class="schedule-time">' + formatClock(item.time) + '</div>' +
             '<div class="schedule-info">' +
-              '<h4>' + escapeHtml(item.title || '') + chip + '</h4>' +
+              '<h4>' + escapeHtml(item.title || '') + '</h4>' +
               '<p>' + escapeHtml(item.description || '') + '</p>' +
               (item.featuredTopic ? '<p style="color:#fcd34d; font-size:12px;">Featured: ' + escapeHtml(item.featuredTopic) + '</p>' : '') +
             '</div>' +
@@ -1326,64 +1294,6 @@
       try {
         return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
       } catch (e) { return dateStr; }
-    }
-
-    // --- Stream Archive ---
-    let archiveItems = [];
-
-    async function loadArchive() {
-      try {
-        const res = await fetch('/api/stream?action=archive');
-        if (!res.ok) return;
-        const data = await res.json();
-        archiveItems = Array.isArray(data.archive) ? data.archive : [];
-        renderArchive();
-      } catch (e) {}
-    }
-
-    function renderArchive() {
-      const container = document.getElementById('archiveList');
-      if (!archiveItems.length) {
-        container.innerHTML = '<p style="color:var(--muted); font-size:14px; text-align:center; padding:20px;">No recorded streams yet.</p>';
-        return;
-      }
-      container.innerHTML = archiveItems.map(item => '' +
-        '<div class="schedule-item">' +
-          '<div class="schedule-day">' + escapeHtml(formatArchiveDate(item.date)) + '</div>' +
-          '<div class="schedule-info">' +
-            '<h4>' + escapeHtml(item.title || '') + '</h4>' +
-            '<p>' + escapeHtml(item.description || '') + '</p>' +
-          '</div>' +
-          '<button class="ep-play" onclick="watchRecording(\'' + item.id + '\')" aria-label="Watch recording">&#9654;</button>' +
-        '</div>'
-      ).join('');
-    }
-
-    function formatArchiveDate(iso) {
-      if (!iso) return '';
-      try {
-        return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      } catch (e) { return iso; }
-    }
-
-    function watchRecording(id) {
-      const item = archiveItems.find(i => i.id === id);
-      if (!item || !item.url) return;
-      let src = '';
-      if (item.platform === 'youtube') {
-        src = 'https://www.youtube.com/embed/' + encodeURIComponent(item.url) + '?autoplay=1';
-      } else if (item.platform === 'facebook') {
-        src = 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(item.url) + '&show_text=false&autoplay=true';
-      } else {
-        window.open(item.url, '_blank', 'noopener');
-        return;
-      }
-      document.getElementById('modalVideo').src = src;
-      document.getElementById('modalTitle').textContent = item.title || 'Past Stream';
-      document.getElementById('modalMeta').textContent = 'Recorded \u2022 ' + formatArchiveDate(item.date);
-      document.getElementById('modalDesc').textContent = item.description || '';
-      document.getElementById('videoModal').classList.add('open');
-      document.body.style.overflow = 'hidden';
     }
 
     function loadFeatured() {
@@ -1635,7 +1545,7 @@
 
     fetchMedia();
     loadStream();
-    loadArchive();
+    setInterval(loadStream, POLL_MS);
 
     // --- Broadcast alerts signup ---
     const broadcastForm = document.getElementById('broadcastForm');
