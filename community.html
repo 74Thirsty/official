@@ -60,26 +60,200 @@
     .statement { padding:56px 7vw; text-align:center; background:linear-gradient(90deg, rgba(255,106,0,.10) 0%, rgba(255,106,0,.03) 100%); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
     .statement p { font-size:clamp(13px,1.6vw,17px); font-weight:900; text-transform:uppercase; letter-spacing:.18em; color:rgba(255,255,255,.45); margin:0; }
 
-    /* GALLERY GRID */
-    .gallery-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
-    .gallery-card { position:relative; border-radius:var(--radius); overflow:hidden; cursor:pointer; border:1px solid var(--line); background:var(--card); transition:all .35s cubic-bezier(.4,0,.2,1); }
-    .gallery-card:hover { border-color:rgba(255,106,0,.5); box-shadow:0 0 40px rgba(255,106,0,.12), 0 24px 60px rgba(0,0,0,.5); transform:translateY(-6px); }
-    .gallery-card::before { content:''; position:absolute; inset:0; background:linear-gradient(180deg, transparent 50%, rgba(0,0,0,.7) 100%); z-index:1; opacity:0; transition:opacity .35s; pointer-events:none; }
-    .gallery-card:hover::before { opacity:1; }
-    .gallery-card img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; transition:transform .5s cubic-bezier(.4,0,.2,1); }
-    .gallery-card:hover img { transform:scale(1.06); }
-    .gallery-card .caption { padding:14px 16px; position:relative; z-index:2; margin-top:-40px; }
-    .gallery-card .caption .name { font-weight:800; font-size:14px; color:var(--white); }
-    .gallery-card .caption .desc { font-size:12px; color:var(--muted); margin-top:3px; line-height:1.4; }
-    .gallery-card .comment-count { position:absolute; top:12px; right:12px; z-index:2; display:flex; align-items:center; gap:5px; padding:4px 10px; background:rgba(0,0,0,.6); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.12); border-radius:20px; font-size:11px; font-weight:700; color:rgba(255,255,255,.7); }
-    .gallery-card .comment-count svg { width:13px; height:13px; fill:currentColor; }
-    .gallery-empty, .testimonials-empty { text-align:center; padding:70px 20px; color:var(--muted); font-size:16px; border:1px dashed var(--line); border-radius:var(--radius); }
+    /* ============================================ */
+    /* LLR COMMUNITY PHOTOBOOK                       */
+    /* ============================================ */
+    .book-stage { padding:10px 0 6px; }
+    .book-frame { max-width:min(1080px,94vw); margin:0 auto; user-select:none; -webkit-user-select:none; }
+
+    .book-viewport {
+      position:relative; touch-action:pan-y; outline:none;
+      border-radius:6px;
+    }
+    .book-viewport:focus-visible { outline:2px solid var(--orange); outline-offset:8px; border-radius:14px; }
+
+    /* The book itself — a spread is two portrait pages side by side (3:2 overall) */
+    .book {
+      position:relative;
+      aspect-ratio:3/2;
+      width:min(100%, calc(min(72vh, 660px) * 1.5));
+      margin:0 auto;
+      perspective:2400px;
+      filter:drop-shadow(0 42px 70px rgba(0,0,0,.65));
+    }
+    /* Table glow beneath the book */
+    .book-viewport::after {
+      content:''; position:absolute; left:50%; bottom:-9%; width:74%; height:60px; transform:translateX(-50%);
+      background:radial-gradient(ellipse at center, rgba(255,106,0,.13) 0%, transparent 68%);
+      pointer-events:none;
+    }
+
+    /* ---------- Sheets & faces (spread mode) ---------- */
+    .sheet {
+      position:absolute; top:0; left:50%; width:50%; height:100%;
+      transform-origin:left center; transform-style:preserve-3d;
+      transition:transform .92s cubic-bezier(.38,.06,.22,.99);
+      will-change:auto;
+    }
+    .sheet.flipped { transform:rotateY(-180deg); }
+    .sheet.turning { will-change:transform; z-index:400 !important; }
+    .face {
+      position:absolute; inset:0; overflow:hidden;
+      backface-visibility:hidden; -webkit-backface-visibility:hidden;
+      background:linear-gradient(160deg, #191919 0%, #121212 55%, #0d0d0d 100%);
+      border-radius:3px 8px 8px 3px;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.045);
+      display:flex; flex-direction:column;
+    }
+    .face.back { transform:rotateY(-180deg); border-radius:8px 3px 3px 8px; }
+    /* Static spine + outer-edge lighting on every page */
+    .face.front::after { content:''; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+      background:linear-gradient(90deg, rgba(0,0,0,.62) 0%, rgba(0,0,0,.18) 7%, transparent 16%, transparent 90%, rgba(0,0,0,.28) 100%); }
+    .face.back::after { content:''; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+      background:linear-gradient(-90deg, rgba(0,0,0,.62) 0%, rgba(0,0,0,.18) 7%, transparent 16%, transparent 90%, rgba(0,0,0,.28) 100%); }
+    /* Dynamic shade while a sheet travels across the book (--shade 0..1 set by JS / keyframes) */
+    .face::before { content:''; position:absolute; inset:0; pointer-events:none; opacity:var(--shade, 0);
+      background:linear-gradient(var(--shade-dir, 90deg), rgba(0,0,0,.85), rgba(0,0,0,.25) 46%, rgba(0,0,0,0) 78%);
+      transition:none; }
+    .sheet.anim-shade-fwd .face::before,
+    .sheet.anim-shade-bwd .face::before { animation:llrShade .92s ease-in-out; }
+    @keyframes llrShade { 0%{opacity:0} 45%{opacity:.72} 100%{opacity:0} }
+    /* Shadow cast on the page underneath while a sheet passes over it */
+    .page-under::after { content:''; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+      animation:llrCast .92s ease-in-out; background:linear-gradient(90deg, rgba(0,0,0,.5), transparent 34%); opacity:0; }
+    .page-under-bwd::after { background:linear-gradient(-90deg, rgba(0,0,0,.5), transparent 34%); }
+    @keyframes llrCast { 0%{opacity:0} 40%{opacity:.8} 100%{opacity:0} }
+
+    /* ---------- Page content ---------- */
+    .page-body { margin:0; flex:1; display:flex; flex-direction:column; padding:clamp(14px,4.2%,26px); position:relative; min-height:0; }
+    .photo-hit { display:flex; flex-direction:column; flex:1; min-height:0; padding:0; border:none; background:transparent; cursor:zoom-in; border-radius:10px; position:relative; }
+    .photo-hit:focus-visible { outline:2px solid var(--orange); outline-offset:4px; }
+    .photo-hit img {
+      width:100%; height:100%; min-height:0; object-fit:contain; display:block;
+      background:
+        radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,.05) 0%, transparent 52%),
+        repeating-linear-gradient(45deg, rgba(255,255,255,.014) 0 2px, transparent 2px 6px), #0a0a0a;
+      border:1px solid rgba(255,255,255,.09);
+      border-radius:8px; box-shadow:0 14px 44px rgba(0,0,0,.55);
+    }
+    .zoom-hint {
+      position:absolute; top:10px; right:10px; display:inline-flex; align-items:center; gap:6px;
+      padding:6px 12px; border-radius:30px; font-size:10px; font-weight:900; letter-spacing:.14em; text-transform:uppercase;
+      color:#ffd9b8; background:rgba(5,5,5,.72); border:1px solid rgba(255,106,0,.45); backdrop-filter:blur(6px);
+      opacity:0; transform:translateY(-4px); transition:opacity .25s, transform .25s; pointer-events:none;
+    }
+    .zoom-hint svg { width:11px; height:11px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+    .photo-hit:hover .zoom-hint, .photo-hit:focus-visible .zoom-hint { opacity:1; transform:translateY(0); }
+    .page-cap { text-align:center; padding:clamp(10px,2.6%,18px) clamp(6px,4%,18px) clamp(2px,1.5%,8px); min-height:0; }
+    .cap-title { display:block; font-family:Georgia,'Times New Roman',serif; font-style:italic; font-size:clamp(13px,1.35vw,17px); color:#e8e2da; letter-spacing:.01em; line-height:1.35; }
+    .cap-sub { display:block; margin-top:5px; font-size:clamp(9px,.85vw,11px); font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:#77716a; }
+    .page-num { position:absolute; bottom:9px; font-size:10px; letter-spacing:.1em; color:#5c5852; font-weight:600; pointer-events:none; }
+    .face.front .page-num { right:14px; }
+    .face.back .page-num { left:14px; }
+    .new-flag {
+      position:absolute; top:clamp(10px,3%,18px); left:clamp(10px,3%,18px); z-index:3;
+      padding:5px 11px; border-radius:4px; font-size:9px; font-weight:900; letter-spacing:.22em; text-transform:uppercase;
+      color:#0c0c0c; background:linear-gradient(135deg, var(--orange), #ff9040);
+      box-shadow:0 6px 18px var(--orange-glow); pointer-events:none;
+    }
+    .comment-count { position:absolute; top:clamp(10px,3%,18px); right:clamp(10px,3%,18px); z-index:3; display:flex; align-items:center; gap:5px; padding:4px 10px; background:rgba(0,0,0,.6); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.12); border-radius:20px; font-size:11px; font-weight:700; color:rgba(255,255,255,.7); pointer-events:none; }
+    .comment-count svg { width:13px; height:13px; fill:currentColor; }
+    .face-pad { flex:1; display:flex; align-items:center; justify-content:center; }
+    .face-pad span { width:34px; height:34px; border-radius:50%; border:1px solid rgba(255,255,255,.08); display:flex; align-items:center; justify-content:center; color:#4a463f; font-size:15px; }
+
+    /* ---------- Cover ---------- */
+    .face.cover-face {
+      cursor:pointer; border-radius:4px 10px 10px 4px;
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E"),
+        linear-gradient(150deg, #20150c 0%, #14100b 45%, #0b0a08 100%);
+      box-shadow:inset 0 0 0 1px rgba(255,140,50,.16), inset 0 0 90px rgba(0,0,0,.75);
+    }
+    .cover-inner { flex:1; margin:clamp(10px,4%,20px); border:1px solid rgba(255,140,50,.28); border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:24px 16px; position:relative; }
+    .cover-inner::before { content:''; position:absolute; inset:6px; border:1px solid rgba(255,140,50,.12); border-radius:5px; pointer-events:none; }
+    .cover-logo { width:clamp(64px,26%,110px); height:auto; filter:drop-shadow(0 12px 30px rgba(0,0,0,.7)); margin-bottom:clamp(14px,4vh,26px); }
+    .cover-kicker { font-size:clamp(9px,1vw,11px); font-weight:900; letter-spacing:.42em; text-transform:uppercase; color:var(--orange); margin-bottom:12px; }
+    .cover-title { font-size:clamp(21px,3.2vw,40px); font-weight:900; text-transform:uppercase; letter-spacing:.02em; line-height:1.04; color:#f5efe8; text-shadow:0 2px 0 rgba(0,0,0,.6), 0 0 34px rgba(255,106,0,.18); }
+    .cover-rule { width:64px; height:2px; background:linear-gradient(90deg, transparent, var(--orange), transparent); margin:clamp(14px,3vh,24px) auto; }
+    .cover-est { font-size:clamp(9px,.95vw,11px); font-weight:800; letter-spacing:.3em; text-transform:uppercase; color:#8d857b; }
+    .cover-new { margin-top:14px; font-size:10px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; color:var(--orange); }
+    .cover-open-hint { position:absolute; bottom:clamp(12px,3.5%,22px); left:0; right:0; display:flex; align-items:center; justify-content:center; gap:9px; font-size:10px; font-weight:900; letter-spacing:.26em; text-transform:uppercase; color:rgba(255,178,110,.85); animation:llrPulse 2.6s ease-in-out infinite; }
+    .cover-open-hint svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+    @keyframes llrPulse { 0%,100%{opacity:.55} 50%{opacity:1} }
+
+    /* Inside front cover / closing pages */
+    .page-prose { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:clamp(20px,7%,44px); }
+    .page-prose h3 { font-family:Georgia,serif; font-style:italic; font-weight:400; font-size:clamp(18px,2vw,27px); color:#ece5dc; margin:0 0 16px; line-height:1.3; }
+    .page-prose p { font-size:clamp(11px,1.05vw,13.5px); line-height:1.85; color:#98918a; margin:0 0 10px; max-width:34ch; }
+    .prose-mark { font-size:clamp(22px,2.4vw,32px); color:var(--orange); margin-bottom:18px; }
+    .gesture-hints { display:flex; gap:26px; margin-top:26px; flex-wrap:wrap; justify-content:center; }
+    .gesture-hints div { display:flex; flex-direction:column; align-items:center; gap:8px; font-size:9px; font-weight:800; letter-spacing:.2em; text-transform:uppercase; color:#6e6862; }
+    .gesture-hints svg { width:22px; height:22px; stroke:var(--orange); stroke-width:1.6; fill:none; opacity:.85; }
+    .closing-cta { margin-top:22px; }
+
+    /* ---------- Single-page mode (mobile-first) ---------- */
+    .book.single { aspect-ratio:3/4; width:min(100%, calc(min(64vh, 560px) * 0.75)); perspective:1800px; }
+    .book.single .sheet, .book.single .face { display:none; }
+    .book-page {
+      position:absolute; inset:0; display:none; overflow:hidden;
+      background:linear-gradient(160deg, #191919 0%, #121212 55%, #0d0d0d 100%);
+      border-radius:10px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.05), 0 30px 70px rgba(0,0,0,.6);
+      will-change:auto; backface-visibility:hidden;
+    }
+    .book-page.cur { display:flex; flex-direction:column; }
+    .book-page.leaving { display:flex; flex-direction:column; z-index:5; }
+    .book-page.entering { display:flex; flex-direction:column; z-index:6; }
+    .book-page .face.front, .book-page .face.back { display:none; }
+    .anim-in-next { animation:pgInNext .48s cubic-bezier(.3,.1,.25,1); }
+    .anim-out-next { animation:pgOutNext .48s cubic-bezier(.3,.1,.25,1) forwards; }
+    .anim-in-prev { animation:pgInPrev .48s cubic-bezier(.3,.1,.25,1); }
+    .anim-out-prev { animation:pgOutPrev .48s cubic-bezier(.3,.1,.25,1) forwards; }
+    @keyframes pgInNext  { from{transform:translateX(56%) rotateY(-14deg); opacity:.4} to{transform:none; opacity:1} }
+    @keyframes pgOutNext { from{transform:none; opacity:1} to{transform:translateX(-30%) rotateY(10deg); opacity:0} }
+    @keyframes pgInPrev  { from{transform:translateX(-56%) rotateY(14deg); opacity:.4} to{transform:none; opacity:1} }
+    @keyframes pgOutPrev { from{transform:none; opacity:1} to{transform:translateX(30%) rotateY(-10deg); opacity:0} }
+
+    .book-page .page-num { right:16px; left:auto; }
+    .book-page.cover-page { cursor:pointer; border-radius:12px;
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E"),
+        linear-gradient(150deg, #20150c 0%, #14100b 45%, #0b0a08 100%);
+      box-shadow:inset 0 0 0 1px rgba(255,140,50,.16), inset 0 0 90px rgba(0,0,0,.75), 0 30px 70px rgba(0,0,0,.6);
+    }
+    .no-anim .sheet { transition:none !important; }
+
+    /* ---------- Controls ---------- */
+    .book-turn {
+      position:absolute; top:50%; transform:translateY(-50%); z-index:30;
+      width:46px; height:46px; border-radius:50%;
+      border:1px solid rgba(255,255,255,.16); background:rgba(8,8,8,.66); color:var(--white);
+      display:flex; align-items:center; justify-content:center; cursor:pointer;
+      backdrop-filter:blur(10px); transition:all .22s; opacity:.92;
+    }
+    .book-turn svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+    .book-turn:hover:not(:disabled) { background:var(--orange); border-color:var(--orange); color:#111; box-shadow:0 0 30px var(--orange-glow); }
+    .book-turn:focus-visible { outline:2px solid var(--orange); outline-offset:3px; }
+    .book-turn:disabled { opacity:.18; cursor:default; }
+    .book-turn-prev { left:calc(-8px - 3.2vw); }
+    .book-turn-next { right:calc(-8px - 3.2vw); }
+    .book-progress { height:2px; background:rgba(255,255,255,.08); border-radius:2px; margin:26px auto 10px; width:min(420px,72%); overflow:hidden; }
+    .book-progress-fill { height:100%; width:0%; background:linear-gradient(90deg, var(--orange-dark), var(--orange)); border-radius:2px; transition:width .45s cubic-bezier(.4,0,.2,1); }
+    .book-counter { text-align:center; font-size:10px; font-weight:800; letter-spacing:.28em; text-transform:uppercase; color:#6e6862; }
+    .book-hint { text-align:center; margin-top:14px; font-size:11px; color:#58534d; letter-spacing:.06em; }
+    .visually-hidden { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+
+    /* Zoom clone used by the open/close transition into the focused view */
+    .lb-clone { position:fixed; z-index:300; object-fit:contain; border-radius:14px; box-shadow:0 30px 100px rgba(0,0,0,.75); pointer-events:none; }
+
+    .book-empty { text-align:center; padding:70px 20px; color:var(--muted); font-size:16px; border:1px dashed var(--line); border-radius:var(--radius); }
+    .testimonials-empty { text-align:center; padding:70px 20px; color:var(--muted); font-size:16px; border:1px dashed var(--line); border-radius:var(--radius); }
 
     /* LIGHTBOX */
     .lightbox { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.94); backdrop-filter:blur(16px); }
     .lightbox.active { display:grid; grid-template-columns:1fr 400px; }
     .lightbox-image-area { display:flex; align-items:center; justify-content:center; position:relative; padding:60px 80px; }
     .lightbox-img { max-width:100%; max-height:85vh; border-radius:14px; box-shadow:0 30px 100px rgba(0,0,0,.7); object-fit:contain; }
+    .lightbox-meta { position:absolute; bottom:22px; left:50%; transform:translateX(-50%); max-width:88%; text-align:center; font-size:12px; color:#a39c93; letter-spacing:.05em; line-height:1.5; background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.08); padding:7px 16px; border-radius:30px; backdrop-filter:blur(8px); pointer-events:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .lightbox-close { position:absolute; top:20px; right:20px; width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.15); background:rgba(0,0,0,.5); color:var(--white); font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; z-index:110; backdrop-filter:blur(8px); }
     .lightbox-close:hover { background:var(--orange); border-color:var(--orange); color:#111; }
     .lightbox-nav { position:absolute; top:50%; transform:translateY(-50%); width:50px; height:50px; border-radius:50%; border:1px solid rgba(255,255,255,.15); background:rgba(0,0,0,.4); color:var(--white); font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; backdrop-filter:blur(8px); }
@@ -199,12 +373,13 @@
       .lightbox.active { grid-template-columns:1fr; grid-template-rows:1fr auto; }
       .lightbox-image-area { padding:60px 20px; }
       .lightbox-comments { height:45vh; border-left:none; border-top:1px solid var(--line); }
+      .book-turn-prev { left:-8px; }
+      .book-turn-next { right:-8px; }
     }
     @media(max-width:940px) {
       .nav { position:static; flex-direction:column; padding:12px 20px; }
       .brand img { width:44px; height:44px; min-width:44px; }
       .nav-links { flex-wrap:wrap; justify-content:center; gap:14px; }
-      .gallery-grid { grid-template-columns:repeat(2,1fr); }
       .testimonials-grid { grid-template-columns:1fr; }
       .footer-top { flex-direction:column; align-items:center; text-align:center; }
       .footer-contact { text-align:center; }
@@ -213,10 +388,27 @@
     @media(max-width:560px) {
       .nav-links a { font-size:11px; }
       .brand span { font-size:13px; }
-      .gallery-grid { grid-template-columns:1fr; }
       section { padding:56px 20px; }
       .footer-inner { padding:32px 20px; }
       .modal { padding:28px 20px; }
+      .book-frame { max-width:100%; }
+      .book, .book.single { width:min(100%, calc(min(58vh, 520px) * 0.75)); }
+      .book-turn { width:40px; height:40px; }
+      .book-turn-prev { left:-6px; }
+      .book-turn-next { right:-6px; }
+      .lightbox-meta { bottom:14px; font-size:11px; }
+      .zoom-hint { display:none; }
+    }
+
+    /* REDUCED MOTION — keep the book fully usable, drop the theatrics */
+    @media (prefers-reduced-motion: reduce) {
+      .sheet { transition-duration:.01ms !important; }
+      .face::before, .page-under::after { animation-duration:.01ms !important; }
+      .anim-in-next, .anim-out-next, .anim-in-prev, .anim-out-prev { animation-duration:.01ms !important; }
+      .cover-open-hint { animation:none; opacity:.9; }
+      .book-progress-fill { transition:none; }
+      .lb-clone { display:none !important; }
+      .lightbox { backdrop-filter:none; }
     }
   </style>
 </head>
@@ -243,18 +435,35 @@
   </header>
 
   <main>
-    <!-- GALLERY -->
+    <!-- GALLERY — LLR COMMUNITY PHOTOBOOK -->
     <section id="gallery">
       <div class="wrap">
         <div class="section-heading">
-          <div class="section-eyebrow">Gallery</div>
-          <h2 class="section-title">Photo <span class="orange">Wall</span></h2>
-          <p style="color:var(--muted); font-size:15px; margin-top:12px;">Moments from the road, the rallies, and the community.</p>
+          <div class="section-eyebrow">The Living Album</div>
+          <h2 class="section-title">Community <span class="orange">PhotoBook</span></h2>
+          <p style="color:var(--muted); font-size:15px; margin-top:12px; max-width:560px; margin-left:auto; margin-right:auto;">Every rider, every ride, every moment — bound into one album. Drag the page, swipe, or click the edges to turn.</p>
         </div>
-        <div style="text-align:center; margin-bottom:40px;">
-          <button class="btn btn-primary" onclick="openPhotoModal()">Submit a Photo</button>
+        <div style="text-align:center; margin-bottom:44px;">
+          <button class="btn btn-primary" onclick="openPhotoModal()">Add Your Photo</button>
         </div>
-        <div id="galleryGrid" class="gallery-grid"></div>
+        <div class="book-stage" id="bookStage">
+          <div class="book-frame">
+            <button type="button" class="book-turn book-turn-prev" id="bookPrev" aria-label="Turn to previous page">
+              <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <div class="book-viewport" id="bookViewport" tabindex="0" role="group"
+                 aria-label="Community photo album. Use the left and right arrow keys to turn pages, and Enter to open a photo.">
+              <div class="book" id="book"></div>
+            </div>
+            <button type="button" class="book-turn book-turn-next" id="bookNext" aria-label="Turn to next page">
+              <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <div class="book-progress" aria-hidden="true"><div class="book-progress-fill" id="bookProgressFill"></div></div>
+            <div class="book-counter" id="bookCounter"></div>
+            <div class="book-hint" id="bookHint">Drag or swipe a page &bull; click a photo to view it full size</div>
+            <div class="visually-hidden" aria-live="polite" id="bookLive"></div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -281,13 +490,14 @@
     </section>
   </main>
 
-  <!-- LIGHTBOX -->
-  <div class="lightbox" id="lightbox">
+  <!-- LIGHTBOX (focused photo view) -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Focused photo view">
     <div class="lightbox-image-area" onclick="closeLightbox(event)">
-      <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
-      <button class="lightbox-nav lightbox-prev" onclick="navLightbox(-1, event)">&#8249;</button>
-      <button class="lightbox-nav lightbox-next" onclick="navLightbox(1, event)">&#8250;</button>
+      <button class="lightbox-close" id="lightboxCloseBtn" aria-label="Close photo view" onclick="closeLightbox()">&times;</button>
+      <button class="lightbox-nav lightbox-prev" aria-label="Previous photo" onclick="navLightbox(-1, event)">&#8249;</button>
+      <button class="lightbox-nav lightbox-next" aria-label="Next photo" onclick="navLightbox(1, event)">&#8250;</button>
       <img class="lightbox-img" id="lightboxImg" src="" alt="">
+      <div class="lightbox-meta" id="lightboxMeta" style="display:none;"></div>
     </div>
     <div class="lightbox-comments">
       <div class="lightbox-comments-header">
@@ -310,8 +520,8 @@
   <div class="modal-overlay" id="photoModal" onclick="closePhotoModal(event)">
     <div class="modal" onclick="event.stopPropagation()">
       <button class="modal-close" onclick="closePhotoModal()">&times;</button>
-      <h3>Submit a <span class="orange">Photo</span></h3>
-      <p class="lead">Share a moment from your ride. Submissions are reviewed before appearing in the gallery.</p>
+      <h3>Add to the <span class="orange">Album</span></h3>
+      <p class="lead">Share a moment from your ride. Once reviewed, it becomes a page in the Community PhotoBook.</p>
       <form id="photoForm" onsubmit="submitPhoto(event)">
         <label for="photoName">Your Name</label>
         <input type="text" id="photoName" placeholder="e.g. John T." required>
@@ -325,7 +535,7 @@
         </div>
         <input type="file" id="photoFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleFileSelect(event)">
         <div class="actions">
-          <button type="submit" class="btn btn-primary" id="photoSubmitBtn">Submit Photo</button>
+          <button type="submit" class="btn btn-primary" id="photoSubmitBtn">Add My Photo</button>
           <button type="button" class="btn btn-secondary" onclick="closePhotoModal()">Cancel</button>
         </div>
         <div class="status" id="photoStatus"></div>
@@ -395,16 +605,33 @@
       if (s < 2592000) return Math.floor(s/86400) + 'd ago';
       return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric' });
     }
-    function commentCountBadge(n) {
-      if (!n) return '';
-      return '<div class="comment-count"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + n + '</div>';
-    }
 
+    /* ================= LLR PHOTOBOOK ENGINE ================= */
     let galleryImages = [];
     let lightboxIndex = 0;
     let galleryCommentCounts = {};
+    let lbOriginRect = null;
+    let lbLastFocus = null;
+    let suppressClick = false;
 
-    // LOAD GALLERY
+    const book = { mode: 'spread', pos: 0, M: 0, sheets: {}, pages: {}, turning: false };
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const SINGLE_BP = window.matchMedia('(max-width: 940px)');
+    const TURN_MS = 920, PAGE_MS = 480;
+    const NEW_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+    const el = (id) => document.getElementById(id);
+
+    function fmtDate(iso) {
+      if (!iso) return '';
+      try { return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); } catch { return ''; }
+    }
+    function isNewPhoto(img) {
+      const t = new Date(img.approvedAt || img.submittedAt || 0).getTime();
+      return t > 0 && (Date.now() - t) < NEW_WINDOW_MS;
+    }
+
+    // LOAD GALLERY — same public API calls as before; rendering handed to the PhotoBook
     async function loadGallery() {
       try {
         const res = await fetch('/api/community?type=gallery&action=list');
@@ -421,48 +648,602 @@
         } catch { galleryCommentCounts[img.id] = 0; }
       }));
 
-      const grid = document.getElementById('galleryGrid');
-      if (!galleryImages.length) {
-        grid.innerHTML = '<div class="gallery-empty">No photos yet. Be the first to share a moment from the ride.</div>';
-        return;
-      }
-      grid.innerHTML = galleryImages.map((img, i) => `
-        <div class="gallery-card" onclick="openLightbox(${i})">
-          <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.title || img.caption || '')}" loading="lazy">
-          ${commentCountBadge(galleryCommentCounts[img.id] || 0)}
-          <div class="caption">
-            <div class="name">${escapeHtml(img.title || img.name || '')}</div>
-            ${img.caption ? '<div class="desc">' + escapeHtml(img.caption) + '</div>' : ''}
-          </div>
-        </div>
-      `).join('');
+      buildBook();
     }
 
-    // LIGHTBOX
-    function openLightbox(i) {
+    /* ---------- Face content ---------- */
+    const ICON_OPEN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+    const ICON_SWIPE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg>';
+    const ICON_TAP = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.6M12 18.4V21M3 12h2.6M18.4 12H21"/></svg>';
+    const ICON_VIEW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/></svg>';
+
+    function faceContent(k) {
+      if (k === 0) return coverMarkup();
+      if (k === 1) return introMarkup();
+      if (k === book.M - 1) return closingMarkup();
+      const idx = k - 2;
+      if (idx >= 0 && idx < galleryImages.length) return photoFaceMarkup(idx, k);
+      return '<div class="page-body"><div class="face-pad"><span>&#10022;</span></div></div>';
+    }
+
+    function coverMarkup() {
+      const fresh = galleryImages.filter(isNewPhoto).length;
+      return `<div class="cover-inner">
+        <img class="cover-logo" src="assets/logo-nobg.png" alt="" decoding="async">
+        <div class="cover-kicker">Est. 2025</div>
+        <div class="cover-title">Community<br>Photobook</div>
+        <div class="cover-rule"></div>
+        <div class="cover-est">Lost Limb Riders &bull; Ride With Purpose</div>
+        ${fresh ? `<div class="cover-new">${fresh} new moment${fresh !== 1 ? 's' : ''} inside</div>` : ''}
+        <div class="cover-open-hint">Open the album ${ICON_OPEN}</div>
+      </div>`;
+    }
+
+    function introMarkup() {
+      return `<div class="page-prose">
+        <div class="prose-mark">&#10022;</div>
+        <h3>Our scrapbook, our story.</h3>
+        <p>Every page in this album was sent in by a rider &mdash; moments from the road, the rallies, and the people who make this club family.</p>
+        <p>It grows one photo at a time. Yours could be next.</p>
+        <div class="gesture-hints">
+          <div>${ICON_SWIPE}<span>Drag / swipe</span></div>
+          <div>${ICON_TAP}<span>Click a photo</span></div>
+        </div>
+      </div>`;
+    }
+
+    function closingMarkup() {
+      return `<div class="page-prose">
+        <div class="prose-mark">&#10022;</div>
+        <h3>Never Give Up.</h3>
+        <p>Ride With Purpose &bull; Support Amputees &bull; Build Community</p>
+        <p>The next page belongs to you.</p>
+        <div class="closing-cta"><button type="button" class="btn btn-primary btn-sm" onclick="openPhotoModal()">Add Your Photo</button></div>
+      </div>`;
+    }
+
+    function photoFaceMarkup(idx, k) {
+      const img = galleryImages[idx];
+      const title = img.title || img.caption || 'Untitled moment';
+      const when = fmtDate(img.approvedAt || img.submittedAt);
+      const count = galleryCommentCounts[img.id] || 0;
+      const comments = count ? `<span class="comment-count"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>${count}</span>` : '';
+      return `<figure class="page-body" role="group" aria-label="Photo ${idx + 1} of ${galleryImages.length}: ${escapeHtml(title)}">
+        ${isNewPhoto(img) ? '<span class="new-flag">New</span>' : ''}
+        <button type="button" class="photo-hit" data-photo="${idx}" aria-label="Open photo ${idx + 1}: ${escapeHtml(title)}">
+          <img src="${escapeHtml(img.url)}" alt="${escapeHtml(title)}" loading="lazy" decoding="async" draggable="false">
+          <span class="zoom-hint" aria-hidden="true">${ICON_VIEW}View</span>
+        </button>
+        <figcaption class="page-cap">
+          <span class="cap-title">${escapeHtml(title)}</span>
+          <span class="cap-sub">by ${escapeHtml(img.name || 'a rider')}${when ? ' &bull; ' + when : ''}</span>
+        </figcaption>
+        ${comments}
+        <span class="page-num" aria-hidden="true">${k}</span>
+      </figure>`;
+    }
+
+    /* ---------- Build & layout ---------- */
+    function computeTotalFaces() {
+      if (!galleryImages.length) return 0;
+      let m = galleryImages.length + 3;             // cover + intro + photos + closing
+      if (m % 2) m++;                               // pad to whole sheets
+      return m;
+    }
+
+    function buildBook() {
+      book.M = computeTotalFaces();
+      const stage = el('bookStage');
+      if (!book.M) {
+        stage.innerHTML = '<div class="book-empty">No photos in the album yet. Be the first to share a moment from the ride.<br><br><button type="button" class="btn btn-primary btn-sm" onclick="openPhotoModal()">Add Your Photo</button></div>';
+        return;
+      }
+      book.mode = SINGLE_BP.matches ? 'single' : 'spread';
+      book.pos = 0;
+      renderMode();
+      updateBookUI();
+    }
+
+    function renderMode() {
+      const b = el('book');
+      b.className = 'book' + (book.mode === 'single' ? ' single' : '');
+      b.innerHTML = '';
+      book.sheets = {}; book.pages = {};
+      if (book.mode === 'spread') ensureSpreadWindow(); else ensureSingleWindow();
+    }
+
+    /* ---------- Spread mode ---------- */
+    const curSheetQ = () => Math.ceil(book.pos / 2);     // number of flipped sheets at current pos
+
+    function sheetEl(s) {
+      const d = document.createElement('div');
+      d.className = 'sheet';
+      d.dataset.sheet = s;
+      d.innerHTML =
+        `<div class="face front${s === 0 ? ' cover-face face-openable' : ''}">${faceContent(2 * s)}</div>` +
+        `<div class="face back">${faceContent(2 * s + 1)}</div>`;
+      return d;
+    }
+
+    function ensureSpreadWindow() {
+      const b = el('book');
+      const q = curSheetQ(), nSheets = book.M / 2;
+      const lo = Math.max(0, q - 2), hi = Math.min(nSheets - 1, q + 2);
+      for (const s of Object.keys(book.sheets)) {
+        const si = Number(s);
+        if (si < lo || si > hi) { book.sheets[s].remove(); delete book.sheets[s]; }
+      }
+      for (let s = lo; s <= hi; s++) {
+        if (!book.sheets[s]) {
+          const node = sheetEl(s);
+          book.sheets[s] = node;
+          b.appendChild(node);
+        }
+      }
+      applySpreadPositions();
+    }
+
+    function applySpreadPositions() {
+      const q = curSheetQ(), nSheets = book.M / 2;
+      for (const s of Object.keys(book.sheets)) {
+        const si = Number(s), node = book.sheets[si];
+        node.style.transform = '';
+        node.style.removeProperty('--shade');
+        node.classList.toggle('flipped', si < q);
+        node.style.zIndex = si < q ? 10 + si : 10 + (nSheets - si);
+      }
+    }
+
+    /* ---------- Single-page mode ---------- */
+    function pageEl(k) {
+      const d = document.createElement('div');
+      d.className = 'book-page' + (k === 0 ? ' cover-page face-openable' : '');
+      d.dataset.face = k;
+      d.innerHTML = faceContent(k);
+      return d;
+    }
+
+    function ensureSingleWindow() {
+      const b = el('book');
+      const lo = Math.max(0, book.pos - 2), hi = Math.min(book.M - 1, book.pos + 2);
+      for (const k of Object.keys(book.pages)) {
+        const ki = Number(k);
+        if ((ki < lo || ki > hi) && ki !== book.pos) { book.pages[k].remove(); delete book.pages[k]; }
+      }
+      for (let k = lo; k <= hi; k++) {
+        if (!book.pages[k]) {
+          const node = pageEl(k);
+          book.pages[k] = node;
+          b.appendChild(node);
+        }
+      }
+      for (const k of Object.keys(book.pages)) book.pages[k].classList.toggle('cur', Number(k) === book.pos);
+    }
+
+    /* ---------- Turning ---------- */
+    function turnNext() {
+      if (book.turning || !book.M || book.pos >= book.M - 1) return;
+      if (book.mode === 'single') singleTurn(1); else spreadTurn(1);
+    }
+    function turnPrev() {
+      if (book.turning || !book.M || book.pos <= 0) return;
+      if (book.mode === 'single') singleTurn(-1); else spreadTurn(-1);
+    }
+
+    function finishTurn(dir) {
+      book.turning = false;
+      if (book.mode === 'spread') {
+        const newQ = clamp(curSheetQ() + dir, 0, book.M / 2);
+        book.pos = newQ === 0 ? 0 : Math.min(book.M - 1, 2 * newQ - 1);
+        ensureSpreadWindow();
+      } else {
+        book.pos = clamp(book.pos + dir, 0, book.M - 1);
+        ensureSingleWindow();
+      }
+      updateBookUI();
+    }
+
+    function spreadTurn(dir) {
+      book.turning = true;
+      const q = curSheetQ();
+      const sheetIdx = dir > 0 ? q : q - 1;
+      const node = book.sheets[sheetIdx];
+      if (!node) { book.turning = false; return; }
+      const under = book.sheets[dir > 0 ? sheetIdx + 1 : sheetIdx - 1];
+      node.classList.add('turning', dir > 0 ? 'anim-shade-fwd' : 'anim-shade-bwd');
+      if (under) under.classList.add('page-under', ...(dir < 0 ? ['page-under-bwd'] : []));
+      requestAnimationFrame(() => {
+        if (dir > 0) node.classList.add('flipped'); else node.classList.remove('flipped');
+      });
+      setTimeout(() => {
+        node.classList.remove('turning', 'anim-shade-fwd', 'anim-shade-bwd');
+        if (under) under.classList.remove('page-under', 'page-under-bwd');
+        finishTurn(dir);
+      }, TURN_MS + 40);
+    }
+
+    function singleTurn(dir) {
+      book.turning = true;
+      const target = book.pos + dir;
+      const curNode = book.pages[book.pos], tgtNode = book.pages[target];
+      if (!tgtNode) { book.turning = false; return; }
+      tgtNode.classList.add('entering', dir > 0 ? 'anim-in-next' : 'anim-in-prev');
+      if (curNode) curNode.classList.add('leaving', dir > 0 ? 'anim-out-next' : 'anim-out-prev');
+      setTimeout(() => {
+        if (curNode) curNode.classList.remove('cur', 'leaving', 'anim-out-next', 'anim-out-prev');
+        tgtNode.classList.remove('entering', 'anim-in-next', 'anim-in-prev');
+        book.pos = target;
+        ensureSingleWindow();
+        updateBookUI();
+        book.turning = false;
+      }, PAGE_MS + 30);
+    }
+
+    function jumpTo(k) {
+      if (book.turning || !book.M || k === book.pos) return;
+      k = clamp(k, 0, book.M - 1);
+      const b = el('book');
+      b.classList.add('no-anim');
+      if (book.mode === 'spread') {
+        book.pos = (k % 2 === 0 && k !== 0 && k !== book.M - 1) ? k - 1 : k;
+        ensureSpreadWindow();
+      } else {
+        book.pos = k;
+        ensureSingleWindow();
+      }
+      requestAnimationFrame(() => b.classList.remove('no-anim'));
+      updateBookUI();
+    }
+
+    function primaryPhotoIdx() {
+      if (book.pos <= 0 || book.pos >= book.M - 1) return -1;
+      let f = book.pos;
+      if (book.mode === 'spread') {
+        const right = f + 1, ri = right - 2;
+        if (right < book.M - 1 && ri >= 0 && ri < galleryImages.length) f = right;
+      }
+      const idx = f - 2;
+      return (idx >= 0 && idx < galleryImages.length) ? idx : -1;
+    }
+
+    /* ---------- Drag / swipe (pointer events unify mouse + touch) ---------- */
+    let drag = null;
+
+    function onPointerDown(e) {
+      if (book.turning || !book.M || drag) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      drag = {
+        id: e.pointerId, x0: e.clientX, t0: performance.now(),
+        moved: false, dir: 0, dx: 0, dead: false, node: null, cur: null, tgt: null,
+        halfW: el('book').clientWidth / 2, w: el('book').clientWidth || 1
+      };
+      try { el('bookViewport').setPointerCapture(e.pointerId); } catch {}
+    }
+
+    function onPointerMove(e) {
+      if (!drag || e.pointerId !== drag.id || book.turning) return;
+      const dx = e.clientX - drag.x0;
+      if (!drag.moved) {
+        if (Math.abs(dx) < 10) return;
+        drag.moved = true;
+        drag.dir = dx < 0 ? 1 : -1;
+        if (book.mode === 'spread') grabSheet(drag); else grabPages(drag);
+        if (drag.dead) return;
+      }
+      drag.dx = dx;
+      if (book.mode === 'spread') dragSheet(drag); else dragPagesMove(drag);
+    }
+
+    function grabSheet(d) {
+      const q = curSheetQ();
+      const idx = d.dir > 0 ? q : q - 1;
+      const node = book.sheets[idx];
+      if (!node) { d.dead = true; return; }
+      d.node = node;
+      node.classList.add('turning');
+      node.style.transition = 'none';
+    }
+
+    function dragSheet(d) {
+      const t = clamp((d.dir > 0 ? -d.dx : d.dx) / (d.halfW || 1), 0, 1);
+      d.node.style.transform = `rotateY(${-180 * t}deg)`;
+      d.node.style.setProperty('--shade', String(Math.sin(Math.PI * t)));
+    }
+
+    function releaseSheet(d, vx) {
+      const node = d.node;
+      const t = clamp((d.dir > 0 ? -d.dx : d.dx) / (d.halfW || 1), 0, 1);
+      const complete = t > 0.42 || (Math.abs(vx) > 0.45 && Math.sign(vx) === -d.dir);
+      book.turning = true;
+      node.style.transition = '';
+      node.style.transform = '';
+      requestAnimationFrame(() => {
+        const endFlipped = complete ? d.dir > 0 : d.dir < 0;
+        node.classList.toggle('flipped', endFlipped);
+      });
+      setTimeout(() => {
+        node.classList.remove('turning');
+        node.style.removeProperty('--shade');
+        if (complete) finishTurn(d.dir);
+        else { applySpreadPositions(); updateBookUI(); book.turning = false; }
+      }, TURN_MS + 40);
+    }
+
+    function grabPages(d) {
+      const target = book.pos + d.dir;
+      if (target < 0 || target > book.M - 1) { d.dead = true; return; }
+      d.cur = book.pages[book.pos];
+      d.tgt = book.pages[target];
+      if (!d.tgt) { d.dead = true; return; }
+      d.tgt.classList.add('entering');
+      if (d.cur) d.cur.classList.add('leaving');
+      if (d.cur) d.cur.style.zIndex = 5;
+      d.tgt.style.zIndex = 6;
+    }
+
+    function dragPagesMove(d) {
+      const w = d.w || 1;
+      if (d.dir > 0) {
+        const tx = clamp(w + d.dx, 0, w);
+        d.tgt.style.transition = 'none';
+        d.tgt.style.transform = `translateX(${tx}px) rotateY(${-6 * (tx / w)}deg)`;
+        d.tgt.style.opacity = String(0.35 + 0.65 * (tx / w));
+        if (d.cur) {
+          d.cur.style.transition = 'none';
+          d.cur.style.transform = `translateX(${d.dx}px) rotateY(${6 * (-d.dx / w)}deg)`;
+          d.cur.style.opacity = String(1 - 0.85 * (-d.dx / w));
+        }
+      } else {
+        const tx = clamp(d.dx - w, -w, 0);
+        d.tgt.style.transition = 'none';
+        d.tgt.style.transform = `translateX(${tx}px) rotateY(${6 * (-tx / w)}deg)`;
+        d.tgt.style.opacity = String(0.35 + 0.65 * (-tx / w));
+        if (d.cur) {
+          d.cur.style.transition = 'none';
+          d.cur.style.transform = `translateX(${d.dx}px) rotateY(${-6 * (d.dx / w)}deg)`;
+          d.cur.style.opacity = String(1 - 0.85 * (d.dx / w));
+        }
+      }
+    }
+
+    function releasePages(d, vx) {
+      const w = d.w || 1;
+      const t = clamp(Math.abs(d.dx) / w, 0, 1);
+      const complete = t > 0.3 || (Math.abs(vx) > 0.45 && Math.sign(vx) === -d.dir);
+      const tgt = d.tgt, cur = d.cur;
+      book.turning = true;
+      [tgt, cur].forEach((n) => { if (n) n.style.transition = `transform .42s cubic-bezier(.3,.1,.25,1), opacity .42s`; });
+      if (d.dir > 0) {
+        if (complete) {
+          tgt.style.transform = 'translateX(0)'; tgt.style.opacity = '1';
+          if (cur) { cur.style.transform = 'translateX(-34%) rotateY(9deg)'; cur.style.opacity = '0'; }
+        } else {
+          tgt.style.transform = `translateX(${w}px)`; tgt.style.opacity = '.35';
+          if (cur) { cur.style.transform = ''; cur.style.opacity = '1'; }
+        }
+      } else {
+        if (complete) {
+          tgt.style.transform = 'translateX(0)'; tgt.style.opacity = '1';
+          if (cur) { cur.style.transform = 'translateX(34%) rotateY(-9deg)'; cur.style.opacity = '0'; }
+        } else {
+          tgt.style.transform = `translateX(${-w}px)`; tgt.style.opacity = '.35';
+          if (cur) { cur.style.transform = ''; cur.style.opacity = '1'; }
+        }
+      }
+      setTimeout(() => {
+        [tgt, cur].forEach((n) => { if (n) { n.style.cssText = ''; } });
+        if (cur) cur.classList.remove('cur', 'leaving');
+        tgt.classList.remove('entering');
+        if (complete) { book.pos = clamp(book.pos + d.dir, 0, book.M - 1); }
+        ensureSingleWindow();
+        updateBookUI();
+        book.turning = false;
+      }, 450);
+    }
+
+    function onPointerUp(e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      const d = drag;
+      drag = null;
+      suppressClick = d.moved;
+      setTimeout(() => { suppressClick = false; }, 350);
+      if (d.dead || !d.moved) {
+        if (d.node) { d.node.style.transition = ''; d.node.style.transform = ''; d.node.classList.remove('turning'); }
+        if (d.tgt) { d.tgt.classList.remove('entering'); d.tgt.style.cssText = ''; }
+        if (d.cur) { d.cur.classList.remove('leaving'); d.cur.style.cssText = ''; }
+        return;
+      }
+      const dt = Math.max(1, performance.now() - d.t0);
+      const vx = d.dx / dt;
+      if (book.mode === 'spread') releaseSheet(d, vx); else releasePages(d, vx);
+    }
+
+    function onPointerCancel() {
+      if (!drag) return;
+      const d = drag;
+      drag = null;
+      if (d.node) { d.node.style.transition = ''; d.node.style.transform = ''; d.node.classList.remove('turning'); applySpreadPositions(); }
+      if (d.tgt) { d.tgt.classList.remove('entering'); d.tgt.style.cssText = ''; }
+      if (d.cur) { d.cur.classList.remove('leaving'); d.cur.style.cssText = ''; }
+      book.turning = false;
+    }
+
+    /* ---------- Book interactions ---------- */
+    function wireBook() {
+      const vp = el('bookViewport');
+      vp.addEventListener('pointerdown', onPointerDown);
+      vp.addEventListener('pointermove', onPointerMove);
+      vp.addEventListener('pointerup', onPointerUp);
+      vp.addEventListener('pointercancel', onPointerCancel);
+
+      el('book').addEventListener('click', (e) => {
+        if (suppressClick) return;
+        const hit = e.target.closest('.photo-hit');
+        if (hit) {
+          const idx = Number(hit.dataset.photo);
+          openLightbox(idx, hit.querySelector('img'));
+          return;
+        }
+        if (e.target.closest('button.btn')) return;
+        if (e.target.closest('.face-openable')) { turnNext(); return; }
+        if (book.turning) return;
+        const rect = el('book').getBoundingClientRect();
+        if (e.clientX - rect.left < rect.width / 2) turnPrev(); else turnNext();
+      });
+
+      el('bookPrev').addEventListener('click', () => turnPrev());
+      el('bookNext').addEventListener('click', () => turnNext());
+
+      let wheelLock = 0;
+      vp.addEventListener('wheel', (e) => {
+        if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || Math.abs(e.deltaX) < 24) return;
+        e.preventDefault();
+        const now = Date.now();
+        if (now < wheelLock || book.turning) return;
+        wheelLock = now + 520;
+        if (e.deltaX > 0) turnNext(); else turnPrev();
+      }, { passive: false });
+
+      vp.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') { e.preventDefault(); turnNext(); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); turnPrev(); }
+        else if (e.key === 'Home') { e.preventDefault(); jumpTo(0); }
+        else if (e.key === 'End') { e.preventDefault(); jumpTo(book.M - 1); }
+        else if ((e.key === 'Enter' || e.key === ' ') && e.target === vp) {
+          e.preventDefault();
+          if (book.pos === 0) { turnNext(); return; }
+          const i = primaryPhotoIdx();
+          if (i >= 0) openLightbox(i, el('book').querySelector(`.photo-hit[data-photo="${i}"] img`));
+        }
+      });
+
+      let resizeTimer = null;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          if (!book.M) return;
+          const want = SINGLE_BP.matches ? 'single' : 'spread';
+          if (want !== book.mode) { book.mode = want; renderMode(); updateBookUI(); }
+        }, 160);
+      });
+    }
+
+    function updateBookUI() {
+      let label;
+      if (book.pos === 0) label = 'Front Cover';
+      else if (book.pos === book.M - 1) label = 'Back Cover';
+      else if (book.mode === 'spread') {
+        label = `Pages ${book.pos}\u2013${book.pos + 1} of ${book.M - 1}`;
+      } else label = `Page ${book.pos} of ${book.M - 1}`;
+      el('bookCounter').textContent = label;
+      el('bookLive').textContent = label;
+      el('bookProgressFill').style.width = Math.round((book.pos / (book.M - 1)) * 100) + '%';
+      el('bookPrev').disabled = book.pos <= 0;
+      el('bookNext').disabled = book.pos >= book.M - 1;
+    }
+
+    /* ---------- LIGHTBOX (focused photo view — existing experience, now reached from the album) ---------- */
+    function positionClone(clone, r) {
+      clone.style.left = r.left + 'px';
+      clone.style.top = r.top + 'px';
+      clone.style.width = r.width + 'px';
+      clone.style.height = r.height + 'px';
+    }
+
+    function openLightbox(i, originImg) {
       lightboxIndex = i;
       renderLightbox();
       loadLightboxComments();
-      document.getElementById('lightbox').classList.add('active');
+      const lb = el('lightbox');
+      lbLastFocus = document.activeElement;
+      lb.classList.add('active');
       document.body.style.overflow = 'hidden';
+
+      lbOriginRect = null;
+      if (originImg && !reduceMotion.matches) {
+        const r = originImg.getBoundingClientRect();
+        if (r.width) {
+          lbOriginRect = r;
+          const target = el('lightboxImg');
+          const to = target.getBoundingClientRect();
+          if (to.width) {
+            lb.style.opacity = '0';
+            target.style.visibility = 'hidden';
+            const clone = originImg.cloneNode(false);
+            clone.className = 'lb-clone';
+            positionClone(clone, r);
+            document.body.appendChild(clone);
+            const dx = (to.left + to.width / 2) - (r.left + r.width / 2);
+            const dy = (to.top + to.height / 2) - (r.top + r.height / 2);
+            lb.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, easing: 'ease-out' });
+            clone.animate([
+              { transform: 'translate(0,0) scale(1,1)' },
+              { transform: `translate(${dx}px,${dy}px) scale(${to.width / r.width},${to.height / r.height})` }
+            ], { duration: 380, easing: 'cubic-bezier(.25,.8,.25,1)' }).onfinish = () => {
+              clone.remove();
+              target.style.visibility = '';
+              lb.style.opacity = '';
+            };
+          }
+        }
+      }
+      el('lightboxCloseBtn').focus({ preventScroll: true });
     }
+
     function closeLightbox(e) {
-      if (e && e.target !== document.getElementById('lightbox') && !e.target.classList.contains('lightbox-close') && !e.target.closest('.lightbox-image-area')) return;
-      document.getElementById('lightbox').classList.remove('active');
-      document.body.style.overflow = '';
+      if (e && e.target !== el('lightbox') && !e.target.classList.contains('lightbox-close') && !e.target.closest('.lightbox-image-area')) return;
+      const lb = el('lightbox');
+      if (!lb.classList.contains('active')) return;
+      const done = () => {
+        lb.classList.remove('active');
+        document.body.style.overflow = '';
+        if (lbLastFocus && document.contains(lbLastFocus)) lbLastFocus.focus({ preventScroll: true });
+        lbLastFocus = null;
+      };
+
+      const img = el('lightboxImg');
+      const from = img.getBoundingClientRect();
+      let toRect = lbOriginRect;
+      const originImg = el('book').querySelector(`.photo-hit[data-photo="${lightboxIndex}"] img`);
+      if (originImg) { const r = originImg.getBoundingClientRect(); if (r.width) toRect = r; }
+      if (reduceMotion.matches || !from.width || !toRect) { done(); return; }
+
+      const clone = img.cloneNode(false);
+      clone.className = 'lb-clone';
+      positionClone(clone, from);
+      document.body.appendChild(clone);
+      lb.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: 'ease-out' }).onfinish = () => { lb.style.opacity = ''; done(); };
+      const dx = (toRect.left + toRect.width / 2) - (from.left + from.width / 2);
+      const dy = (toRect.top + toRect.height / 2) - (from.top + from.height / 2);
+      clone.animate([
+        { transform: 'translate(0,0) scale(1,1)', opacity: 1 },
+        { transform: `translate(${dx}px,${dy}px) scale(${toRect.width / from.width},${toRect.height / from.height})`, opacity: .6 }
+      ], { duration: 360, easing: 'cubic-bezier(.3,.7,.3,1)' }).onfinish = () => clone.remove();
     }
+
     function navLightbox(dir, e) {
       if (e) e.stopPropagation();
       lightboxIndex = (lightboxIndex + dir + galleryImages.length) % galleryImages.length;
       renderLightbox();
       loadLightboxComments();
     }
+
     function renderLightbox() {
       const img = galleryImages[lightboxIndex];
       if (!img) return;
-      document.getElementById('lightboxImg').src = img.url;
-      document.getElementById('lightboxImg').alt = img.title || img.caption || '';
+      const li = el('lightboxImg');
+      li.src = img.url;
+      li.alt = img.title || img.caption || 'Community photo';
+      const meta = el('lightboxMeta');
+      const bits = [];
+      if (img.title || img.caption) bits.push(img.title || img.caption);
+      if (img.name) bits.push('by ' + img.name);
+      const when = fmtDate(img.approvedAt || img.submittedAt);
+      if (when) bits.push(when);
+      meta.textContent = bits.join(' \u00B7 ');
+      meta.style.display = bits.length ? 'block' : 'none';
     }
+
     async function loadLightboxComments() {
       const img = galleryImages[lightboxIndex];
       if (!img) return;
@@ -495,6 +1276,7 @@
         list.innerHTML = '<div class="lightbox-comments-empty">Could not load comments.</div>';
       }
     }
+
     async function submitLightboxComment() {
       const img = galleryImages[lightboxIndex];
       if (!img) return;
@@ -525,11 +1307,21 @@
       }
       btn.disabled = false; btn.textContent = 'Post';
     }
+
     document.addEventListener('keydown', e => {
-      if (!document.getElementById('lightbox').classList.contains('active')) return;
+      const lb = document.getElementById('lightbox');
+      if (!lb.classList.contains('active')) return;
       if (e.key === 'Escape') closeLightbox();
       if (e.key === 'ArrowLeft') navLightbox(-1);
       if (e.key === 'ArrowRight') navLightbox(1);
+      if (e.key === 'Tab') {
+        const focusables = lb.querySelectorAll('button, input, textarea, [tabindex]:not([tabindex="-1"])');
+        if (!focusables.length) return;
+        const first = focusables[0], last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        else if (!lb.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+      }
     });
 
     // LOAD TESTIMONIALS
@@ -719,7 +1511,7 @@
         });
         const data = await res.json();
         if (res.ok) {
-          document.getElementById('photoStatus').textContent = 'Photo submitted! It will appear after review.';
+          document.getElementById('photoStatus').textContent = 'Photo submitted! It will join the album after review.';
           document.getElementById('photoStatus').className = 'status success';
           setTimeout(() => { closePhotoModal(); }, 2000);
         } else {
@@ -730,7 +1522,7 @@
         document.getElementById('photoStatus').textContent = 'Network error. Try again.';
         document.getElementById('photoStatus').className = 'status error';
       }
-      btn.disabled = false; btn.textContent = 'Submit Photo';
+      btn.disabled = false; btn.textContent = 'Add My Photo';
     }
 
     // TESTIMONIAL MODAL
@@ -764,6 +1556,7 @@
 
     // INIT
     document.addEventListener('DOMContentLoaded', () => {
+      wireBook();
       loadGallery();
       loadTestimonials();
       fetch('/api/visit', {
