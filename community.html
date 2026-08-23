@@ -79,12 +79,13 @@
       width:min(100%, calc(min(72vh, 660px) * 1.5));
       margin:0 auto;
       perspective:2400px;
-      filter:drop-shadow(0 42px 70px rgba(0,0,0,.65));
     }
-    /* Table glow beneath the book */
+    /* Table glow beneath the book (static paint — no per-frame filter work during turns) */
     .book-viewport::after {
-      content:''; position:absolute; left:50%; bottom:-9%; width:74%; height:60px; transform:translateX(-50%);
-      background:radial-gradient(ellipse at center, rgba(255,106,0,.13) 0%, transparent 68%);
+      content:''; position:absolute; left:50%; bottom:-8%; width:86%; height:84px; transform:translateX(-50%);
+      background:
+        radial-gradient(ellipse 46% 82% at 50% 32%, rgba(0,0,0,.55) 0%, rgba(0,0,0,.28) 45%, transparent 72%),
+        radial-gradient(ellipse 64% 100% at 50% 42%, rgba(255,106,0,.10) 0%, transparent 66%);
       pointer-events:none;
     }
 
@@ -97,6 +98,7 @@
     }
     .sheet.flipped { transform:rotateY(-180deg); }
     .sheet.turning { will-change:transform; z-index:400 !important; }
+    .sheet.buried { pointer-events:none; }
     .face {
       position:absolute; inset:0; overflow:hidden;
       backface-visibility:hidden; -webkit-backface-visibility:hidden;
@@ -106,6 +108,9 @@
       display:flex; flex-direction:column;
     }
     .face.back { transform:rotateY(-180deg); border-radius:8px 3px 3px 8px; }
+    /* The face pointing away from the reader is visually culled; keep it from
+       catching stray clicks too (focus is handled via the inert property). */
+    .sheet.flipped > .face.front, .sheet:not(.flipped) > .face.back { pointer-events:none; }
     /* Static spine + outer-edge lighting on every page */
     .face.front::after { content:''; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
       background:linear-gradient(90deg, rgba(0,0,0,.62) 0%, rgba(0,0,0,.18) 7%, transparent 16%, transparent 90%, rgba(0,0,0,.28) 100%); }
@@ -146,8 +151,8 @@
     .photo-hit:hover .zoom-hint, .photo-hit:focus-visible .zoom-hint { opacity:1; transform:translateY(0); }
     .page-cap { text-align:center; padding:clamp(10px,2.6%,18px) clamp(6px,4%,18px) clamp(2px,1.5%,8px); min-height:0; }
     .cap-title { display:block; font-family:Georgia,'Times New Roman',serif; font-style:italic; font-size:clamp(13px,1.35vw,17px); color:#e8e2da; letter-spacing:.01em; line-height:1.35; }
-    .cap-sub { display:block; margin-top:5px; font-size:clamp(9px,.85vw,11px); font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:#77716a; }
-    .page-num { position:absolute; bottom:9px; font-size:10px; letter-spacing:.1em; color:#5c5852; font-weight:600; pointer-events:none; }
+    .cap-sub { display:block; margin-top:5px; font-size:clamp(9px,.85vw,11px); font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:#8a837b; }
+    .page-num { position:absolute; bottom:9px; font-size:10px; letter-spacing:.1em; color:#7d766e; font-weight:600; pointer-events:none; }
     .face.front .page-num { right:14px; }
     .face.back .page-num { left:14px; }
     .new-flag {
@@ -238,8 +243,8 @@
     .book-turn-next { right:calc(-8px - 3.2vw); }
     .book-progress { height:2px; background:rgba(255,255,255,.08); border-radius:2px; margin:26px auto 10px; width:min(420px,72%); overflow:hidden; }
     .book-progress-fill { height:100%; width:0%; background:linear-gradient(90deg, var(--orange-dark), var(--orange)); border-radius:2px; transition:width .45s cubic-bezier(.4,0,.2,1); }
-    .book-counter { text-align:center; font-size:10px; font-weight:800; letter-spacing:.28em; text-transform:uppercase; color:#6e6862; }
-    .book-hint { text-align:center; margin-top:14px; font-size:11px; color:#58534d; letter-spacing:.06em; }
+    .book-counter { text-align:center; font-size:10px; font-weight:800; letter-spacing:.28em; text-transform:uppercase; color:#87817a; }
+    .book-hint { text-align:center; margin-top:14px; font-size:11px; color:#8a847c; letter-spacing:.06em; }
     .visually-hidden { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
 
     /* Zoom clone used by the open/close transition into the focused view */
@@ -791,6 +796,18 @@
         node.style.removeProperty('--shade');
         node.classList.toggle('flipped', si < q);
         node.style.zIndex = si < q ? 10 + si : 10 + (nSheets - si);
+        // Sheets outside the live spread sit under other pages: make them
+        // click-through and unfocusable so buried photos can't steal taps or Tab.
+        const buried = si < q - 1 || si > q;
+        node.classList.toggle('buried', buried);
+        try { node.inert = buried; } catch {}
+        // Within a live sheet only the face pointing at the reader is interactive;
+        // the culled opposite face must not catch clicks or keyboard focus.
+        const faces = node.querySelectorAll('.face');
+        try {
+          if (faces[0]) faces[0].inert = si < q;
+          if (faces[1]) faces[1].inert = si >= q;
+        } catch {}
       }
     }
 
@@ -859,7 +876,7 @@
         node.classList.remove('turning', 'anim-shade-fwd', 'anim-shade-bwd');
         if (under) under.classList.remove('page-under', 'page-under-bwd');
         finishTurn(dir);
-      }, TURN_MS + 40);
+      }, reduceMotion.matches ? 40 : TURN_MS + 40);
     }
 
     function singleTurn(dir) {
@@ -876,7 +893,7 @@
         ensureSingleWindow();
         updateBookUI();
         book.turning = false;
-      }, PAGE_MS + 30);
+      }, reduceMotion.matches ? 30 : PAGE_MS + 30);
     }
 
     function jumpTo(k) {
@@ -917,7 +934,6 @@
         moved: false, dir: 0, dx: 0, dead: false, node: null, cur: null, tgt: null,
         halfW: el('book').clientWidth / 2, w: el('book').clientWidth || 1
       };
-      try { el('bookViewport').setPointerCapture(e.pointerId); } catch {}
     }
 
     function onPointerMove(e) {
@@ -926,6 +942,9 @@
       if (!drag.moved) {
         if (Math.abs(dx) < 10) return;
         drag.moved = true;
+        // Capture only once this is a real drag — capturing on pointerdown
+        // would retarget the composed click away from the book delegate.
+        try { el('bookViewport').setPointerCapture(e.pointerId); } catch {}
         drag.dir = dx < 0 ? 1 : -1;
         if (book.mode === 'spread') grabSheet(drag); else grabPages(drag);
         if (drag.dead) return;
@@ -966,7 +985,7 @@
         node.style.removeProperty('--shade');
         if (complete) finishTurn(d.dir);
         else { applySpreadPositions(); updateBookUI(); book.turning = false; }
-      }, TURN_MS + 40);
+      }, reduceMotion.matches ? 40 : TURN_MS + 40);
     }
 
     function grabPages(d) {
@@ -1038,7 +1057,7 @@
         ensureSingleWindow();
         updateBookUI();
         book.turning = false;
-      }, 450);
+      }, reduceMotion.matches ? 40 : 450);
     }
 
     function onPointerUp(e) {
