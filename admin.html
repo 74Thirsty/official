@@ -138,6 +138,12 @@
       margin-top: 8px;
     }
 
+    .stat-card .sub {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
     .tabs {
       display: flex;
       gap: 0;
@@ -499,6 +505,15 @@
         <div class="stat-card">
           <div class="num" id="statToday">–</div>
           <div class="label">Today</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" id="statUnique">–</div>
+          <div class="label">Unique Visitors</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" id="statUniqueToday">–</div>
+          <div class="label">Unique Today</div>
+          <div class="sub" id="statTodaySplit"></div>
         </div>
         <div class="stat-card">
           <div class="num" id="statSubs">–</div>
@@ -1021,6 +1036,10 @@
         const data = await res.json();
         document.getElementById('statVisits').textContent = data.totalVisits || 0;
         document.getElementById('statToday').textContent = data.todayVisits || 0;
+        document.getElementById('statUnique').textContent = data.uniqueVisitors || 0;
+        document.getElementById('statUniqueToday').textContent = data.uniqueToday || 0;
+        document.getElementById('statTodaySplit').textContent =
+          (data.newVisitorsToday || 0) + ' new · ' + (data.returningVisitorsToday || 0) + ' returning';
         document.getElementById('statSubs').textContent = data.subscribers || 0;
         renderBarChart('chartCountries', 'chartCountriesEmpty', data.topCountries || {});
         renderBarChart('chartBrowsers', 'chartBrowsersEmpty', data.browserStats || {});

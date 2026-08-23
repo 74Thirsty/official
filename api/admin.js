@@ -31,11 +31,22 @@ export default function handler(req, res) {
       const todayStr = new Date().toISOString().slice(0, 10);
       let today = 0;
       const countries = {};
+      const seenEver = new Set();
+      const seenBeforeToday = new Set();
+      const seenToday = new Set();
       for (const v of visitors) {
-        if ((v.timestamp || '').slice(0, 10) === todayStr) today++;
+        const day = (v.timestamp || '').slice(0, 10);
+        if (day === todayStr) today++;
         const c = v.country;
         if (c && c !== 'N/A') countries[c] = (countries[c] || 0) + 1;
+        const vid = v.visitorId;
+        if (!vid) continue;
+        if (day === todayStr) seenToday.add(vid);
+        else seenBeforeToday.add(vid);
+        seenEver.add(vid);
       }
+      const returningToday = [...seenToday].filter((id) => seenBeforeToday.has(id)).length;
+      const newToday = seenToday.size - returningToday;
 
       const topCountries = Object.entries(countries)
         .sort((a, b) => b[1] - a[1])
@@ -48,6 +59,10 @@ export default function handler(req, res) {
       sendJson(res, {
         totalVisits: visitors.length,
         todayVisits: today,
+        uniqueVisitors: seenEver.size,
+        uniqueToday: seenToday.size,
+        newVisitorsToday: newToday,
+        returningVisitorsToday: returningToday,
         subscribers: subscribers.length,
         topCountries,
         browserStats: getBrowserStats(visitors),
