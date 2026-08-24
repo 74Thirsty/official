@@ -542,6 +542,7 @@
         <button class="tab-btn" onclick="switchTab('newsletter')">Send Newsletter</button>
         <button class="tab-btn" onclick="switchTab('stream')">Live Stream</button>
         <button class="tab-btn" onclick="switchTab('events')">Events</button>
+        <button class="tab-btn" onclick="switchTab('sponsors')">Sponsors</button>
         <button class="tab-btn" onclick="switchTab('gallery')">Gallery</button>
         <button class="tab-btn" onclick="switchTab('testimonials')">Testimonials</button>
         <button class="tab-btn" onclick="switchTab('comments')">Comments</button>
@@ -851,6 +852,98 @@
           </div>
         </div>
 
+        <!-- Sponsors Panel -->
+        <div id="panel-sponsors" class="tab-panel">
+          <div class="panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; flex-wrap:wrap;">
+              <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin:0;">Sponsor Wall Management</h3>
+              <button class="btn btn-sm btn-primary" style="white-space:nowrap;" onclick="openSponsorForm()">+ Add Sponsor</button>
+            </div>
+
+            <div style="margin-bottom:18px; padding:14px 16px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.03);">
+              <div style="font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:8px;">Recognition Levels (shown in order on the public wall)</div>
+              <div id="spLevelChips" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+              <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                <input id="newLevelName" maxlength="40" placeholder="New level name (e.g. Presenting Partner)" style="flex:1; min-width:200px; padding:8px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:13px;">
+                <button class="btn btn-sm btn-secondary" onclick="addSponsorLevel()">+ Add Level</button>
+              </div>
+              <div id="spLevelStatus" style="margin-top:8px; font-size:12px; color:var(--muted); min-height:16px;"></div>
+            </div>
+
+            <div id="sponsorFormWrap" style="display:none; border:1px solid rgba(255,106,0,.35); border-radius:10px; padding:18px; margin-bottom:18px; background:rgba(255,106,0,.04);">
+              <input type="hidden" id="spEditId" value="">
+              <div class="form-row">
+                <div class="form-field">
+                  <label>Sponsor / Organization Name *</label>
+                  <input id="spName" maxlength="120" placeholder="e.g. Acme Harley-Davidson">
+                </div>
+                <div class="form-field">
+                  <label>Recognition Level *</label>
+                  <select id="spLevel"></select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label>Website URL</label>
+                  <input id="spWebsite" maxlength="500" placeholder="https://example.com">
+                </div>
+                <div class="form-field">
+                  <label>Contact Info (optional)</label>
+                  <input id="spContact" maxlength="200" placeholder="Phone, email, or contact person">
+                </div>
+              </div>
+              <div class="form-field" style="margin-bottom:14px;">
+                <label>Description</label>
+                <textarea id="spDesc" maxlength="600" placeholder="How does this sponsor support the mission?"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label>Display Order (lower number = shown earlier)</label>
+                  <input id="spOrder" type="number" min="0" max="9999" value="0">
+                </div>
+                <div class="form-field">
+                  <label>Status</label>
+                  <select id="spActive">
+                    <option value="true">Active — shown on the wall</option>
+                    <option value="false">Inactive — hidden from the wall</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-field" style="margin-bottom:14px;">
+                <label>Logo (PNG, JPG, WebP, or GIF &middot; under 400KB)</label>
+                <input id="spLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onchange="handleLogoSelect(this)">
+                <img id="spLogoPreview" src="" alt="" style="display:none; margin-top:10px; max-width:220px; max-height:110px; object-fit:contain; border:1px solid var(--line); border-radius:8px; padding:6px; background:#fff;">
+                <div style="margin-top:8px;">
+                  <button type="button" class="btn btn-sm btn-secondary" id="spRemoveLogoBtn" onclick="removeSponsorLogo()" style="display:none;">Remove Logo</button>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary" onclick="saveSponsor()">Save Sponsor</button>
+                <button class="btn btn-secondary" onclick="cancelSponsorForm()">Cancel</button>
+              </div>
+              <div id="spSaveStatus" style="margin-top:12px; font-size:13px; min-height:18px;"></div>
+            </div>
+
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Logo</th>
+                    <th>Name</th>
+                    <th>Level</th>
+                    <th>Status</th>
+                    <th>Website</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="spBody"></tbody>
+              </table>
+            </div>
+            <div id="spEmpty" class="empty-state" style="display:none;">No sponsors yet. Click &ldquo;+ Add Sponsor&rdquo; to create the first one.</div>
+          </div>
+        </div>
+
         <!-- Gallery Panel -->
         <div id="panel-gallery" class="tab-panel">
           <div class="panel-header">
@@ -980,6 +1073,7 @@
           streamCheckTimer = setInterval(checkStreamLive, 60000);
         }
         if (name === 'events') loadEvents();
+        if (name === 'sponsors') loadSponsorsAdmin();
         if (name === 'newsletter') loadSignedStatus();
         if (name === 'gallery') { loadGalleryPending(); loadGalleryApproved(); }
         if (name === 'testimonials') loadTestimonialPending();
@@ -1616,6 +1710,313 @@
         const ampm = hr >= 12 ? 'PM' : 'AM';
         const hr12 = hr === 0 ? 12 : hr > 12 ? hr - 12 : hr;
         return hr12 + ':' + m + ' ' + ampm;
+      }
+
+      // --- Sponsor Wall ---
+      let allSponsors = [];
+      let allSponsorLevels = [];
+      let pendingLogoData = '';
+      let sponsorLogoDirty = false;
+      let sponsorLogoRemoval = false;
+
+      function sponsorsApiUrl(action) {
+        return '/api/community?type=sponsor&action=' + action + '&key=' + encodeURIComponent(adminKey);
+      }
+
+      async function loadSponsorsAdmin() {
+        try {
+          const res = await fetch(sponsorsApiUrl('list-all'));
+          if (!res.ok) return;
+          const data = await res.json();
+          allSponsors = Array.isArray(data.sponsors) ? data.sponsors : [];
+          allSponsorLevels = Array.isArray(data.levels) ? data.levels : [];
+          renderSponsorLevelChips();
+          populateSponsorLevelSelect(document.getElementById('spLevel').value);
+          renderSponsorTable();
+        } catch {}
+      }
+
+      function renderSponsorLevelChips() {
+        const wrap = document.getElementById('spLevelChips');
+        if (!allSponsorLevels.length) {
+          wrap.innerHTML = '<span style="color:var(--muted); font-size:13px;">No recognition levels yet — add one below.</span>';
+          return;
+        }
+        wrap.innerHTML = allSponsorLevels.map(l =>
+          '<span style="display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border:1px solid rgba(255,106,0,.4); border-radius:50px; background:rgba(255,106,0,.07); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em;">' +
+            escapeHtml(l.name) +
+            '<button title="Rename level" style="background:none; border:none; color:#aaa; cursor:pointer; padding:0;" onclick="renameSponsorLevel(\'' + escapeHtml(l.id) + '\')">&#9998;</button>' +
+            '<button title="Delete level" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:0;" onclick="deleteSponsorLevel(\'' + escapeHtml(l.id) + '\')">&times;</button>' +
+          '</span>'
+        ).join('');
+      }
+
+      function populateSponsorLevelSelect(selectedId) {
+        const select = document.getElementById('spLevel');
+        const current = selectedId || select.value || (allSponsorLevels[0] && allSponsorLevels[0].id) || '';
+        select.innerHTML = allSponsorLevels.map(l => '<option value="' + escapeHtml(l.id) + '">' + escapeHtml(l.name) + '</option>').join('');
+        if (current && allSponsorLevels.some(l => l.id === current)) select.value = current;
+      }
+
+      function levelName(id) {
+        const level = allSponsorLevels.find(l => l.id === id);
+        return level ? level.name : (id || '—');
+      }
+
+      function renderSponsorTable() {
+        const body = document.getElementById('spBody');
+        const empty = document.getElementById('spEmpty');
+        if (!allSponsors.length) { body.innerHTML = ''; empty.style.display = 'block'; return; }
+        empty.style.display = 'none';
+        const firstId = allSponsors[0].id;
+        const lastId = allSponsors[allSponsors.length - 1].id;
+        body.innerHTML = allSponsors.map(s => {
+          const logoCell = s.logo && s.logo.url
+            ? '<img src="' + escapeHtml(s.logo.url) + '" alt="" style="width:64px; height:40px; object-fit:contain; background:#fff; border-radius:6px; padding:3px;">'
+            : '<span style="color:#555;">—</span>';
+          const statusBadge = s.active
+            ? '<span class="badge badge-clean">Active</span>'
+            : '<span class="badge badge-hosting">Inactive</span>';
+          const toggleLabel = s.active ? 'Deactivate' : 'Activate';
+          const websiteCell = s.websiteUrl
+            ? '<a href="' + escapeHtml(s.websiteUrl) + '" target="_blank" rel="noopener" style="color:var(--orange);">' + escapeHtml(truncate(String(s.websiteUrl).replace(/^https?:\/\//, ''), 26)) + '</a>'
+            : '<span style="color:#555;">—</span>';
+          const contactLine = s.contactInfo ? '<div style="color:#777; font-size:11px; margin-top:2px;">' + escapeHtml(s.contactInfo) + '</div>' : '';
+          return '<tr>' +
+            '<td style="white-space:nowrap;">' +
+              '<div style="font-weight:800; margin-bottom:4px;">' + (Number(s.order) || 0) + '</div>' +
+              '<button class="btn btn-sm" style="padding:2px 8px; margin-right:2px;" title="Move up"' + (s.id === firstId ? ' disabled' : '') + ' onclick="moveSponsor(\'' + s.id + '\', -1)">&#9650;</button>' +
+              '<button class="btn btn-sm" style="padding:2px 8px;" title="Move down"' + (s.id === lastId ? ' disabled' : '') + ' onclick="moveSponsor(\'' + s.id + '\', 1)">&#9660;</button>' +
+            '</td>' +
+            '<td>' + logoCell + '</td>' +
+            '<td><div style="font-weight:700; color:var(--white);">' + escapeHtml(s.name) + '</div>' + contactLine + '</td>' +
+            '<td><span class="badge badge-clean">' + escapeHtml(levelName(s.levelId)) + '</span></td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td>' + websiteCell + '</td>' +
+            '<td style="text-align:right; white-space:nowrap;">' +
+              '<button class="btn btn-sm" style="padding:4px 10px; margin-right:4px;" onclick="editSponsor(\'' + s.id + '\')">Edit</button>' +
+              '<button class="btn btn-sm" style="padding:4px 10px; margin-right:4px; background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,.2);" onclick="toggleSponsor(\'' + s.id + '\')">' + toggleLabel + '</button>' +
+              '<button class="btn btn-danger btn-sm" style="padding:4px 10px;" onclick="deleteSponsor(\'' + s.id + '\')">Del</button>' +
+            '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      function openSponsorForm(editId) {
+        populateSponsorLevelSelect();
+        pendingLogoData = '';
+        sponsorLogoDirty = false;
+        sponsorLogoRemoval = false;
+        document.getElementById('spLogoFile').value = '';
+        document.getElementById('spLogoPreview').style.display = 'none';
+        document.getElementById('spRemoveLogoBtn').style.display = 'none';
+        document.getElementById('spSaveStatus').textContent = '';
+        const sponsor = editId ? allSponsors.find(s => s.id === editId) : null;
+        document.getElementById('spEditId').value = sponsor ? sponsor.id : '';
+        document.getElementById('spName').value = sponsor ? (sponsor.name || '') : '';
+        document.getElementById('spLevel').value = sponsor ? sponsor.levelId : (document.getElementById('spLevel').value || '');
+        document.getElementById('spWebsite').value = sponsor ? (sponsor.websiteUrl || '') : '';
+        document.getElementById('spContact').value = sponsor ? (sponsor.contactInfo || '') : '';
+        document.getElementById('spDesc').value = sponsor ? (sponsor.description || '') : '';
+        document.getElementById('spOrder').value = sponsor ? (Number(sponsor.order) || 0) : nextAutoOrder();
+        document.getElementById('spActive').value = sponsor ? String(sponsor.active !== false) : 'true';
+        if (sponsor && sponsor.logo && sponsor.logo.url) {
+          const preview = document.getElementById('spLogoPreview');
+          preview.src = sponsor.logo.url;
+          preview.style.display = 'block';
+          document.getElementById('spRemoveLogoBtn').style.display = 'inline-block';
+        }
+        document.getElementById('sponsorFormWrap').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function nextAutoOrder() {
+        return allSponsors.reduce((max, s) => Math.max(max, Number(s.order) || 0), -1) + 1;
+      }
+
+      function cancelSponsorForm() {
+        document.getElementById('sponsorFormWrap').style.display = 'none';
+        document.getElementById('spSaveStatus').textContent = '';
+      }
+
+      function handleLogoSelect(input) {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type)) {
+          document.getElementById('spSaveStatus').textContent = 'Logo must be PNG, JPG, WebP, or GIF.';
+          input.value = '';
+          return;
+        }
+        if (file.size > 400 * 1024) {
+          document.getElementById('spSaveStatus').textContent = 'Logo is too large (' + Math.round(file.size / 1024) + 'KB). Use an image under 400KB.';
+          input.value = '';
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          pendingLogoData = ev.target.result;
+          sponsorLogoDirty = true;
+          sponsorLogoRemoval = false;
+          const preview = document.getElementById('spLogoPreview');
+          preview.src = pendingLogoData;
+          preview.style.display = 'block';
+          document.getElementById('spRemoveLogoBtn').style.display = 'inline-block';
+          document.getElementById('spSaveStatus').textContent = '';
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function removeSponsorLogo() {
+        pendingLogoData = '';
+        sponsorLogoDirty = false;
+        sponsorLogoRemoval = true;
+        document.getElementById('spLogoFile').value = '';
+        document.getElementById('spLogoPreview').style.display = 'none';
+        document.getElementById('spRemoveLogoBtn').style.display = 'none';
+      }
+
+      async function saveSponsor() {
+        const statusEl = document.getElementById('spSaveStatus');
+        const name = document.getElementById('spName').value.trim();
+        if (!name) { statusEl.textContent = 'Sponsor name is required.'; return; }
+        const payload = {
+          name,
+          levelId: document.getElementById('spLevel').value,
+          websiteUrl: document.getElementById('spWebsite').value.trim(),
+          contactInfo: document.getElementById('spContact').value.trim(),
+          description: document.getElementById('spDesc').value.trim(),
+          order: parseInt(document.getElementById('spOrder').value, 10) || 0,
+          active: document.getElementById('spActive').value === 'true',
+        };
+        if (sponsorLogoDirty && pendingLogoData) payload.logoData = pendingLogoData;
+        if (sponsorLogoRemoval) payload.removeLogo = true;
+        const editId = document.getElementById('spEditId').value;
+        if (editId) payload.id = editId;
+        statusEl.textContent = 'Saving...';
+        try {
+          const res = await fetch(sponsorsApiUrl(editId ? 'update' : 'add'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            statusEl.textContent = data.error || 'Save failed.';
+            return;
+          }
+          cancelSponsorForm();
+          loadSponsorsAdmin();
+        } catch {
+          statusEl.textContent = 'Network error.';
+        }
+      }
+
+      function editSponsor(id) {
+        openSponsorForm(id);
+      }
+
+      async function toggleSponsor(id) {
+        const sponsor = allSponsors.find(s => s.id === id);
+        if (!sponsor) return;
+        try {
+          const res = await fetch(sponsorsApiUrl('update'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, active: !(sponsor.active !== false) })
+          });
+          if (!res.ok) { const d = await res.json(); alert(d.error || 'Failed.'); return; }
+          loadSponsorsAdmin();
+        } catch { alert('Network error.'); }
+      }
+
+      async function deleteSponsor(id) {
+        if (!confirm('Permanently delete this sponsor? This cannot be undone. (Use Deactivate to just hide it.)')) return;
+        try {
+          const res = await fetch(sponsorsApiUrl('delete'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) { alert(data.error || 'Delete failed.'); return; }
+          loadSponsorsAdmin();
+        } catch { alert('Network error.'); }
+      }
+
+      async function moveSponsor(id, direction) {
+        const ids = allSponsors.map(s => s.id);
+        const index = ids.indexOf(id);
+        const target = index + direction;
+        if (index < 0 || target < 0 || target >= ids.length) return;
+        [ids[index], ids[target]] = [ids[target], ids[index]];
+        try {
+          const res = await fetch(sponsorsApiUrl('reorder'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: ids })
+          });
+          if (!res.ok) { const d = await res.json(); alert(d.error || 'Reorder failed.'); return; }
+          loadSponsorsAdmin();
+        } catch { alert('Network error.'); }
+      }
+
+      async function addSponsorLevel() {
+        const input = document.getElementById('newLevelName');
+        const statusEl = document.getElementById('spLevelStatus');
+        const name = input.value.trim();
+        if (!name) { statusEl.textContent = 'Enter a level name first.'; return; }
+        statusEl.textContent = 'Adding...';
+        try {
+          const res = await fetch(sponsorsApiUrl('add-level'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) { statusEl.textContent = data.error || 'Could not add level.'; return; }
+          input.value = '';
+          statusEl.textContent = 'Level "' + data.level.name + '" added.';
+          loadSponsorsAdmin();
+        } catch { statusEl.textContent = 'Network error.'; }
+      }
+
+      async function renameSponsorLevel(id) {
+        const level = allSponsorLevels.find(l => l.id === id);
+        if (!level) return;
+        const name = prompt('New name for "' + level.name + '":', level.name);
+        if (!name || !name.trim()) return;
+        const statusEl = document.getElementById('spLevelStatus');
+        statusEl.textContent = 'Renaming...';
+        try {
+          const res = await fetch(sponsorsApiUrl('rename-level'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, name: name.trim() })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) { statusEl.textContent = data.error || 'Could not rename level.'; return; }
+          statusEl.textContent = 'Level renamed.';
+          loadSponsorsAdmin();
+        } catch { statusEl.textContent = 'Network error.'; }
+      }
+
+      async function deleteSponsorLevel(id) {
+        const level = allSponsorLevels.find(l => l.id === id);
+        if (!level) return;
+        if (!confirm('Delete the "' + level.name + '" recognition level? Only possible when no sponsors use it.')) return;
+        const statusEl = document.getElementById('spLevelStatus');
+        statusEl.textContent = 'Deleting...';
+        try {
+          const res = await fetch(sponsorsApiUrl('delete-level'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) { statusEl.textContent = data.error || 'Could not delete level.'; return; }
+          statusEl.textContent = 'Level deleted.';
+          loadSponsorsAdmin();
+        } catch { statusEl.textContent = 'Network error.'; }
       }
 
      // --- Utilities ---

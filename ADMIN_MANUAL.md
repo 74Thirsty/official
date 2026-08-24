@@ -14,15 +14,16 @@ Complete reference for managing the website: events, live streaming (Facebook Li
 4. [Live Streaming — Facebook Live](#live-streaming--facebook-live)
 5. [Scheduled Broadcasts](#scheduled-broadcasts)
 6. [Events Calendar](#events-calendar)
-7. [Newsletter System](#newsletter-system)
-8. [Community Moderation (Gallery / Testimonials / Comments)](#community-moderation)
-9. [Guestbook](#guestbook)
-10. [API Reference](#api-reference)
-11. [Storage (Vercel KV)](#storage-vercel-kv)
-12. [Environment Variables](#environment-variables)
-13. [Cron](#cron)
-14. [Troubleshooting](#troubleshooting)
-15. [Quick Reference Card](#quick-reference-card)
+7. [Sponsor Wall](#sponsor-wall)
+8. [Newsletter System](#newsletter-system)
+9. [Community Moderation (Gallery / Testimonials / Comments)](#community-moderation)
+10. [Guestbook](#guestbook)
+11. [API Reference](#api-reference)
+12. [Storage (Vercel KV)](#storage-vercel-kv)
+13. [Environment Variables](#environment-variables)
+14. [Cron](#cron)
+15. [Troubleshooting](#troubleshooting)
+16. [Quick Reference Card](#quick-reference-card)
 
 ---
 
@@ -37,7 +38,7 @@ Complete reference for managing the website: events, live streaming (Facebook Li
 | `media.html` | `/media.html` | Podcast player, vlogs, Coffee Talk, **live stream player + schedule**, broadcast-alert signup |
 | `mission.html` | `/mission.html` | Mission, board, programs, donate |
 | `community.html` | `/community.html` | Community hub — photo gallery, testimonials, comments (visitor submissions are moderated) |
-| `sponsors.html` | `/sponsors.html` | Sponsor wall (Title/Major/Supporting tiers) |
+| `sponsors.html` | `/sponsors.html` | Sponsor wall — fully populated from sponsor records managed in admin (no hard-coded sponsors) |
 | `admin.html` | `/admin.html` | **Single admin dashboard** — everything is managed here |
 
 There is no hidden admin mode anywhere (the old press-A toggle is gone). Events and all other content are managed from `admin.html`.
@@ -55,7 +56,7 @@ There is no hidden admin mode anywhere (the old press-A toggle is gone). Events 
 | `/api/stream` | mixed | Facebook Live status, config + schedule CRUD, broadcast-alert signup |
 | `/api/ebook` | Token | One-time e-book download links (`?token=...`) |
 | `/api/unsubscribe` | Token | Newsletter unsubscribe links |
-| `/api/community` | mixed | Gallery/testimonials/comments list+submit (public), pending/approve/delete (admin) |
+| `/api/community` | mixed | Gallery/testimonials/comments list+submit (public), pending/approve/delete (admin); sponsor list (public) + sponsor CRUD/levels/reorder (admin) |
 | `/api/admin` | Yes | Stats, subscribers, visitors, newsletter preview + blast, stream config, audit |
 | `/api/cron-newsletter` | Cron | Automated weekly sender (gated by `CRON_SECRET`) |
 
@@ -89,6 +90,7 @@ If login fails with "Invalid admin key," the `ADMIN_KEY` env var on Vercel is th
 | Send Newsletter | Build preview, **send real blast**, resend welcome emails (see [Newsletter](#newsletter-system)) |
  | Live Stream | Facebook Live status, page URL, schedule, broadcast alerts — see next section |
 | Events | Create/edit/delete calendar events (same data as the public calendar) |
+| Sponsors | Full Sponsor Wall management: add/edit/delete, activate/deactivate, reorder, logos, recognition levels |
 | Gallery / Testimonials / Comments | Moderate visitor submissions — approve/unapprove/delete |
 | Guestbook | Read entries, download JSON backup, clear |
 
@@ -140,6 +142,41 @@ All management happens in `admin.html` → **Events** tab (the public page is re
 - **Edit / Delete** — buttons on each event row
 - Events auto-seed from `lib/seed.js` if the store is ever empty
 - Scheduled livestreams create/update linked calendar events on their own
+
+---
+
+## Sponsor Wall
+
+All management happens in `admin.html` → **Sponsors** tab; the public `sponsors.html` page is read-only and rebuilds itself from the saved records on every visit. Nothing on the wall is hard-coded.
+
+### Adding a sponsor
+
+1. **Sponsors** tab → **+ Add Sponsor**
+2. Fill in: Name (required), Recognition Level (required), Website URL, Contact Info, Description
+3. Optionally upload a logo (PNG/JPG/WebP/GIF under 400KB — stored in Vercel Blob)
+4. Set **Display Order** (lower number = shown earlier) and Status (Active/Inactive)
+5. **Save Sponsor** — it appears on the public wall immediately
+
+### Managing sponsors
+
+Each row in the table shows order number (with ▲/▼ move buttons), logo preview, name/contact, level badge, status badge, website link, and actions:
+
+- **Edit** — change any field, replace the logo (upload a new one or Remove Logo), rename, etc.
+- **Activate / Deactivate** — hides a sponsor from the public wall *without* deleting the record (status shows Inactive; reactivate anytime)
+- **Del** — permanently deletes the sponsor and its logo (asks to confirm)
+- Moving a sponsor with ▲/▼ re-numbers display order automatically
+
+### Recognition levels
+
+The levels at the top of the Sponsors tab are configurable data (not code):
+
+- The public wall renders one section per level, top-to-bottom by rank — Platinum first by default, then Gold, Silver, Bronze, Community Sponsor, Individual Supporter
+- **+ Add Level** appends a new level to the bottom of the wall (e.g. "Presenting Partner")
+- **✎** renames a level everywhere instantly (public wall included)
+- **×** deletes a level — only allowed when no sponsors still use it
+- Within a level section, sponsors sort by Display Order
+
+Sponsor records persist in KV (`llr:sponsors`, cap 200) and survive refreshes and redeploys.
 
 ---
 
@@ -245,9 +282,11 @@ JSON arrays under `llr:*` — access goes through `lib/storage.js` only.
 | `llr:gallery-pending` / `llr:gallery-approved` | 200 / 500 | Community photos |
 | `llr:testimonials` | 500 | Community testimonials |
 | `llr:comments` | 2000 | Community comments |
+| `llr:sponsors` | 200 | Sponsor records (logos live in Vercel Blob under `sponsors/logos/`) |
+| `llr:sponsor-levels` | 24 | Recognition levels (auto-seeds Platinum → Individual Supporter) |
 | `llr:audit` | 5000 | Audit trail |
 
-Re-seed tip: deleting `llr:events` / `llr:media` / `llr:stream` in the Vercel KV dashboard makes the next public read re-seed from `lib/seed.js`.
+Re-seed tip: deleting `llr:events` / `llr:media` / `llr:stream` in the Vercel KV dashboard makes the next public read re-seed from `lib/seed.js`. Deleting `llr:sponsor-levels` restores the six default levels the same way.
 
 ---
 
@@ -311,6 +350,9 @@ No system crontab involved — Vercel runs it.
 | Force a live check | admin.html → Live Stream → **Check** |
 | Schedule a broadcast | Live Stream → + Add Scheduled Stream (auto-creates calendar event) |
 | Add an event | admin.html → Events tab → create |
+| Add a sponsor | admin.html → Sponsors tab → + Add Sponsor → Save |
+| Hide a sponsor without deleting | Sponsors tab → **Deactivate** on its row |
+| Reorder the Sponsor Wall | Sponsors tab → ▲/▼ arrows, or set Display Order when editing |
 | Send a newsletter now | Send Newsletter → Preview → Send to All Subscribers → confirm |
 | Approve community photos/testimonials/comments | Gallery/Testimonials/Comments tabs → Approve |
 | Back up guestbook | Guestbook tab → Download |

@@ -57,32 +57,33 @@
     /* TIER HEADINGS */
     .tier-heading { font-size:14px; font-weight:900; letter-spacing:.18em; text-transform:uppercase; color:var(--orange); padding:12px 0; border-bottom:2px solid var(--orange); margin-bottom:28px; }
 
+    /* WALL STATES */
+    .wall-state { text-align:center; color:var(--muted); font-size:16px; line-height:1.6; padding:60px 20px; border:1px dashed var(--line); border-radius:18px; max-width:640px; margin:0 auto; }
+
     /* SPONSOR GRID */
-    .sponsor-grid { display:grid; gap:20px; margin-bottom:60px; }
-    .sponsor-grid.tier-title { grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); }
-    .sponsor-grid.tier-major { grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); }
-    .sponsor-grid.tier-supporting { grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
+    .sponsor-grid { display:grid; gap:20px; margin-bottom:60px; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); }
+    .sponsor-grid.featured { grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); }
 
     .sponsor-card { display:flex; flex-direction:column; align-items:center; text-align:center; padding:36px 28px; border:1px solid var(--line); border-radius:18px; background:linear-gradient(145deg, rgba(20,20,20,.95), rgba(8,8,8,.95)); transition:border-color .2s, transform .2s; }
     .sponsor-card:hover { border-color:rgba(255,106,0,.4); transform:translateY(-3px); }
 
-    .sponsor-logo { width:100%; max-width:200px; height:100px; object-fit:contain; margin-bottom:20px; filter:brightness(0) invert(1); opacity:.85; transition:opacity .2s; }
-    .sponsor-logo:hover { opacity:1; }
-    .sponsor-card.tier-title .sponsor-logo { max-width:260px; height:120px; }
-    .sponsor-card.tier-supporting .sponsor-logo { max-width:140px; height:70px; }
+    .level-chip { display:inline-block; padding:4px 14px; border:1px solid rgba(255,106,0,.45); border-radius:50px; font-size:10px; font-weight:900; letter-spacing:.18em; text-transform:uppercase; color:var(--orange); background:rgba(255,106,0,.07); margin-bottom:12px; }
 
     .sponsor-name { font-size:18px; font-weight:900; margin-bottom:8px; color:var(--white); }
-    .sponsor-card.tier-title .sponsor-name { font-size:22px; }
-    .sponsor-card.tier-supporting .sponsor-name { font-size:15px; }
+    .sponsor-card.featured .sponsor-name { font-size:22px; }
 
-    .sponsor-desc { font-size:14px; color:var(--muted); line-height:1.55; margin-bottom:16px; }
+    .sponsor-desc { font-size:14px; color:var(--muted); line-height:1.55; margin-bottom:10px; }
+    .sponsor-contact { font-size:13px; color:#777; margin-bottom:16px; }
     .sponsor-link { display:inline-block; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:var(--orange); border:1px solid rgba(255,106,0,.3); border-radius:8px; padding:8px 18px; transition:background .2s; }
     .sponsor-link:hover { background:rgba(255,106,0,.12); }
 
-    /* PLACEHOLDER */
+    .sponsor-logo { width:100%; max-width:200px; height:100px; object-fit:contain; margin-bottom:20px; filter:brightness(0) invert(1); opacity:.85; transition:opacity .2s; background:transparent; }
+    .sponsor-logo:hover { opacity:1; }
+    .sponsor-card.featured .sponsor-logo { max-width:260px; height:120px; }
+
+    /* LOGO PLACEHOLDER */
     .sponsor-placeholder { width:100%; max-width:200px; height:100px; border:2px dashed rgba(255,255,255,.15); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:20px; font-size:12px; color:#555; font-weight:700; text-transform:uppercase; letter-spacing:.1em; }
-    .sponsor-card.tier-title .sponsor-placeholder { max-width:260px; height:120px; }
-    .sponsor-card.tier-supporting .sponsor-placeholder { max-width:140px; height:70px; font-size:10px; }
+    .sponsor-card.featured .sponsor-placeholder { max-width:260px; height:120px; }
 
     /* CTA */
     .sponsor-cta { text-align:center; padding:60px 7vw; border-top:1px solid var(--line); }
@@ -115,15 +116,14 @@
       .nav { position:static; align-items:flex-start; flex-direction:column; }
       .nav-links { flex-wrap:wrap; }
       section { padding:60px 7vw; }
-      .sponsor-grid.tier-title { grid-template-columns:1fr; }
-      .sponsor-grid.tier-major { grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); }
+      .sponsor-grid.featured { grid-template-columns:1fr; }
     }
     @media (max-width:560px) {
       .brand { min-width:0; }
       .brand img { width:44px; height:44px; min-width:44px; }
       .nav-links { gap:14px; font-size:12px; }
       section, .page-hero { padding-left:22px; padding-right:22px; }
-      .sponsor-grid.tier-major, .sponsor-grid.tier-supporting { grid-template-columns:1fr; }
+      .sponsor-grid { grid-template-columns:1fr; }
       .footer-top { flex-direction:column; align-items:center; text-align:center; }
       .footer-contact { text-align:center; }
       .footer-bottom { flex-direction:column; align-items:center; text-align:center; }
@@ -154,90 +154,13 @@
   </header>
 
   <main>
-    <!-- TITLE SPONSORS -->
-    <section>
-      <div class="wrap">
-        <div class="tier-heading">Title Sponsors</div>
-        <div class="sponsor-grid tier-title">
-
-          <div class="sponsor-card tier-title">
-            <div class="sponsor-placeholder">Logo</div>
-            <div class="sponsor-name">Sponsor Name</div>
-            <div class="sponsor-desc">Description of this sponsor's support for the Lost Limb Riders mission and community.</div>
-            <a class="sponsor-link" href="#" target="_blank" rel="noopener">Visit Website</a>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
     <div class="statement"><p>Ride With Purpose &bull; Support Amputees &bull; Build Community</p></div>
 
-    <!-- MAJOR SPONSORS -->
+    <!-- SPONSOR WALL (populated from /api/community?type=sponsor&action=list) -->
     <section>
       <div class="wrap">
-        <div class="tier-heading">Major Sponsors</div>
-        <div class="sponsor-grid tier-major">
-
-          <div class="sponsor-card">
-            <div class="sponsor-placeholder">Logo</div>
-            <div class="sponsor-name">Sponsor Name</div>
-            <div class="sponsor-desc">How this partner supports the mission.</div>
-            <a class="sponsor-link" href="#" target="_blank" rel="noopener">Visit Website</a>
-          </div>
-
-          <div class="sponsor-card">
-            <div class="sponsor-placeholder">Logo</div>
-            <div class="sponsor-name">Sponsor Name</div>
-            <div class="sponsor-desc">How this partner supports the mission.</div>
-            <a class="sponsor-link" href="#" target="_blank" rel="noopener">Visit Website</a>
-          </div>
-
-          <div class="sponsor-card">
-            <div class="sponsor-placeholder">Logo</div>
-            <div class="sponsor-name">Sponsor Name</div>
-            <div class="sponsor-desc">How this partner supports the mission.</div>
-            <a class="sponsor-link" href="#" target="_blank" rel="noopener">Visit Website</a>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- SUPPORTING SPONSORS -->
-    <section>
-      <div class="wrap">
-        <div class="tier-heading">Supporting Sponsors</div>
-        <div class="sponsor-grid tier-supporting">
-
-          <div class="sponsor-card tier-supporting">
-            <div class="sponsor-placeholder">Logo</div>
-            <div class="sponsor-name">Sponsor Name</div>
-            <div class="sponsor-desc">How this partner supports the mission.</div>
-            <a class="sponsor-link" href="#" target="_blank" rel="noopener">Visit</a>
-          </div>
-
-          <div class="sponsor-card tier-supporting">
-            <div class="sponsor-placeholder">Logo</div>
-            <div class="sponsor-name">Sponsor Name</div>
-            <div class="sponsor-desc">How this partner supports the mission.</div>
-            <a class="sponsor-link" href="#" target="_blank" rel="noopener">Visit</a>
-          </div>
-
-          <div class="sponsor-card tier-supporting">
-            <div class="sponsor-placeholder">Logo</div>
-            <div class="sponsor-name">Sponsor Name</div>
-            <div class="sponsor-desc">How this partner supports the mission.</div>
-            <a class="sponsor-link" href="#" target="_blank" rel="noopener">Visit</a>
-          </div>
-
-          <div class="sponsor-card tier-supporting">
-            <div class="sponsor-placeholder">Logo</div>
-            <div class="sponsor-name">Sponsor Name</div>
-            <div class="sponsor-desc">How this partner supports the mission.</div>
-            <a class="sponsor-link" href="#" target="_blank" rel="noopener">Visit</a>
-          </div>
-
+        <div id="sponsorWall">
+          <div class="wall-state">Loading sponsors&hellip;</div>
         </div>
       </div>
     </section>
@@ -279,5 +202,83 @@
       </div>
     </div>
   </footer>
+
+  <script>
+    function escapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[c]);
+    }
+
+    function sponsorCard(sponsor, levelName, featured) {
+      const logo = sponsor.logo && sponsor.logo.url
+        ? '<img class="sponsor-logo" src="' + escapeHtml(sponsor.logo.url) + '" alt="' + escapeHtml(sponsor.name) + ' logo" loading="lazy" onerror="this.outerHTML=\'<div class=sponsor-placeholder>Logo</div>\'">'
+        : '<div class="sponsor-placeholder">Logo</div>';
+      let html = '<div class="sponsor-card' + (featured ? ' featured' : '') + '">' +
+        '<div class="level-chip">' + escapeHtml(levelName) + '</div>' +
+        logo +
+        '<div class="sponsor-name">' + escapeHtml(sponsor.name) + '</div>';
+      if (sponsor.description) html += '<div class="sponsor-desc">' + escapeHtml(sponsor.description) + '</div>';
+      if (sponsor.contactInfo) html += '<div class="sponsor-contact">' + escapeHtml(sponsor.contactInfo) + '</div>';
+      if (sponsor.websiteUrl) {
+        html += '<a class="sponsor-link" href="' + escapeHtml(sponsor.websiteUrl) + '" target="_blank" rel="noopener noopener noreferrer">Visit Website</a>';
+      }
+      return html + '</div>';
+    }
+
+    async function loadSponsorWall() {
+      const wall = document.getElementById('sponsorWall');
+      try {
+        const res = await fetch('/api/community?type=sponsor&action=list');
+        if (!res.ok) throw new Error('bad status');
+        const data = await res.json();
+        const levels = Array.isArray(data.levels) ? data.levels : [];
+        const sponsors = Array.isArray(data.sponsors) ? data.sponsors : [];
+
+        if (!sponsors.length) {
+          wall.innerHTML = '<div class="wall-state">Our Sponsor Wall is coming together. Want to be part of the mission? Call 515-890-5765 to become a sponsor.</div>';
+          return;
+        }
+
+        const levelNames = {};
+        for (const level of levels) levelNames[level.id] = level.name || level.id;
+
+        const byLevel = {};
+        for (const sponsor of sponsors) {
+          const key = sponsor.levelId || '';
+          (byLevel[key] = byLevel[key] || []).push(sponsor);
+        }
+
+        let html = '';
+        levels.forEach((level, index) => {
+          const group = byLevel[level.id];
+          if (!group || !group.length) return;
+          delete byLevel[level.id];
+          const featured = index === 0;
+          html += '<div class="tier-heading">' + escapeHtml(level.name || level.id) + ' Sponsors</div>' +
+            '<div class="sponsor-grid' + (featured ? ' featured' : '') + '">' +
+            group.map((s) => sponsorCard(s, level.name || level.id, featured)).join('') +
+            '</div>';
+        });
+        // Sponsors pointing at a level that no longer exists still get shown.
+        for (const key of Object.keys(byLevel)) {
+          const group = byLevel[key];
+          html += '<div class="tier-heading">Sponsors</div>' +
+            '<div class="sponsor-grid">' +
+            group.map((s) => sponsorCard(s, levelNames[key] || key, false)).join('') +
+            '</div>';
+        }
+        wall.innerHTML = html;
+      } catch {
+        wall.innerHTML = '<div class="wall-state">Could not load the Sponsor Wall right now. Please refresh the page or call 515-890-5765 to learn about sponsoring.</div>';
+      }
+    }
+
+    loadSponsorWall();
+  </script>
 </body>
 </html>
