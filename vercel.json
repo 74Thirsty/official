@@ -5,7 +5,7 @@
       "schedule": "0 9 * * 1"
     },
     {
-      "path": "/api/cron-content",
+      "path": "/api/cron-newsletter?target=content",
       "schedule": "0 6 * * 1"
     }
   ]

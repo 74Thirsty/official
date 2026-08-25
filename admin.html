@@ -2393,7 +2393,7 @@
 
     // --- Content Engine ---
     function contentApiUrl(action, extra) {
-      let url = '/api/content?action=' + action + '&key=' + encodeURIComponent(adminKey);
+      let url = '/api/admin?action=content-' + action + '&key=' + encodeURIComponent(adminKey);
       if (extra) url += '&' + extra;
       return url;
     }
@@ -2527,7 +2527,7 @@
       status.textContent = 'Generating ideas... this may take 30-60 seconds.';
       status.style.color = '#f59e0b';
       try {
-        const res = await fetch('/api/content?action=generate-ideas&key=' + encodeURIComponent(adminKey), {
+        const res = await fetch(contentApiUrl('generate-ideas'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: '{}'
