@@ -6,16 +6,7 @@ import { addAudit } from '../lib/audit.js';
 import { randomBytes } from 'crypto';
 import { parseBrowser } from '../lib/ua.js';
 import { facebookDetectionConfigured } from '../lib/stream.js';
-
-function getBrowserStats(visitors) {
-  const stats = { Chrome: 0, Firefox: 0, Safari: 0, Edge: 0, Other: 0 };
-  for (const v of visitors) {
-    const browser = parseBrowser(v.userAgent);
-    if (stats[browser] !== undefined) stats[browser]++;
-    else stats.Other++;
-  }
-  return stats;
-}
+import { computeVisitorStats } from '../lib/visitor-stats.js';
 
 export default function handler(req, res) {
   if (req.method === 'OPTIONS') return sendEmpty(res);
@@ -27,45 +18,10 @@ export default function handler(req, res) {
   const fail = () => sendJson(res, { error: 'Storage error.' }, 500);
 
   if (action === 'stats') {
-    Promise.all([getList(KEYS.visitors), getList(KEYS.subscribers)]).then(async ([visitors, subscribers]) => {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      let today = 0;
-      const countries = {};
-      const seenEver = new Set();
-      const seenBeforeToday = new Set();
-      const seenToday = new Set();
-      for (const v of visitors) {
-        const day = (v.timestamp || '').slice(0, 10);
-        if (day === todayStr) today++;
-        const c = v.country;
-        if (c && c !== 'N/A') countries[c] = (countries[c] || 0) + 1;
-        const vid = v.visitorId;
-        if (!vid) continue;
-        if (day === todayStr) seenToday.add(vid);
-        else seenBeforeToday.add(vid);
-        seenEver.add(vid);
-      }
-      const returningToday = [...seenToday].filter((id) => seenBeforeToday.has(id)).length;
-      const newToday = seenToday.size - returningToday;
-
-      const topCountries = Object.entries(countries)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-        .reduce((acc, [k, n]) => {
-          acc[k] = n;
-          return acc;
-        }, {});
-
+    Promise.all([getList(KEYS.visitors), getList(KEYS.subscribers)]).then(([visitors, subscribers]) => {
       sendJson(res, {
-        totalVisits: visitors.length,
-        todayVisits: today,
-        uniqueVisitors: seenEver.size,
-        uniqueToday: seenToday.size,
-        newVisitorsToday: newToday,
-        returningVisitorsToday: returningToday,
+        ...computeVisitorStats(visitors),
         subscribers: subscribers.length,
-        topCountries,
-        browserStats: getBrowserStats(visitors),
         signedCopyReady: signedCopyAvailable(),
       });
     }).catch(fail);
