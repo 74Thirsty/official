@@ -83,6 +83,16 @@ Facebook offers no public way to detect a live Page without them.
 | `FACEBOOK_ACCESS_TOKEN` | Optional (needed for auto-detection) | Page access token | `lib/stream.js`. Server-side only; never sent to browsers. |
 | `FACEBOOK_PAGE_URL` | Optional | `https://www.facebook.com/YourPage` | Offline-state "Follow on Facebook" link. The admin panel field overrides this. |
 
+### Content Engine (Story + Event-Idea Generation)
+
+| Variable | Required | Value | Notes |
+|---|---|---|---|
+| `GEMINI_API_KEY` | Optional (needed for AI generation) | Google AI Studio key | `lib/ai.js`. Powers story generation and event-idea recommendations. Get one at [aistudio.google.com](https://aistudio.google.com/apikey). |
+| `GEMINI_MODEL` | Optional | Default: `gemini-2.5-flash` | Override the Gemini model used for generation. |
+| `DISCORD_OWNER_WEBHOOK_URL` | Optional | Discord channel webhook URL | `lib/notify.js`. Admin notifications for approvals, generation events, failures. Channel → Integrations → Webhooks → New Webhook. Without it, all content features work but no Discord alerts fire. |
+
+Without the first two, all content-engine UI is visible in admin but generation buttons return "AI not configured." Notifications silently skip (logged to audit).
+
 Without the first two, the site still works but always shows its offline state.
 
 ---

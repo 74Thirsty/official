@@ -35,7 +35,17 @@ export default function handler(req, res) {
     const streamSchedule = (streamArr && streamArr[0] && streamArr[0].schedule) || [];
     const streamList = getUpcomingStreams(streamSchedule);
     const userMessage = process.env.NEWSLETTER_MESSAGE || '';
-    const { dateRange } = buildNewsletter(userMessage, upcoming, streamList);
+
+    let storyForNewsletter = null;
+    let storyId = null;
+    const stories = await getList(KEYS.stories);
+    const storyIdx = stories.findIndex(s => s.status === 'approved');
+    if (storyIdx !== -1) {
+      storyForNewsletter = stories[storyIdx];
+      storyId = stories[storyIdx].id;
+    }
+
+    const { dateRange } = buildNewsletter(userMessage, upcoming, streamList, 'Rider', '', storyForNewsletter);
     const subject = `Lost Limb Riders — Events ${dateRange}`;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -53,7 +63,7 @@ export default function handler(req, res) {
         continue;
       }
       const name = String(sub.name || 'Rider').replace(/[<>]/g, '').trim() || 'Rider';
-      const { html } = buildNewsletter(userMessage, upcoming, streamList, name, buildUnsubscribeUrl(sub.unsubToken || ''));
+      const { html } = buildNewsletter(userMessage, upcoming, streamList, name, buildUnsubscribeUrl(sub.unsubToken || ''), storyForNewsletter);
       const result = await sendEmail(to, subject, html);
       if (result.ok) {
         sent++;
@@ -67,12 +77,24 @@ export default function handler(req, res) {
       await setDate(KEYS.lastNewsletterSent, new Date().toISOString());
     }
 
+    if (storyId && sent > 0) {
+      const allStories = await getList(KEYS.stories);
+      const si = allStories.findIndex(s => s.id === storyId);
+      if (si !== -1) {
+        allStories[si].status = 'used';
+        allStories[si].newsletterIssue = subject;
+        allStories[si].usedAt = new Date().toISOString();
+        await setList(KEYS.stories, allStories);
+      }
+    }
+
     return sendJson(res, {
       ok: true,
       sent,
       failed,
       skipped: activeSubscribers.length - sent - failed,
       failures: failures.slice(0, 5),
+      storyIncluded: Boolean(storyForNewsletter),
     });
   }).catch(() => sendJson(res, { error: 'Storage error.' }, 500));
 }

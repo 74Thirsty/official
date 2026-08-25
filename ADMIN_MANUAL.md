@@ -180,6 +180,44 @@ Sponsor records persist in KV (`llr:sponsors`, cap 200) and survive refreshes an
 
 ---
 
+## Content Engine
+
+Two admin tabs: **Content Engine** (stories + settings) and **Event Ideas** (approval queue).
+
+### Story generator
+
+Generates original fictional short stories (600–1,000 words) for newsletter use. All stories require **admin approval** before publication.
+
+- **Generate Story** — on-demand; pick theme/tone/character manually or hit **Surprise Me** for random picks
+- Stories enter `pending` status → **Approve** / **Reject** / **Archive**
+- Once approved, the next newsletter blast or cron send includes the story with a fiction disclosure
+- After inclusion, the story status changes to `used` with the newsletter issue label
+- The generator receives full story history to avoid repetition in characters, themes, and settings
+
+### Event idea recommendations
+
+AI generates practical event ideas scored by outreach, membership, fundraising, sponsor, and visibility value. Each recommendation includes a rationale explaining why it would benefit Lost Limb Riders.
+
+- **Generate Ideas** — on-demand, produces ~3 ideas per run
+- All ideas enter the **Event Approval Queue** as `pending`
+- **Approve** publishes the idea as an official calendar event (status `published`)
+- **Reject** hides it and logs the rejection
+- Ideas never appear on the public calendar until approved
+
+### Settings
+
+Toggle automatic generation (stories/events), set frequency (days), and enable/disable Discord notifications. Approval is always required — cannot be disabled.
+
+### Notifications
+
+Requires `DISCORD_OWNER_WEBHOOK_URL` in Vercel env. Notifications fire for: idea generated, idea approved/rejected, story generated/approved/rejected/used, generation failures, notification failures. Discord failure never blocks content creation.
+
+### Cron
+
+`/api/cron-content` runs Mondays 06:00 UTC. Generates stories and/or ideas based on frequency settings stored in `llr:content-settings`. Self-gates like the newsletter cron (`CRON_SECRET` required, skips if too soon, logs failures).
+
+---
+
 ## Newsletter System
 
 ### Signup → Welcome
@@ -193,8 +231,8 @@ Sponsor records persist in KV (`llr:sponsors`, cap 200) and survive refreshes an
 
 Two ways, both real sends via Resend:
 
-- **Manual blast** — Send Newsletter tab → optional intro message → Preview → **Send to All Subscribers** → confirm. Sends immediately to active subscribers (capped at 100 per run), records an audit entry, and updates the last-sent timestamp.
-- **Automated cron** — runs Mondays 09:00 UTC but only actually sends every **≥ 13 days**, also capped at 100. Requires `CRON_SECRET`.
+- **Manual blast** — Send Newsletter tab → optional intro message → Preview → **Send to All Subscribers** → confirm. Sends immediately to active subscribers (capped at 100 per run), records an audit entry, and updates the last-sent timestamp. If an approved story is available, it's included automatically.
+- **Automated cron** — runs Mondays 09:00 UTC but only actually sends every **≥ 13 days**, also capped at 100. Requires `CRON_SECRET`. Also includes the next approved story if available.
 
 Every email includes a personalized **unsubscribe link** (`/api/unsubscribe`). Unsubscribed members stay in the list but receive nothing.
 
@@ -284,6 +322,9 @@ JSON arrays under `llr:*` — access goes through `lib/storage.js` only.
 | `llr:comments` | 2000 | Community comments |
 | `llr:sponsors` | 200 | Sponsor records (logos live in Vercel Blob under `sponsors/logos/`) |
 | `llr:sponsor-levels` | 24 | Recognition levels (auto-seeds Platinum → Individual Supporter) |
+| `llr:event-ideas` | 200 | AI-generated event recommendations awaiting approval |
+| `llr:stories` | 500 | Story library — generated fiction with status/metadata |
+| `llr:content-settings` | — | Content Engine settings (frequencies, toggles) |
 | `llr:audit` | 5000 | Audit trail |
 
 Re-seed tip: deleting `llr:events` / `llr:media` / `llr:stream` in the Vercel KV dashboard makes the next public read re-seed from `lib/seed.js`. Deleting `llr:sponsor-levels` restores the six default levels the same way.
@@ -311,7 +352,14 @@ Note: `.env.local` only applies to local `vercel dev`. Production reads env vars
 
 ## Cron
 
-Configured in `vercel.json`: `0 9 * * 1` — Mondays 09:00 UTC, hitting `/api/cron-newsletter`.
+Configured in `vercel.json`:
+
+| Schedule | Endpoint | Purpose |
+|----------|----------|---------|
+| `0 9 * * 1` | `/api/cron-newsletter` | Weekly newsletter blast (Mondays 09:00 UTC) |
+| `0 6 * * 1` | `/api/cron-content` | Content generation — stories + event ideas (Mondays 06:00 UTC) |
+
+### Newsletter cron
 
 The function self-gates:
 
@@ -319,8 +367,13 @@ The function self-gates:
 2. Skips if the last send was less than **13 days** ago (`too_soon`)
 3. Caps at **100 sends per run**
 4. Records failures and updates `llr:last-newsletter-sent`
+5. Includes the next approved story (if available) and marks it `used` after sending
 
-No system crontab involved — Vercel runs it.
+### Content cron
+
+Same `CRON_SECRET` gate. Requires `GEMINI_API_KEY` set (skips with `no_ai_key` if missing). Self-gates based on `llr:content-settings` frequencies (default: stories every 7 days, ideas every 14 days). Generation failures log to audit and notify via Discord if configured — never block other operations.
+
+No system crontab involved — Vercel runs both.
 
 ---
 

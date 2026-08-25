@@ -49,15 +49,19 @@ export default function handler(req, res) {
   }
 
   if (action === 'send-newsletter' && req.method === 'POST') {
-    Promise.all([readBody(req), getList(KEYS.events), getList(KEYS.stream)]).then(async ([payload, events, streamArr]) => {
+    Promise.all([readBody(req), getList(KEYS.events), getList(KEYS.stream), getList(KEYS.stories)]).then(async ([payload, events, streamArr, stories]) => {
       const upcoming = getUpcomingEvents(events);
       const streamSchedule = (streamArr && streamArr[0] && streamArr[0].schedule) || [];
+      const storyForNewsletter = stories.find(s => s.status === 'approved') || null;
       const { html, eventCount, streamCount } = buildNewsletter(
         String(payload.message || '').trim(),
         upcoming,
-        getUpcomingStreams(streamSchedule)
+        getUpcomingStreams(streamSchedule),
+        'Rider',
+        '',
+        storyForNewsletter
       );
-      sendJson(res, { html, eventCount, streamCount });
+      sendJson(res, { html, eventCount, streamCount, storyIncluded: Boolean(storyForNewsletter) });
     }).catch(fail);
     return;
   }
@@ -78,7 +82,11 @@ export default function handler(req, res) {
       const streamSchedule = (streamArr && streamArr[0] && streamArr[0].schedule) || [];
       const streamList = getUpcomingStreams(streamSchedule);
       const userMessage = msg || process.env.NEWSLETTER_MESSAGE || '';
-      const { dateRange } = buildNewsletter(userMessage, upcoming, streamList);
+      const allStories = await getList(KEYS.stories);
+      const storyIdx = allStories.findIndex(s => s.status === 'approved');
+      const storyForNewsletter = storyIdx !== -1 ? allStories[storyIdx] : null;
+      const storyId = storyForNewsletter?.id || null;
+      const { dateRange } = buildNewsletter(userMessage, upcoming, streamList, 'Rider', '', storyForNewsletter);
       const subject = `Lost Limb Riders — Events ${dateRange}`;
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -95,7 +103,7 @@ export default function handler(req, res) {
           continue;
         }
         const name = String(sub.name || 'Rider').replace(/[<>]/g, '').trim() || 'Rider';
-        const { html } = buildNewsletter(userMessage, upcoming, streamList, name, buildUnsubscribeUrl(sub.unsubToken || ''));
+        const { html } = buildNewsletter(userMessage, upcoming, streamList, name, buildUnsubscribeUrl(sub.unsubToken || ''), storyForNewsletter);
         const result = await sendEmail(to, subject, html);
         if (result.ok) {
           sent++;
@@ -109,7 +117,17 @@ export default function handler(req, res) {
         await setDate(KEYS.lastNewsletterSent, new Date().toISOString());
       }
 
-      await addAudit('newsletter_blast', 'admin', { sent, failed, total: active.length });
+      if (storyId && sent > 0) {
+        const si = allStories.findIndex(s => s.id === storyId);
+        if (si !== -1) {
+          allStories[si].status = 'used';
+          allStories[si].newsletterIssue = subject;
+          allStories[si].usedAt = new Date().toISOString();
+          await setList(KEYS.stories, allStories);
+        }
+      }
+
+      await addAudit('newsletter_blast', 'admin', { sent, failed, total: active.length, storyIncluded: Boolean(storyForNewsletter) });
 
       return sendJson(res, {
         ok: true,
@@ -117,6 +135,7 @@ export default function handler(req, res) {
         failed,
         total: active.length,
         capped: active.length > MAX_BLAST,
+        storyIncluded: Boolean(storyForNewsletter),
         dateRange,
         failures: failures.slice(0, 10),
       });

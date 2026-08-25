@@ -547,6 +547,8 @@
         <button class="tab-btn" onclick="switchTab('testimonials')">Testimonials</button>
         <button class="tab-btn" onclick="switchTab('comments')">Comments</button>
         <button class="tab-btn" onclick="switchTab('guestbook')">Guestbook</button>
+        <button class="tab-btn" onclick="switchTab('content')">Content Engine</button>
+        <button class="tab-btn" onclick="switchTab('ideas')">Event Ideas</button>
       </div>
 
       <!-- Subscribers panel -->
@@ -1009,6 +1011,80 @@
           </div>
         </div>
 
+        <!-- Content Engine Panel -->
+        <div id="panel-content" class="tab-panel">
+          <div class="panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin:0;">Content Engine</h3>
+              <div id="ceStatus" style="font-size:12px; color:var(--muted);"></div>
+            </div>
+
+            <div id="ceSettings" style="display:none; margin-bottom:20px; padding:16px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.03);">
+              <div style="font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:12px;">Generation Settings</div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label><input type="checkbox" id="ceAutoStories" checked> Auto-generate stories (cron)</label>
+                </div>
+                <div class="form-field">
+                  <label><input type="checkbox" id="ceAutoIdeas" checked> Auto-generate event ideas (cron)</label>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label>Story frequency (days)</label>
+                  <input id="ceStoryFreq" type="number" min="1" max="90" value="7" style="width:80px;">
+                </div>
+                <div class="form-field">
+                  <label>Idea frequency (days)</label>
+                  <input id="ceIdeaFreq" type="number" min="1" max="90" value="14" style="width:80px;">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label><input type="checkbox" id="ceNotify" checked> Discord notifications</label>
+                </div>
+              </div>
+              <div id="ceAiStatus" style="font-size:12px; margin-top:8px;"></div>
+              <div style="margin-top:12px;">
+                <button class="btn btn-sm btn-primary" onclick="saveContentSettings()">Save Settings</button>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="generateStory()">Generate Story</button>
+              <button class="btn btn-secondary" onclick="generateStory(true)">Surprise Me</button>
+            </div>
+            <div id="ceGenStatus" style="font-size:13px; margin-bottom:16px; min-height:18px;"></div>
+
+            <h3 style="color:var(--orange); font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin:16px 0 10px;">Story Library</h3>
+            <div id="ceStoryFilter" style="margin-bottom:10px;">
+              <select id="ceStoryStatus" onchange="loadStoryLibrary()" style="padding:6px 10px; border:1px solid var(--line); border-radius:6px; background:rgba(255,255,255,.05); color:var(--white); font-size:13px;">
+                <option value="">All</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="used">Used</option>
+                <option value="rejected">Rejected</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+            <div id="ceStoryList"></div>
+            <div id="ceStoryEmpty" class="empty-state" style="display:none;">No stories yet. Generate your first story above.</div>
+          </div>
+        </div>
+
+        <!-- Event Ideas Panel -->
+        <div id="panel-ideas" class="tab-panel">
+          <div class="panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin:0;">Event Approval Queue</h3>
+              <button class="btn btn-primary" onclick="generateIdeas()">Generate Ideas</button>
+            </div>
+            <div id="ideasGenStatus" style="font-size:13px; margin-bottom:12px; min-height:18px;"></div>
+            <div id="ideasList"></div>
+            <div id="ideasEmpty" class="empty-state" style="display:none;">No pending event ideas. Generate recommendations above.</div>
+          </div>
+        </div>
+
      </div>
   </section>
 
@@ -1079,6 +1155,8 @@
         if (name === 'testimonials') loadTestimonialPending();
         if (name === 'comments') loadCommentsPending();
         if (name === 'guestbook') loadGuestbook();
+        if (name === 'content') { loadContentSettings(); loadStoryLibrary(); }
+        if (name === 'ideas') loadIdeas();
       }
 
       async function loadSignedStatus() {
@@ -2311,6 +2389,233 @@
       } catch {
         status.textContent = 'Network error.';
       }
+    }
+
+    // --- Content Engine ---
+    function contentApiUrl(action, extra) {
+      let url = '/api/content?action=' + action + '&key=' + encodeURIComponent(adminKey);
+      if (extra) url += '&' + extra;
+      return url;
+    }
+
+    async function loadContentSettings() {
+      try {
+        const res = await fetch(contentApiUrl('settings'));
+        if (!res.ok) return;
+        const data = await res.json();
+        const s = data.settings || {};
+        document.getElementById('ceAutoStories').checked = s.autoStories !== false;
+        document.getElementById('ceAutoIdeas').checked = s.autoIdeas !== false;
+        document.getElementById('ceStoryFreq').value = s.storyFrequencyDays || 7;
+        document.getElementById('ceIdeaFreq').value = s.ideaFrequencyDays || 14;
+        document.getElementById('ceNotify').checked = s.notificationsEnabled !== false;
+        const aiDot = s.aiConfigured ? '#22c55e' : '#f59e0b';
+        const aiTxt = s.aiConfigured ? 'Gemini: Connected' : 'Gemini: Not configured (set GEMINI_API_KEY)';
+        const dcDot = s.discordConfigured ? '#22c55e' : '#f59e0b';
+        const dcTxt = s.discordConfigured ? 'Discord: Connected' : 'Discord: Not configured (set DISCORD_OWNER_WEBHOOK_URL)';
+        document.getElementById('ceAiStatus').innerHTML =
+          '<span style="color:' + aiDot + ';">&#9679;</span> ' + aiTxt +
+          ' &nbsp;&nbsp; <span style="color:' + dcDot + ';">&#9679;</span> ' + dcTxt;
+        document.getElementById('ceSettings').style.display = 'block';
+      } catch {}
+    }
+
+    async function saveContentSettings() {
+      const status = document.getElementById('ceStatus');
+      status.textContent = 'Saving...';
+      try {
+        const res = await fetch(contentApiUrl('settings'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            autoStories: document.getElementById('ceAutoStories').checked,
+            autoIdeas: document.getElementById('ceAutoIdeas').checked,
+            storyFrequencyDays: parseInt(document.getElementById('ceStoryFreq').value) || 7,
+            ideaFrequencyDays: parseInt(document.getElementById('ceIdeaFreq').value) || 14,
+            notificationsEnabled: document.getElementById('ceNotify').checked,
+          })
+        });
+        if (res.ok) status.textContent = 'Settings saved.';
+        else status.textContent = 'Save failed.';
+      } catch { status.textContent = 'Network error.'; }
+    }
+
+    async function generateStory(surprise) {
+      const status = document.getElementById('ceGenStatus');
+      status.textContent = 'Generating story... this may take 30-60 seconds.';
+      status.style.color = '#f59e0b';
+      try {
+        const res = await fetch(contentApiUrl('generate-story'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(surprise ? { surprise: true } : {})
+        });
+        const data = await res.json();
+        if (!res.ok) { status.textContent = data.error || 'Generation failed.'; status.style.color = '#ef4444'; return; }
+        status.textContent = 'Story generated: "' + (data.story?.title || 'Untitled') + '" (' + (data.story?.wordCount || 0) + ' words). Now pending review.';
+        status.style.color = '#22c55e';
+        loadStoryLibrary();
+      } catch { status.textContent = 'Network error.'; status.style.color = '#ef4444'; }
+    }
+
+    async function loadStoryLibrary() {
+      const filter = document.getElementById('ceStoryStatus').value;
+      const extra = filter ? '&status=' + encodeURIComponent(filter) : '';
+      try {
+        const res = await fetch(contentApiUrl('stories' + (extra ? '?' + extra.substring(1) : '')));
+        if (!res.ok) return;
+        const data = await res.json();
+        const stories = data.stories || [];
+        const list = document.getElementById('ceStoryList');
+        const empty = document.getElementById('ceStoryEmpty');
+        if (!stories.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+        empty.style.display = 'none';
+        list.innerHTML = stories.map(s => {
+          const statusColor = { pending:'#f59e0b', approved:'#22c55e', rejected:'#ef4444', used:'#3b82f6', archived:'#666' };
+          const badge = '<span class="badge" style="background:' + (statusColor[s.status] || '#666') + '; color:#fff;">' + s.status + '</span>';
+          const char = s.character || {};
+          return '<div style="padding:14px 16px; border:1px solid var(--line); border-radius:10px; margin-bottom:10px; background:rgba(255,255,255,.03);">' +
+            '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">' +
+              '<div>' +
+                '<div style="font-weight:700; color:var(--white); font-size:14px;">' + escapeHtml(s.title || 'Untitled') + ' ' + badge + '</div>' +
+                '<div style="font-size:12px; color:var(--muted); margin-top:4px;">' +
+                  (char.name ? escapeHtml(char.name) + ', ' : '') + escapeHtml(char.occupation || '') +
+                  ' &middot; ' + (s.wordCount || 0) + ' words' +
+                  ' &middot; Theme: ' + escapeHtml(s.theme || 'none') +
+                  (s.newsletterIssue ? ' &middot; Used: ' + escapeHtml(s.newsletterIssue) : '') +
+                '</div>' +
+              '</div>' +
+              '<div style="display:flex; gap:4px; flex-shrink:0;">' +
+                (s.status === 'pending' ?
+                  '<button class="btn btn-sm" style="padding:3px 8px; background:#22c55e; color:#fff;" onclick="updateStory(\'' + s.id + '\',\'approved\')">Approve</button>' +
+                  '<button class="btn btn-sm" style="padding:3px 8px; background:#ef4444; color:#fff;" onclick="updateStory(\'' + s.id + '\',\'rejected\')">Reject</button>'
+                : '') +
+                (s.status === 'approved' ?
+                  '<button class="btn btn-sm" style="padding:3px 8px; background:#3b82f6; color:#fff;" onclick="updateStory(\'' + s.id + '\',\'used\')">Mark Used</button>'
+                : '') +
+                (s.status === 'archived' ?
+                  '<button class="btn btn-sm" style="padding:3px 8px;" onclick="updateStory(\'' + s.id + '\',\'pending\')">Restore</button>'
+                : '') +
+                '<button class="btn btn-sm" style="padding:3px 8px;" onclick="updateStory(\'' + s.id + '\',\'archived\')">Archive</button>' +
+              '</div>' +
+            '</div>' +
+            (s.similarityWarning ? '<div style="font-size:11px; color:#f59e0b; margin-top:6px;">Similarity flags: ' + escapeHtml(JSON.stringify(s.similarityWarning)) + '</div>' : '') +
+            (s.text ? '<div style="font-size:12px; color:#999; margin-top:8px; max-height:80px; overflow:hidden; white-space:pre-wrap;">' + escapeHtml((s.text || '').slice(0, 300)) + '…</div>' : '') +
+          '</div>';
+        }).join('');
+      } catch {}
+    }
+
+    async function updateStory(id, status) {
+      const statusEl = document.getElementById('ceGenStatus');
+      statusEl.textContent = 'Updating...';
+      try {
+        const res = await fetch(contentApiUrl('update-story'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, status })
+        });
+        if (res.ok) { statusEl.textContent = 'Story marked as ' + status + '.'; statusEl.style.color = '#22c55e'; }
+        else { const d = await res.json(); statusEl.textContent = d.error || 'Failed.'; statusEl.style.color = '#ef4444'; }
+        loadStoryLibrary();
+      } catch { statusEl.textContent = 'Network error.'; statusEl.style.color = '#ef4444'; }
+    }
+
+    // --- Event Ideas ---
+    async function generateIdeas() {
+      const status = document.getElementById('ideasGenStatus');
+      status.textContent = 'Generating ideas... this may take 30-60 seconds.';
+      status.style.color = '#f59e0b';
+      try {
+        const res = await fetch('/api/content?action=generate-ideas&key=' + encodeURIComponent(adminKey), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}'
+        });
+        const data = await res.json();
+        if (!res.ok) { status.textContent = data.error || 'Generation failed.'; status.style.color = '#ef4444'; return; }
+        status.textContent = (data.total || 0) + ' ideas generated. Review below.';
+        status.style.color = '#22c55e';
+        loadIdeas();
+      } catch { status.textContent = 'Network error.'; status.style.color = '#ef4444'; }
+    }
+
+    async function loadIdeas() {
+      try {
+        const res = await fetch('/api/events?action=ideas&key=' + encodeURIComponent(adminKey));
+        if (!res.ok) return;
+        const data = await res.json();
+        const ideas = data.ideas || [];
+        const list = document.getElementById('ideasList');
+        const empty = document.getElementById('ideasEmpty');
+        if (!ideas.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+        empty.style.display = 'none';
+        list.innerHTML = ideas.map(i => {
+          const statusColor = { pending:'#f59e0b', approved:'#22c55e', rejected:'#ef4444', draft:'#3b82f6' };
+          const badge = '<span class="badge" style="background:' + (statusColor[i.status] || '#666') + '; color:#fff;">' + i.status + '</span>';
+          const scores = i.scores || {};
+          const scoreStr = ['outreach','membership','fundraising','sponsor','visibility'].map(k => scores[k] ? k.slice(0,3)+':'+scores[k] : '').filter(Boolean).join(' ');
+          return '<div style="padding:14px 16px; border:1px solid var(--line); border-radius:10px; margin-bottom:10px; background:rgba(255,255,255,.03);">' +
+            '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">' +
+              '<div style="flex:1;">' +
+                '<div style="font-weight:700; color:var(--white); font-size:14px;">' + escapeHtml(i.title || 'Untitled') + ' ' + badge + '</div>' +
+                '<div style="font-size:12px; color:var(--muted); margin-top:4px;">' +
+                  escapeHtml(i.date || 'TBD') + ' &middot; ' + escapeHtml(i.location || i.city || 'TBD') +
+                  ' &middot; ' + escapeHtml(i.role || i.eventType || '') +
+                  (i.source ? ' &middot; <span style="color:#888;">Source: ' + escapeHtml(i.source) + '</span>' : '') +
+                '</div>' +
+                (i.rationale ? '<div style="font-size:12px; color:#aaa; margin-top:6px; font-style:italic;">' + escapeHtml(i.rationale.slice(0, 200)) + '</div>' : '') +
+                (scoreStr ? '<div style="font-size:11px; color:#666; margin-top:4px;">Scores: ' + scoreStr + '</div>' : '') +
+              '</div>' +
+              '<div style="display:flex; gap:4px; flex-shrink:0; flex-wrap:wrap;">' +
+                (i.status === 'pending' ?
+                  '<button class="btn btn-sm" style="padding:3px 8px; background:#22c55e; color:#fff;" onclick="approveIdea(\'' + i.id + '\')">Approve</button>' +
+                  '<button class="btn btn-sm" style="padding:3px 8px; background:#ef4444; color:#fff;" onclick="rejectIdea(\'' + i.id + '\')">Reject</button>'
+                : '') +
+                '<button class="btn btn-sm" style="padding:3px 8px;" onclick="deleteIdea(\'' + i.id + '\')">Delete</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      } catch {}
+    }
+
+    async function approveIdea(id) {
+      try {
+        const res = await fetch('/api/events?action=approve-idea&key=' + encodeURIComponent(adminKey), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) { document.getElementById('ideasGenStatus').textContent = 'Idea approved and published to calendar.'; document.getElementById('ideasGenStatus').style.color = '#22c55e'; }
+        else { document.getElementById('ideasGenStatus').textContent = data.error || 'Failed.'; }
+        loadIdeas();
+      } catch {}
+    }
+
+    async function rejectIdea(id) {
+      const reason = prompt('Rejection reason (optional):') || '';
+      try {
+        await fetch('/api/events?action=reject-idea&key=' + encodeURIComponent(adminKey), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, reason })
+        });
+        loadIdeas();
+      } catch {}
+    }
+
+    async function deleteIdea(id) {
+      if (!confirm('Delete this idea?')) return;
+      try {
+        await fetch('/api/events?action=delete-idea&key=' + encodeURIComponent(adminKey), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        loadIdeas();
+      } catch {}
     }
 
     // --- Init ---
