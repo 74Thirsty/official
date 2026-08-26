@@ -1,0 +1,4 @@
+[submodule "documentation-source"]
+	path = documentation-source
+	url = https://github.com/LostLimbRider/Autobiography
+	branch = master
