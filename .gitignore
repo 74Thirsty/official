@@ -10,3 +10,7 @@ node_modules/
 .env*
 .agents/
 skills-lock.json
+
+# Documentation work — parked on back burner (see plan)
+documentation.html
+api/docs-auth.js
