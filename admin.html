@@ -146,7 +146,7 @@
 
     .tabs {
       display: flex;
-      gap: 0;
+      gap: 12px;
       margin-bottom: 24px;
       border-bottom: 2px solid var(--line);
     }
@@ -168,6 +168,24 @@
 
     .tab-btn:hover { color: var(--white); }
     .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
+
+    .tab-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 0 0 auto;
+    }
+
+    .tab-group-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: 4px 10px 0;
+      opacity: .7;
+      white-space: nowrap;
+    }
 
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
@@ -537,18 +555,30 @@
 
       <!-- Tabs -->
       <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('subscribers')">Subscribers</button>
-        <button class="tab-btn" onclick="switchTab('visitors')">Visitor Log</button>
-        <button class="tab-btn" onclick="switchTab('newsletter')">Send Newsletter</button>
-        <button class="tab-btn" onclick="switchTab('stream')">Live Stream</button>
-        <button class="tab-btn" onclick="switchTab('events')">Events</button>
-        <button class="tab-btn" onclick="switchTab('sponsors')">Sponsors</button>
-        <button class="tab-btn" onclick="switchTab('gallery')">Gallery</button>
-        <button class="tab-btn" onclick="switchTab('testimonials')">Testimonials</button>
-        <button class="tab-btn" onclick="switchTab('comments')">Comments</button>
-        <button class="tab-btn" onclick="switchTab('guestbook')">Guestbook</button>
-        <button class="tab-btn" onclick="switchTab('content')">Content Engine</button>
-        <button class="tab-btn" onclick="switchTab('ideas')">Event Ideas</button>
+        <div class="tab-group">
+          <span class="tab-group-label">Audience</span>
+          <button class="tab-btn active" onclick="switchTab('subscribers')">Subscribers</button>
+          <button class="tab-btn" onclick="switchTab('visitors')">Visitor Log</button>
+          <button class="tab-btn" onclick="switchTab('guestbook')">Guestbook</button>
+        </div>
+        <div class="tab-group">
+          <span class="tab-group-label">Outreach</span>
+          <button class="tab-btn" onclick="switchTab('newsletter')">Send Newsletter</button>
+          <button class="tab-btn" onclick="switchTab('stream')">Live Stream</button>
+        </div>
+        <div class="tab-group">
+          <span class="tab-group-label">Content</span>
+          <button class="tab-btn" onclick="switchTab('events')">Events</button>
+          <button class="tab-btn" onclick="switchTab('sponsors')">Sponsors</button>
+          <button class="tab-btn" onclick="switchTab('content')">Content Engine</button>
+          <button class="tab-btn" onclick="switchTab('ideas')">Event Ideas</button>
+        </div>
+        <div class="tab-group">
+          <span class="tab-group-label">Moderation</span>
+          <button class="tab-btn" onclick="switchTab('gallery')">Gallery</button>
+          <button class="tab-btn" onclick="switchTab('testimonials')">Testimonials</button>
+          <button class="tab-btn" onclick="switchTab('comments')">Comments</button>
+        </div>
       </div>
 
       <!-- Subscribers panel -->
