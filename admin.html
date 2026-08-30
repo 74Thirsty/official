@@ -144,55 +144,75 @@
       margin-top: 6px;
     }
 
-    .tabs {
+    .tab-menu {
       display: flex;
-      gap: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
       margin-bottom: 24px;
       border-bottom: 2px solid var(--line);
-      overflow-x: auto;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255,255,255,.25) transparent;
+      padding-bottom: 12px;
     }
 
-    .tabs::-webkit-scrollbar { height: 6px; }
-    .tabs::-webkit-scrollbar-thumb { background: rgba(255,255,255,.25); border-radius: 3px; }
-    .tabs::-webkit-scrollbar-track { background: transparent; }
+    .menu-group { position: relative; }
 
-    .tab-btn {
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 14px;
+    .menu-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--charcoal);
+      border: 1px solid var(--line);
+      color: var(--white);
+      font-size: 13px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: .05em;
-      padding: 12px 24px;
+      padding: 10px 18px;
+      border-radius: 8px;
       cursor: pointer;
-      border-bottom: 3px solid transparent;
-      margin-bottom: -2px;
       transition: color .15s, border-color .15s;
     }
 
-    .tab-btn:hover { color: var(--white); }
-    .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
+    .menu-btn:hover { border-color: var(--orange); color: var(--orange); }
+    .menu-btn.open { border-color: var(--orange); color: var(--orange); background: var(--card); }
 
-    .tab-group {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      flex: 0 0 auto;
+    .menu-caret { font-size: 9px; opacity: .7; }
+
+    .menu-drop {
+      display: none;
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 0;
+      min-width: 230px;
+      flex-direction: column;
+      gap: 2px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 6px;
+      z-index: 30;
     }
 
-    .tab-group-label {
+    .menu-drop.open { display: flex; }
+
+    .menu-item {
+      background: none;
+      border: none;
       color: var(--muted);
-      font-size: 11px;
-      font-weight: 900;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: .08em;
-      padding: 4px 10px 0;
-      opacity: .7;
+      letter-spacing: .04em;
+      padding: 10px 14px;
+      border-radius: 6px;
+      cursor: pointer;
       white-space: nowrap;
+      transition: color .15s, background .15s;
     }
+
+    .menu-item:hover { color: var(--white); background: rgba(255,255,255,.06); }
+    .menu-item.active { color: var(--orange); }
 
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
@@ -480,7 +500,8 @@
       section { padding: 24px 5vw; }
       .panel { padding: 20px; }
       .stat-grid { grid-template-columns: 1fr 1fr; }
-      .tab-btn { padding: 10px 16px; font-size: 12px; }
+      .menu-btn { padding: 9px 14px; font-size: 12px; }
+      .menu-drop { min-width: 200px; }
     }
   </style>
 </head>
@@ -559,33 +580,41 @@
         </div>
       </div>
 
-      <!-- Tabs -->
-      <div class="tabs">
-        <div class="tab-group">
-          <span class="tab-group-label">Audience</span>
-          <button class="tab-btn active" onclick="switchTab('subscribers')">Subscribers</button>
-          <button class="tab-btn" onclick="switchTab('visitors')">Visitor Log</button>
-          <button class="tab-btn" onclick="switchTab('guestbook')">Guestbook</button>
+      <!-- Menus -->
+      <nav class="tab-menu" id="tabMenu">
+        <div class="menu-group">
+          <button type="button" class="menu-btn" onclick="toggleMenu(this)">Audience <span class="menu-caret">&#9662;</span></button>
+          <div class="menu-drop">
+            <button type="button" class="menu-item active" onclick="switchTab('subscribers', this)">Subscribers</button>
+            <button type="button" class="menu-item" onclick="switchTab('visitors', this)">Visitor Log</button>
+            <button type="button" class="menu-item" onclick="switchTab('guestbook', this)">Guestbook</button>
+          </div>
         </div>
-        <div class="tab-group">
-          <span class="tab-group-label">Outreach</span>
-          <button class="tab-btn" onclick="switchTab('newsletter')">Send Newsletter</button>
-          <button class="tab-btn" onclick="switchTab('stream')">Live Stream</button>
+        <div class="menu-group">
+          <button type="button" class="menu-btn" onclick="toggleMenu(this)">Outreach <span class="menu-caret">&#9662;</span></button>
+          <div class="menu-drop">
+            <button type="button" class="menu-item" onclick="switchTab('newsletter', this)">Send Newsletter</button>
+            <button type="button" class="menu-item" onclick="switchTab('stream', this)">Live Stream</button>
+          </div>
         </div>
-        <div class="tab-group">
-          <span class="tab-group-label">Content</span>
-          <button class="tab-btn" onclick="switchTab('events')">Events</button>
-          <button class="tab-btn" onclick="switchTab('sponsors')">Sponsors</button>
-          <button class="tab-btn" onclick="switchTab('content')">Content Engine</button>
-          <button class="tab-btn" onclick="switchTab('ideas')">Event Ideas</button>
+        <div class="menu-group">
+          <button type="button" class="menu-btn" onclick="toggleMenu(this)">Content <span class="menu-caret">&#9662;</span></button>
+          <div class="menu-drop">
+            <button type="button" class="menu-item" onclick="switchTab('events', this)">Events</button>
+            <button type="button" class="menu-item" onclick="switchTab('sponsors', this)">Sponsors</button>
+            <button type="button" class="menu-item" onclick="switchTab('content', this)">Content Engine</button>
+            <button type="button" class="menu-item" onclick="switchTab('ideas', this)">Event Ideas</button>
+          </div>
         </div>
-        <div class="tab-group">
-          <span class="tab-group-label">Moderation</span>
-          <button class="tab-btn" onclick="switchTab('gallery')">Gallery</button>
-          <button class="tab-btn" onclick="switchTab('testimonials')">Testimonials</button>
-          <button class="tab-btn" onclick="switchTab('comments')">Comments</button>
+        <div class="menu-group">
+          <button type="button" class="menu-btn" onclick="toggleMenu(this)">Moderation <span class="menu-caret">&#9662;</span></button>
+          <div class="menu-drop">
+            <button type="button" class="menu-item" onclick="switchTab('gallery', this)">Gallery</button>
+            <button type="button" class="menu-item" onclick="switchTab('testimonials', this)">Testimonials</button>
+            <button type="button" class="menu-item" onclick="switchTab('comments', this)">Comments</button>
+          </div>
         </div>
-      </div>
+      </nav>
 
       <!-- Subscribers panel -->
       <div id="panel-subscribers" class="tab-panel active">
@@ -1168,12 +1197,33 @@
       return url;
     }
 
-    // --- Tabs ---
+    // --- Menus ---
       let streamCheckTimer = null;
-      function switchTab(name) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+      function closeMenus() {
+        document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('open'));
+        document.querySelectorAll('.menu-drop').forEach(d => d.classList.remove('open'));
+      }
+
+      function toggleMenu(btn) {
+        const willOpen = !btn.classList.contains('open');
+        closeMenus();
+        if (willOpen) {
+          btn.classList.add('open');
+          const drop = btn.closest('.menu-group').querySelector('.menu-drop');
+          if (drop) drop.classList.add('open');
+        }
+      }
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.menu-group')) closeMenus();
+      });
+
+      function switchTab(name, el) {
+        closeMenus();
+        document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active'));
+        if (el) el.classList.add('active');
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        event.target.classList.add('active');
         document.getElementById('panel-' + name).classList.add('active');
 
         if (streamCheckTimer) { clearInterval(streamCheckTimer); streamCheckTimer = null; }
