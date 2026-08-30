@@ -126,6 +126,13 @@ Full details: [`VERCEL_ENV_CHECKLIST.md`](VERCEL_ENV_CHECKLIST.md). User-facing 
 4. `npm run deploy` (`vercel --prod`)
 5. Cron configured in `vercel.json`: `"0 9 * * 1"` (Mondays 09:00 UTC). The function gates itself: sends at most every **13 days** and caps **100 sends/run** via Resend. Manual blasts from the admin panel also cap at 100 and update `llr:last-newsletter-sent`.
 
+### Deploy gotchas (write it down — do not repeat these mistakes)
+
+- **Deploy with `npm run deploy` — always.** Do not run `npx vercel --prod` with a hand-supplied `VERCEL_TOKEN`.
+- **Do NOT set `VERCEL_TOKEN` for deploys.** The CLI's stored auth (`~/.local/share/com.vercel.cli/auth.json`) auto-refreshes the expired access token — `vercel whoami` → `lostlimbrider`. Overriding with a stale `VERCEL_TOKEN` produces a spurious `Error: Not authorized`, which is NOT a real auth problem.
+- **Vercel uploads from the filesystem, not git.** Untracked/git-ignored files physically present in `api/` still count as serverless functions and will trip the Hobby-plan cap of **12 functions** (`Error: No more than 12 Serverless Functions...`). There are currently exactly 12 deployable functions (see `api/`).
+- **Parked work goes in `.vercelignore`, never deleted.** The parked docs function `api/docs-auth.js` is excluded via `.vercelignore` so it doesn't count against the 12-function cap while staying on the back burner. Keep ignored/unwanted api files out of deployment with `.vercelignore`, and keep its entries in sync with what should NOT ship.
+
 ## Editing seed data
 
 Edit `lib/seed.js` (embedded), then redeploy. Keep the `{{...}}` placeholders intact. `data/` is dead (empty `.gitkeep` only) — never read/write it at runtime.
