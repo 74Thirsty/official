@@ -1162,6 +1162,18 @@
           </div>
         </div>
 
+        <!-- Idea Preview modal -->
+        <div id="ideaPreviewModal" style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.75); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:20px;">
+          <div class="media-modal" style="max-width:720px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px;">
+              <h3 style="margin:0; font-size:22px; text-transform:uppercase; letter-spacing:-.02em;">Event Idea <span style="color:var(--orange);">Preview</span></h3>
+              <button type="button" class="btn btn-sm" onclick="closeIdeaPreview()" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.2);">Close</button>
+            </div>
+            <div id="ideaPreviewMeta" style="font-size:12px; color:var(--muted); margin-bottom:16px; line-height:1.5;"></div>
+            <div id="ideaPreviewContent" style="max-height:60vh; overflow-y:auto; padding-right:8px;"></div>
+          </div>
+        </div>
+
      </div>
   </section>
 
@@ -1361,9 +1373,12 @@
           const ebookCell = s.ebookLinkIssued
             ? (s.ebookTokenUsed ? '<span class="badge badge-clean">Downloaded</span>' : '<span style="color:var(--muted);">Issued</span>')
             : '<span style="color:#555;">—</span>';
+          const emailEsc = escapeHtml(s.email);
           const resendBtn = isUnsubscribed
             ? '<span style="color:#666;font-size:12px;">Unsubscribed</span>'
-            : '<button class="btn btn-sm" onclick="resendWelcome(\'' + escapeHtml(s.email) + '\')" title="Re-send welcome letter with a fresh e-book link">Resend</button>';
+            : '<button class="btn btn-sm" onclick="resendWelcome(\'' + emailEsc + '\')" title="Re-send welcome letter with a fresh e-book link">Resend</button>' +
+              '<button class="btn btn-sm" style="background:#f59e0b; color:#fff;" onclick="unsubscribeSubscriber(\'' + emailEsc + '\')" title="Stop sending newsletters to this subscriber (keeps their record)">Unsub</button>' +
+              '<button class="btn btn-sm" style="background:#ef4444; color:#fff;" onclick="deleteSubscriber(\'' + emailEsc + '\')" title="Permanently delete this subscriber record">Delete</button>';
           return '<tr>' +
             '<td>' + escapeHtml(s.name || '') + '</td>' +
             '<td>' + escapeHtml(s.email || '') + '</td>' +
@@ -1419,6 +1434,46 @@
         }
       } else {
         alert(data.error || 'Failed to re-send welcome letter.');
+      }
+      loadSubscribers();
+    }
+
+    async function unsubscribeSubscriber(email) {
+      if (!confirm('Unsubscribe ' + email + '? They will stop receiving newsletters but their record stays for the visitor log.')) return;
+      try {
+        const res = await fetch(apiUrl('subscriber-unsubscribe'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          alert('Unsubscribed ' + email + (data.alreadyUnsubscribed ? ' (already unsubscribed).' : '.'));
+        } else {
+          alert(data.error || 'Failed to unsubscribe subscriber.');
+        }
+      } catch {
+        alert('Network error.');
+      }
+      loadSubscribers();
+    }
+
+    async function deleteSubscriber(email) {
+      if (!confirm('Permanently delete ' + email + '? This cannot be undone.')) return;
+      try {
+        const res = await fetch(apiUrl('subscriber-delete'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          alert('Deleted subscriber ' + email + '.');
+        } else {
+          alert(data.error || 'Failed to delete subscriber.');
+        }
+      } catch {
+        alert('Network error.');
       }
       loadSubscribers();
     }
@@ -2647,6 +2702,8 @@
     }
 
     // --- Event Ideas ---
+    let ideasCache = [];
+
     async function generateIdeas() {
       const status = document.getElementById('ideasGenStatus');
       status.textContent = 'Generating ideas... this may take 30-60 seconds.';
@@ -2671,6 +2728,7 @@
         if (!res.ok) return;
         const data = await res.json();
         const ideas = data.ideas || [];
+        ideasCache = ideas;
         const list = document.getElementById('ideasList');
         const empty = document.getElementById('ideasEmpty');
         if (!ideas.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
@@ -2697,6 +2755,7 @@
                   '<button class="btn btn-sm" style="padding:3px 8px; background:#22c55e; color:#fff;" onclick="approveIdea(\'' + i.id + '\')">Approve</button>' +
                   '<button class="btn btn-sm" style="padding:3px 8px; background:#ef4444; color:#fff;" onclick="rejectIdea(\'' + i.id + '\')">Reject</button>'
                 : '') +
+                '<button class="btn btn-sm" style="padding:3px 8px;" onclick="previewIdea(\'' + i.id + '\')">Preview</button>' +
                 '<button class="btn btn-sm" style="padding:3px 8px;" onclick="deleteIdea(\'' + i.id + '\')">Delete</button>' +
               '</div>' +
             '</div>' +
@@ -2741,6 +2800,58 @@
         });
         loadIdeas();
       } catch {}
+    }
+
+    function previewIdea(id) {
+      const i = ideasCache.find(x => x.id === id);
+      if (!i) return;
+      const scores = i.scores || {};
+      const scoreStr = ['outreach','membership','fundraising','sponsor','visibility'].map(k => scores[k] ? k.slice(0,3)+': '+scores[k] : '').filter(Boolean).join(' · ');
+      const meta = [];
+      const dateParts = [i.date && i.endDate && i.endDate !== i.date ? i.date + ' — ' + i.endDate : (i.date || '')];
+      if (i.time && i.endTime && i.endTime !== i.time) dateParts[0] += ' · ' + i.time + ' – ' + i.endTime;
+      else if (i.time) dateParts[0] += ' · ' + i.time;
+      if (dateParts[0]) meta.push(dateParts[0]);
+      if (i.location) meta.push(i.location);
+      if (i.address) meta.push(i.address);
+      if (i.city && i.state) meta.push(i.city + ', ' + i.state);
+      else if (i.city) meta.push(i.city);
+      if (i.eventType || i.role) meta.push(i.eventType || i.role);
+      if (i.source) meta.push('Source: ' + i.source);
+      document.getElementById('ideaPreviewMeta').innerHTML =
+        '<strong style="color:var(--white);">' + escapeHtml(i.title || 'Untitled') + '</strong>' +
+        (meta.length ? ' &middot; ' + escapeHtml(meta.join(' · ')) : '') +
+        (scoreStr ? '<div style="margin-top:6px; font-size:11px; color:#666;">Scores: ' + escapeHtml(scoreStr) + '</div>' : '');
+      const sections = [
+        ['Rationale', i.rationale],
+        ['Description', i.description],
+        ['Audience', i.audience],
+        ['Membership Value', i.membershipValue],
+        ['Fundraising Potential', i.fundraisingPotential],
+        ['Outreach Potential', i.outreachPotential],
+        ['Estimated Cost', i.estimatedCost],
+        ['Volunteer Details', i.volunteerDetails],
+        ['Equipment Needed', i.equipmentNeeded],
+        ['Promo Materials Needed', i.promoMaterialsNeeded],
+        ['Sponsor Involvement', i.sponsorInvolvement],
+        ['Insurance/Permit Notes', i.insurancePermitNotes],
+        ['Accessibility Notes', i.accessibilityNotes],
+        ['Contact', [i.contactPerson, i.contactPhone, i.contactEmail].filter(Boolean).join(' · ') || ''],
+        ['Links', [i.website, i.registrationUrl, i.socialUrl].filter(Boolean).join(' · ') || ''],
+      ].filter(([,v]) => v && String(v).trim());
+      let body = sections.map(([label, value]) =>
+        '<div style="margin-bottom:14px;">' +
+          '<div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--orange); margin-bottom:4px;">' + escapeHtml(label) + '</div>' +
+          '<div style="font-size:14px; color:#ccc; line-height:1.7; white-space:pre-wrap;">' + escapeHtml(String(value).trim()) + '</div>' +
+        '</div>'
+      ).join('');
+      if (!body) body = '<div class="empty-state">No details.</div>';
+      document.getElementById('ideaPreviewContent').innerHTML = body;
+      document.getElementById('ideaPreviewModal').style.display = 'flex';
+    }
+
+    function closeIdeaPreview() {
+      document.getElementById('ideaPreviewModal').style.display = 'none';
     }
 
     // --- Init ---

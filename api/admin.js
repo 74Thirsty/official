@@ -228,6 +228,50 @@ export default function handler(req, res) {
     return;
   }
 
+  if (action === 'subscriber-unsubscribe' && req.method === 'POST') {
+    readBody(req).then(async (payload) => {
+      const email = String(payload.email ?? '').trim().toLowerCase();
+      if (!email) {
+        return sendJson(res, { error: 'Email is required.' }, 422);
+      }
+      const entries = await getList(KEYS.subscribers);
+      const index = entries.findIndex((e) => e.email === email);
+      if (index < 0) {
+        return sendJson(res, { error: 'Subscriber not found.' }, 404);
+      }
+      const sub = entries[index];
+      if ((sub.status ?? 'active') === 'unsubscribed') {
+        return sendJson(res, { ok: true, email, alreadyUnsubscribed: true });
+      }
+      sub.status = 'unsubscribed';
+      sub.unsubscribedAt = new Date().toISOString();
+      entries[index] = sub;
+      await setList(KEYS.subscribers, entries);
+      await addAudit('subscriber_unsubscribed', email, {});
+      return sendJson(res, { ok: true, email });
+    }).catch(fail);
+    return;
+  }
+
+  if (action === 'subscriber-delete' && req.method === 'POST') {
+    readBody(req).then(async (payload) => {
+      const email = String(payload.email ?? '').trim().toLowerCase();
+      if (!email) {
+        return sendJson(res, { error: 'Email is required.' }, 422);
+      }
+      const entries = await getList(KEYS.subscribers);
+      const index = entries.findIndex((e) => e.email === email);
+      if (index < 0) {
+        return sendJson(res, { error: 'Subscriber not found.' }, 404);
+      }
+      const [removed] = entries.splice(index, 1);
+      await setList(KEYS.subscribers, entries);
+      await addAudit('subscriber_deleted', email, { name: removed.name || '' });
+      return sendJson(res, { ok: true, email });
+    }).catch(fail);
+    return;
+  }
+
   if (action === 'audit') {
     getList(KEYS.audit).then((audit) => {
       const limit = Math.min(200, Math.max(1, parseInt(getParam(req, 'limit') || '100', 10) || 100));
