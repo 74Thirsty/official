@@ -63,6 +63,8 @@ export default function handler(req, res) {
         description: clean(payload.description, 2000),
         status: clean(payload.status || 'published', 30),
         source: clean(payload.source || 'manual', 30),
+        repeat: clean(payload.repeat || 'none', 10),
+        repeatUntil: clean(payload.repeatUntil || '', 10),
         createdAt: new Date().toISOString(),
       };
       if (!event.title || !event.date) {
@@ -87,6 +89,7 @@ export default function handler(req, res) {
         ['title', 200], ['date', 10], ['endDate', 10], ['time', 5],
         ['category', 30], ['location', 200], ['description', 2000],
         ['status', 30], ['cancelledReason', 500],
+        ['repeat', 10], ['repeatUntil', 10],
       ];
       for (const [field, limit] of fields) {
         if (payload[field] !== undefined) {

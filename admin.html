@@ -885,6 +885,21 @@
                   <input id="evLocation" maxlength="200" placeholder="e.g. Fort Dodge, IA">
                 </div>
               </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label>Repeat</label>
+                  <select id="evRepeat">
+                    <option value="none">Does not repeat</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label>Repeat Until (optional)</label>
+                  <input id="evRepeatUntil" type="date">
+                </div>
+              </div>
               <div class="form-field">
                 <label>End Date (optional, for multi-day)</label>
                 <input id="evEnd" type="date">
@@ -1854,6 +1869,8 @@
         document.getElementById('evCategory').value = 'ride';
         document.getElementById('evLocation').value = '';
         document.getElementById('evDesc').value = '';
+        document.getElementById('evRepeat').value = 'none';
+        document.getElementById('evRepeatUntil').value = '';
         document.getElementById('evSaveStatus').textContent = '';
         document.getElementById('eventFormWrap').style.display = 'block';
       }
@@ -1867,7 +1884,9 @@
           category: document.getElementById('evCategory').value,
           location: document.getElementById('evLocation').value.trim(),
           description: document.getElementById('evDesc').value.trim(),
-          endDate: document.getElementById('evEnd').value
+          endDate: document.getElementById('evEnd').value,
+          repeat: document.getElementById('evRepeat').value,
+          repeatUntil: document.getElementById('evRepeatUntil').value
         };
         const statusEl = document.getElementById('evSaveStatus');
         if (!eventData.title || !eventData.date) {
@@ -1910,6 +1929,8 @@
         document.getElementById('evCategory').value = ev.category || 'community';
         document.getElementById('evLocation').value = ev.location || '';
         document.getElementById('evDesc').value = ev.description || '';
+        document.getElementById('evRepeat').value = ev.repeat || 'none';
+        document.getElementById('evRepeatUntil').value = ev.repeatUntil || '';
         document.getElementById('evSaveStatus').textContent = '';
         document.getElementById('eventFormWrap').style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });

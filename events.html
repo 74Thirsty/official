@@ -884,12 +884,33 @@
       render();
     }
 
+    function eventOccursOn(e, dateStr) {
+      const start = e.date;
+      if (!start || dateStr < start) return false;
+      if (e.repeatUntil && dateStr > e.repeatUntil) return false;
+      const repeat = e.repeat || 'none';
+      if (repeat === 'none') {
+        const end = e.endDate || e.date;
+        return dateStr >= start && dateStr <= end;
+      }
+      const startDate = new Date(start + 'T00:00:00');
+      const check = new Date(dateStr + 'T00:00:00');
+      if (repeat === 'weekly') {
+        return startDate.getDay() === check.getDay();
+      }
+      if (repeat === 'monthly') {
+        return startDate.getDate() === check.getDate();
+      }
+      if (repeat === 'yearly') {
+        return startDate.getMonth() === check.getMonth() && startDate.getDate() === check.getDate();
+      }
+      return false;
+    }
+
     function getEventsForDate(dateStr) {
       return allEvents.filter(e => {
         if (!activeFilters.has(e.category)) return false;
-        const start = e.date;
-        const end = e.endDate || e.date;
-        return dateStr >= start && dateStr <= end;
+        return eventOccursOn(e, dateStr);
       });
     }
 
@@ -999,12 +1020,29 @@
       grid.innerHTML = html;
     }
 
+    function nextOccurrence(e, fromStr) {
+      if ((e.repeat || 'none') === 'none') {
+        return (e.date && e.date >= fromStr) ? e.date : null;
+      }
+      let candidate = new Date(fromStr + 'T00:00:00');
+      const start = new Date((e.date || '') + 'T00:00:00');
+      const repeat = e.repeat;
+      const loopUntil = new Date(candidate.getTime() + 366 * 5 * 86400000).getTime();
+      while (candidate.getTime() <= loopUntil) {
+        const ds = `${candidate.getFullYear()}-${String(candidate.getMonth()+1).padStart(2,'0')}-${String(candidate.getDate()).padStart(2,'0')}`;
+        if (ds >= (e.date||'') && ds >= fromStr && eventOccursOn(e, ds)) return ds;
+        candidate.setDate(candidate.getDate() + 1);
+      }
+      return null;
+    }
+
     function renderUpcoming() {
       const events = getVisibleEvents();
       const today = new Date().toISOString().split('T')[0];
       const upcoming = events
-        .filter(e => e.date >= today)
-        .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''))
+        .map(e => ({ e, next: nextOccurrence(e, today) }))
+        .filter(x => x.next)
+        .sort((a, b) => a.next.localeCompare(b.next) || (a.e.time || '').localeCompare(b.e.time || ''))
         .slice(0, 10);
 
       const list = document.getElementById('upcomingList');
@@ -1013,8 +1051,9 @@
         return;
       }
 
-      list.innerHTML = upcoming.map(e => {
-        const d = new Date(e.date + 'T00:00:00');
+      list.innerHTML = upcoming.map(({ e, next }) => {
+        const d = new Date(next + 'T00:00:00');
+        const repeatLabel = e.repeat && e.repeat !== 'none' ? ' · ' + (e.repeat === 'weekly' ? 'Weekly' : e.repeat === 'monthly' ? 'Monthly' : 'Yearly') : '';
         return `
           <div class="upcoming-item" onclick="openDetail('${e.id}')">
             <div class="upcoming-date">
@@ -1023,7 +1062,7 @@
             </div>
             <div class="upcoming-info">
               <div class="title">${escapeHtml(e.title)}</div>
-              <div class="meta">${e.time ? formatTime(e.time) : 'All day'}${e.location ? ' · ' + escapeHtml(e.location) : ''}</div>
+              <div class="meta">${e.time ? formatTime(e.time) : 'All day'}${e.location ? ' · ' + escapeHtml(e.location) : ''}${repeatLabel}</div>
               <span class="cat-badge cat-${e.category}">${CATEGORY_META[e.category]?.label || e.category}</span>
             </div>
           </div>
@@ -1059,6 +1098,7 @@
           <h2>${escapeHtml(ev.title)}</h2>
           <div class="date">${dateDisplay}</div>
           ${ev.time ? `<div class="time">${formatTime(ev.time)}</div>` : ''}
+          ${ev.repeat && ev.repeat !== 'none' ? `<div class="time" style="color:var(--orange);">Repeats ${ev.repeat === 'weekly' ? 'Weekly' : ev.repeat === 'monthly' ? 'Monthly' : 'Yearly'}${ev.repeatUntil ? ' until ' + formatDate(ev.repeatUntil) : ''}</div>` : ''}
         </div>
         ${ev.description ? `
           <div class="detail-section">
