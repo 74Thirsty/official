@@ -92,6 +92,7 @@ test('renderStoryWithDisclosure escapes HTML in story content', () => {
 test('normalizeStoryMeta provides defaults for all fields', () => {
   const meta = normalizeStoryMeta({ id: 'st-1', title: 'Story', text: 'The text' });
   assert.equal(meta.id, 'st-1');
+  assert.equal(meta.text, 'The text');
   assert.equal(meta.status, 'pending');
   assert.equal(typeof meta.character, 'object');
   assert.ok(Array.isArray(meta.emotionalBeats));
