@@ -305,6 +305,46 @@ export default function handler(req, res) {
     return;
   }
 
+  // --- Documentation access user management ---
+  if (action === 'docs-users') {
+    getList(KEYS.docsUsers).then((users) => {
+      sendJson(res, { users: (users || []).map(u => ({ name: u.name, addedAt: u.addedAt })), total: (users || []).length });
+    }).catch(fail);
+    return;
+  }
+
+  if (action === 'docs-add-user' && req.method === 'POST') {
+    readBody(req).then(async (payload) => {
+      const name = clean(String(payload.name || ''), 60);
+      const key = clean(String(payload.key || ''), 120);
+      if (!name || !key) return sendJson(res, { error: 'Name and key are required.' }, 422);
+      const users = await getList(KEYS.docsUsers);
+      if (users.some(u => u.name.toLowerCase() === name.toLowerCase())) {
+        return sendJson(res, { error: 'User already exists.' }, 422);
+      }
+      users.push({ name, key, addedAt: new Date().toISOString() });
+      await setList(KEYS.docsUsers, users);
+      await addAudit('docs_user_added', 'admin', { name });
+      sendJson(res, { ok: true, users: users.map(u => ({ name: u.name, addedAt: u.addedAt })) });
+    }).catch(fail);
+    return;
+  }
+
+  if (action === 'docs-remove-user' && req.method === 'POST') {
+    readBody(req).then(async (payload) => {
+      const name = clean(String(payload.name || ''), 60);
+      if (!name) return sendJson(res, { error: 'Name is required.' }, 422);
+      let users = await getList(KEYS.docsUsers);
+      const before = users.length;
+      users = users.filter(u => u.name.toLowerCase() !== name.toLowerCase());
+      if (users.length === before) return sendJson(res, { error: 'User not found.' }, 404);
+      await setList(KEYS.docsUsers, users);
+      await addAudit('docs_user_removed', 'admin', { name });
+      sendJson(res, { ok: true, users: users.map(u => ({ name: u.name, addedAt: u.addedAt })) });
+    }).catch(fail);
+    return;
+  }
+
   sendJson(res, { error: 'Unsupported action.' }, 404);
 }
 
