@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation Library | Lost Limb Riders</title>
+  <link rel="icon" type="image/png" href="assets/logo-nobg.png">
+  <meta name="description" content="Lost Limb Riders organizational documentation library — policies, procedures, handbooks, forms, and operational documents.">
+  <style>
+    :root {
+      --orange: #ff6a00;
+      --orange-dark: #c94f00;
+      --orange-glow: rgba(255,106,0,.35);
+      --black: #050505;
+      --charcoal: #101010;
+      --card: #141414;
+      --card-hover: #1a1a1a;
+      --line: rgba(255,255,255,.10);
+      --muted: #9a9a9a;
+      --white: #ffffff;
+      --shadow: 0 24px 70px rgba(0,0,0,.5);
+      --radius: 18px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin:0; background:var(--black); color:var(--white); font-family:'Inter',system-ui,-apple-system,Helvetica,Arial,sans-serif; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+    body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse at 15% 10%, rgba(255,106,0,.07) 0%, transparent 55%), radial-gradient(ellipse at 85% 90%, rgba(255,106,0,.04) 0%, transparent 55%); pointer-events:none; z-index:0; }
+    a { color:var(--orange); text-decoration:none; transition:color .2s; }
+    a:hover { color:#ff8a33; }
+    .wrap { max-width:1200px; margin:0 auto; position:relative; z-index:1; }
+    .orange { color:var(--orange); }
+
+    /* NAV */
+    .nav { position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:14px 7vw; background:rgba(5,5,5,.92); border-bottom:1px solid var(--line); backdrop-filter:blur(20px) saturate(1.4); }
+    .brand { display:flex; align-items:center; gap:12px; color:var(--white); font-weight:900; font-size:16px; letter-spacing:.08em; text-transform:uppercase; text-decoration:none; }
+    .brand img { width:52px; height:52px; min-width:52px; border-radius:12px; }
+    .nav-links { display:flex; gap:22px; align-items:center; }
+    .nav-links a { color:#bbb; font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; position:relative; padding:4px 0; }
+    .nav-links a::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:var(--orange); border-radius:2px; transition:width .3s; }
+    .nav-links a:hover { color:var(--white); }
+    .nav-links a:hover::after, .nav-links a.active::after { width:100%; }
+    .nav-links a.active { color:var(--orange); }
+
+    /* HERO */
+    .page-hero { position:relative; padding:120px 7vw 80px; text-align:center; background:linear-gradient(180deg, rgba(255,106,0,.10) 0%, rgba(255,106,0,.02) 60%, transparent 100%); border-bottom:1px solid var(--line); overflow:hidden; }
+    .page-hero::before { content:''; position:absolute; top:-200px; left:50%; transform:translateX(-50%); width:800px; height:800px; background:radial-gradient(circle, rgba(255,106,0,.08) 0%, transparent 70%); pointer-events:none; }
+    .eyebrow { display:inline-block; padding:7px 20px; border:1px solid rgba(255,106,0,.6); border-radius:50px; font-size:11px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:var(--orange); margin-bottom:24px; background:rgba(255,106,0,.06); }
+    .page-hero h1 { font-size:clamp(42px,6vw,84px); line-height:.9; letter-spacing:-.04em; text-transform:uppercase; margin:0 0 20px; font-weight:900; }
+    .page-hero .subtitle { color:var(--muted); font-size:clamp(17px,2vw,21px); line-height:1.5; max-width:640px; margin:0 auto; }
+
+    /* SECTIONS */
+    section { padding:60px 7vw; position:relative; z-index:1; }
+    .section-heading { text-align:center; margin-bottom:40px; }
+    .section-eyebrow { display:inline-block; padding:5px 14px; border:1px solid rgba(255,106,0,.4); border-radius:50px; font-size:10px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:var(--orange); margin-bottom:16px; background:rgba(255,106,0,.05); }
+    .section-title { font-size:clamp(30px,4vw,52px); line-height:.92; letter-spacing:-.03em; text-transform:uppercase; margin:0 0 14px; font-weight:900; }
+    .divider { height:1px; background:linear-gradient(90deg, transparent, var(--line), rgba(255,106,0,.2), var(--line), transparent); margin:0; }
+
+    /* SEARCH */
+    .search-wrap { max-width:600px; margin:0 auto 40px; position:relative; }
+    .search-wrap input { width:100%; padding:16px 20px 16px 52px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,.04); color:var(--white); font-size:16px; font-family:inherit; outline:none; transition:border-color .2s, box-shadow .2s; }
+    .search-wrap input:focus { border-color:var(--orange); box-shadow:0 0 30px rgba(255,106,0,.1); }
+    .search-wrap input::placeholder { color:#555; }
+    .search-icon { position:absolute; left:18px; top:50%; transform:translateY(-50%); color:#555; font-size:18px; pointer-events:none; }
+
+    /* DEPARTMENT GROUPS */
+    .dept-group { margin-bottom:40px; }
+    .dept-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--line); }
+    .dept-header h3 { font-size:15px; font-weight:900; text-transform:uppercase; letter-spacing:.1em; color:var(--orange); margin:0; }
+    .dept-count { font-size:11px; color:var(--muted); background:rgba(255,255,255,.06); padding:2px 10px; border-radius:50px; font-weight:700; }
+
+    /* DOCUMENT CARDS */
+    .doc-list { display:grid; gap:10px; }
+    .doc-card { display:grid; grid-template-columns:1fr auto; align-items:center; gap:16px; padding:16px 20px; background:var(--card); border:1px solid var(--line); border-radius:12px; transition:all .2s; }
+    .doc-card:hover { border-color:rgba(255,106,0,.3); background:var(--card-hover); transform:translateY(-1px); box-shadow:0 8px 30px rgba(0,0,0,.3); }
+    .doc-info { min-width:0; }
+    .doc-title { font-size:15px; font-weight:700; color:var(--white); margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .doc-meta { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .doc-id { font-size:12px; font-weight:800; color:var(--orange); font-family:'SF Mono',SFMono-Regular,Menlo,Consolas,monospace; letter-spacing:.03em; }
+    .doc-type { font-size:11px; color:var(--muted); background:rgba(255,255,255,.06); padding:2px 8px; border-radius:4px; font-weight:600; }
+    .doc-status { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; padding:3px 10px; border-radius:50px; }
+    .doc-status.active { background:rgba(34,197,94,.15); color:#22c55e; }
+    .doc-status.draft { background:rgba(245,158,11,.15); color:#f59e0b; }
+    .doc-status.superseded { background:rgba(239,68,68,.15); color:#ef4444; }
+    .doc-status.archived { background:rgba(156,163,175,.15); color:#9ca3af; }
+    .doc-open { display:inline-flex; align-items:center; gap:6px; padding:8px 18px; background:var(--orange); color:var(--white); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; border-radius:8px; white-space:nowrap; transition:all .2s; text-decoration:none; }
+    .doc-open:hover { background:var(--orange-dark); color:var(--white); transform:scale(1.03); }
+
+    /* LOGIN BOX */
+    .login-section { max-width:440px; margin:0 auto; padding:48px 20px; text-align:center; }
+    .login-box { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:36px 32px; }
+    .login-box h3 { font-size:20px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; margin:0 0 8px; }
+    .login-box p { color:var(--muted); font-size:14px; margin:0 0 24px; line-height:1.5; }
+    .login-box label { display:block; font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; margin-top:16px; text-align:left; }
+    .login-box label:first-of-type { margin-top:0; }
+    .login-box input { width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.04); color:var(--white); font-size:15px; font-family:inherit; outline:none; transition:border-color .2s; }
+    .login-box input:focus { border-color:var(--orange); }
+    .login-box .btn-login { width:100%; margin-top:24px; padding:14px; background:var(--orange); color:var(--white); border:none; border-radius:10px; font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; transition:all .2s; }
+    .login-box .btn-login:hover { background:var(--orange-dark); }
+    .login-box .btn-login:disabled { opacity:.5; cursor:not-allowed; }
+    .login-error { color:#ef4444; font-size:13px; margin-top:12px; min-height:20px; }
+
+    /* INTERNAL BANNER */
+    .internal-banner { display:flex; align-items:center; gap:10px; padding:14px 20px; background:rgba(255,106,0,.06); border:1px solid rgba(255,106,0,.2); border-radius:12px; margin-bottom:24px; font-size:13px; color:var(--muted); }
+    .internal-banner .lock-icon { font-size:16px; }
+
+    /* FOOTER */
+    footer { border-top:1px solid var(--line); position:relative; z-index:1; }
+    .footer-inner { max-width:1200px; margin:0 auto; padding:48px 7vw; }
+    .footer-top { display:flex; align-items:flex-start; justify-content:space-between; gap:40px; flex-wrap:wrap; }
+    .footer-brand { display:flex; align-items:center; gap:14px; }
+    .footer-brand img { width:46px; height:46px; border-radius:10px; }
+    .footer-brand .brand-text { font-weight:900; font-size:15px; text-transform:uppercase; letter-spacing:.06em; }
+    .footer-brand .brand-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+    .footer-nav { display:flex; gap:20px; flex-wrap:wrap; }
+    .footer-nav a { color:#888; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; transition:color .2s; }
+    .footer-nav a:hover { color:var(--orange); }
+    .footer-contact { text-align:right; }
+    .footer-contact a { color:var(--muted); font-size:13px; display:block; transition:color .2s; }
+    .footer-contact a:hover { color:var(--orange); }
+    .footer-bottom { margin-top:32px; padding-top:24px; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .footer-bottom .copyright { font-size:12px; color:#555; }
+    .footer-bottom .fine-print { font-size:11px; color:#444; text-align:right; max-width:500px; line-height:1.5; }
+
+    /* RESPONSIVE */
+    @media(max-width:940px) {
+      .nav { position:static; flex-direction:column; padding:12px 20px; }
+      .brand img { width:44px; height:44px; min-width:44px; }
+      .nav-links { flex-wrap:wrap; justify-content:center; gap:14px; }
+      .footer-top { flex-direction:column; align-items:center; text-align:center; }
+      .footer-contact { text-align:center; }
+      .footer-bottom { flex-direction:column; align-items:center; text-align:center; }
+    }
+    @media(max-width:560px) {
+      .nav-links a { font-size:11px; }
+      .brand span { font-size:13px; }
+      section { padding:40px 20px; }
+      .footer-inner { padding:32px 20px; }
+      .doc-card { grid-template-columns:1fr; gap:12px; }
+      .doc-open { justify-self:start; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" aria-label="Primary navigation">
+    <a class="brand" href="index.html" aria-label="Lost Limb Riders home">
+      <img src="assets/logo-nobg.png" alt="Lost Limb Riders logo">
+      <span>Lost Limb Riders</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="events.html">Events</a>
+      <a href="media.html">Media</a>
+      <a href="mission.html">Mission</a>
+      <a href="community.html">Community</a>
+      <a href="sponsors.html">Sponsors</a>
+      <a href="documentation.html" class="active">Docs</a>
+    </div>
+  </nav>
+
+  <header class="page-hero">
+    <div class="eyebrow">Organizational Reference</div>
+    <h1>Documentation <span class="orange">Library</span></h1>
+    <p class="subtitle">Policies, procedures, handbooks, forms, and operational documents for Lost Limb Riders.</p>
+  </header>
+
+  <main>
+    <!-- SEARCH -->
+    <section style="padding-bottom:0;">
+      <div class="wrap">
+        <div class="search-wrap">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" id="docSearch" placeholder="Search documents by title, ID, or category..." autocomplete="off">
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPLIANCE ENGINE -->
+    <section style="padding-top:0;">
+      <div class="wrap">
+        <div class="internal-banner">
+          <span class="lock-icon">&#128214;</span>
+          <span><strong>Source of truth:</strong> the Autobiography repository remains the authoritative document library. The registry below contains metadata only; no duplicate document bodies are stored.</span>
+        </div>
+        <div class="section-heading">
+          <div class="section-eyebrow">Compliance</div>
+          <h2 class="section-title">Compliance <span class="orange">Engine</span></h2>
+          <p style="color:var(--muted); font-size:15px; margin-top:12px; max-width:760px; margin-left:auto; margin-right:auto;">Requirements are mapped to the current governing documents and evidence records without creating a shadow repository.</p>
+        </div>
+        <div id="complianceMatrix" class="doc-list"></div>
+      </div>
+    </section>
+
+    <!-- PUBLIC DOCUMENTS -->
+    <section id="public-docs">
+      <div class="wrap">
+        <div class="section-heading">
+          <div class="section-eyebrow">Open Access</div>
+          <h2 class="section-title">Public <span class="orange">Documents</span></h2>
+          <p style="color:var(--muted); font-size:15px; margin-top:12px; max-width:560px; margin-left:auto; margin-right:auto;">Handbooks, program manuals, and forms available to all visitors.</p>
+        </div>
+        <div id="publicList"></div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- INTERNAL LOGIN GATE -->
+    <section id="internal-gate">
+      <div class="wrap">
+        <div class="section-heading">
+          <div class="section-eyebrow">Authorized Personnel</div>
+          <h2 class="section-title">Internal <span class="orange">Documents</span></h2>
+          <p style="color:var(--muted); font-size:15px; margin-top:12px; max-width:560px; margin-left:auto; margin-right:auto;">Governance, operations, and position manuals. Login required.</p>
+        </div>
+
+        <div id="loginArea">
+          <div class="login-section">
+            <div class="login-box">
+              <h3>Document Access</h3>
+              <p>Enter your credentials to view internal organizational documents.</p>
+              <form id="loginForm" onsubmit="return docsLogin(event)">
+                <label for="loginName">Name</label>
+                <input type="text" id="loginName" placeholder="Your name" required autocomplete="username">
+                <label for="loginKey">Access Key</label>
+                <input type="password" id="loginKey" placeholder="Access key" required autocomplete="current-password">
+                <button type="submit" class="btn-login" id="loginBtn">Access Documents</button>
+                <div class="login-error" id="loginError"></div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div id="internalDocs" style="display:none;">
+          <div class="internal-banner">
+            <span class="lock-icon">&#128274;</span>
+            <span>Logged in as <strong id="loggedInUser"></strong></span>
+            <span style="margin-left:auto;"><a href="#" onclick="docsLogout(); return false;" style="color:#ef4444; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.05em;">Logout</a></span>
+          </div>
+          <div id="internalList"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="assets/logo-nobg.png" alt="Lost Limb Riders">
+          <div>
+            <div class="brand-text">Lost Limb Riders</div>
+            <div class="brand-sub">Motorcycle Club &bull; Est. 2025</div>
+          </div>
+        </div>
+        <div class="footer-nav">
+          <a href="index.html">Home</a>
+          <a href="events.html">Events</a>
+          <a href="media.html">Media</a>
+          <a href="mission.html">Mission</a>
+          <a href="community.html">Community</a>
+          <a href="sponsors.html">Sponsors</a>
+          <a href="documentation.html">Docs</a>
+        </div>
+        <div class="footer-contact">
+          <a href="mailto:john.thompson@lostlimbriders.org">john.thompson@lostlimbriders.org</a>
+          <a href="tel:5158905765">515-890-5765</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="copyright">&copy; 2026 Lost Limb Riders Motorcycle Club. All rights reserved.</div>
+        <div class="fine-print">Ride With Purpose &bull; Support Amputees &bull; Build Community &bull; Never Give Up</div>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module">
+    import {
+      DOCUMENT_SOURCE_REPO,
+      getActiveDocuments,
+      classifyDocumentsByDomain,
+      buildComplianceMatrix,
+      filterDocuments,
+    } from './lib/document-registry.js';
+
+    const REPO_BASE = 'https://github.com/LostLimbRider/Autobiography/blob/master/';
+    const allDocs = getActiveDocuments();
+    const PUBLIC_DOCS = classifyDocumentsByDomain(filterDocuments('', allDocs.filter((doc) => doc.access === 'public')));
+    const INTERNAL_DOCS = classifyDocumentsByDomain(filterDocuments('', allDocs.filter((doc) => doc.access === 'internal')));
+    const ComplianceRequirements = buildComplianceMatrix();
+
+    function renderComplianceMatrix() {
+      const host = document.getElementById('complianceMatrix');
+      if (!host) return;
+      host.innerHTML = ComplianceRequirements.map((requirement) => {
+        const evidence = requirement.evidence.map((entry) => {
+          const doc = entry.document || {};
+          const label = doc.document_code || entry.document_code;
+          const canonical = doc.canonical_path || entry.canonical_path;
+          const source = canonical ? `${REPO_BASE}${canonical.replace('documentation-source/', '')}` : '#';
+          return '<div class="doc-card" data-search="' + escapeHtml((label + ' ' + entry.section + ' ' + requirement.title).toLowerCase()) + '">' +
+            '<div class="doc-info">' +
+              '<div class="doc-title">' + escapeHtml(requirement.title) + '</div>' +
+              '<div class="doc-meta">' +
+                '<span class="doc-id">' + escapeHtml(requirement.id) + '</span>' +
+                '<span class="doc-type">' + escapeHtml(requirement.domain) + '</span>' +
+                '<span class="doc-status ' + String(requirement.status).toLowerCase().replace(/\s+/g, '-') + '">' + escapeHtml(requirement.status) + '</span>' +
+              '</div>' +
+              '<div style="font-size:12px; color:var(--muted); margin-top:6px;">' + escapeHtml(requirement.summary) + '</div>' +
+              '<div style="font-size:11px; color:var(--muted); margin-top:6px;">Evidence: <strong style="color:var(--white);">' + escapeHtml(label) + '</strong> &middot; ' + escapeHtml(entry.section) + '</div>' +
+            '</div>' +
+            '<a class="doc-open" href="' + escapeHtml(source) + '" target="_blank" rel="noopener">Trace Evidence &rarr;</a>' +
+          '</div>';
+        }).join('');
+
+        return '<div class="dept-group"><div class="dept-header"><h3>' + escapeHtml(requirement.domain) + '</h3><span class="dept-count">' + requirement.evidence.length + '</span></div><div class="doc-list">' + evidence + '</div></div>';
+      }).join('');
+    }
+
+    function renderDocCard(doc) {
+      var url = doc.source_url || (REPO_BASE + doc.canonical_path.replace('documentation-source/', ''));
+      var statusClass = doc.status || 'active';
+      var statusLabel = statusClass.charAt(0).toUpperCase() + statusClass.slice(1);
+      var idHtml = doc.document_code ? '<span class="doc-id">' + escapeHtml(doc.document_code) + '</span>' : '';
+      var descHtml = doc.description ? '<div style="font-size:12px; color:var(--muted); margin-top:2px;">' + escapeHtml(doc.description) + '</div>' : '';
+      return '<div class="doc-card" data-search="' + escapeHtml((doc.title + ' ' + (doc.document_code || '') + ' ' + (doc.type || '') + ' ' + (doc.description || '')).toLowerCase()) + '">' +
+        '<div class="doc-info">' +
+          '<div class="doc-title">' + escapeHtml(doc.title) + '</div>' +
+          '<div class="doc-meta">' +
+            idHtml +
+            '<span class="doc-type">' + escapeHtml(doc.type) + '</span>' +
+            '<span class="doc-status ' + statusClass + '">' + statusLabel + '</span>' +
+          '</div>' +
+          descHtml +
+        '</div>' +
+        '<a class="doc-open" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">Open Document &rarr;</a>' +
+      '</div>';
+    }
+
+    function renderGroup(container, groups) {
+      var html = '';
+      for (var i = 0; i < groups.length; i++) {
+        var g = groups[i];
+        html += '<div class="dept-group">';
+        html += '<div class="dept-header"><h3>' + escapeHtml(g.section) + '</h3><span class="dept-count">' + g.items.length + '</span></div>';
+        html += '<div class="doc-list">';
+        for (var j = 0; j < g.items.length; j++) {
+          html += renderDocCard(g.items[j]);
+        }
+        html += '</div></div>';
+      }
+      container.innerHTML = html;
+    }
+
+    function escapeHtml(v) {
+      return String(v || '').replace(/[&<>"']/g, function(c) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+      });
+    }
+
+    document.getElementById('docSearch').addEventListener('input', function() {
+      var q = this.value.toLowerCase().trim();
+      var cards = document.querySelectorAll('.doc-card');
+      for (var i = 0; i < cards.length; i++) {
+        var haystack = cards[i].getAttribute('data-search') || '';
+        cards[i].style.display = (!q || haystack.indexOf(q) !== -1) ? '' : 'none';
+      }
+      var groups = document.querySelectorAll('.dept-group');
+      for (var g = 0; g < groups.length; g++) {
+        var visibleCards = groups[g].querySelectorAll('.doc-card:not([style*="display: none"])');
+        groups[g].style.display = visibleCards.length ? '' : 'none';
+      }
+    });
+
+    function docsLogin(e) {
+      e.preventDefault();
+      var name = document.getElementById('loginName').value.trim();
+      var key = document.getElementById('loginKey').value.trim();
+      var errEl = document.getElementById('loginError');
+      var btn = document.getElementById('loginBtn');
+      if (!name || !key) { errEl.textContent = 'Enter both name and key.'; return false; }
+      btn.disabled = true; btn.textContent = 'Checking...'; errEl.textContent = '';
+      fetch('/api/docs-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, key: key })
+      }).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.ok) {
+          sessionStorage.setItem('llr-docs-user', data.name);
+          showInternalDocs(data.name);
+        } else {
+          errEl.textContent = data.error || 'Access denied.';
+        }
+        btn.disabled = false; btn.textContent = 'Access Documents';
+      }).catch(function() {
+        errEl.textContent = 'Connection error.';
+        btn.disabled = false; btn.textContent = 'Access Documents';
+      });
+      return false;
+    }
+
+    function showInternalDocs(name) {
+      document.getElementById('loginArea').style.display = 'none';
+      document.getElementById('internalDocs').style.display = '';
+      document.getElementById('loggedInUser').textContent = name;
+      renderGroup(document.getElementById('internalList'), INTERNAL_DOCS);
+    }
+
+    function docsLogout() {
+      sessionStorage.removeItem('llr-docs-user');
+      document.getElementById('loginArea').style.display = '';
+      document.getElementById('internalDocs').style.display = 'none';
+      document.getElementById('loginName').value = '';
+      document.getElementById('loginKey').value = '';
+      document.getElementById('loginError').textContent = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      renderComplianceMatrix();
+      renderGroup(document.getElementById('publicList'), PUBLIC_DOCS);
+      var savedUser = sessionStorage.getItem('llr-docs-user');
+      if (savedUser) showInternalDocs(savedUser);
+
+      fetch('/api/visit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          screen: screen.width + 'x' + screen.height,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          lang: navigator.language,
+          platform: navigator.platform,
+          cookies: navigator.cookieEnabled ? 'enabled' : 'disabled',
+          dnt: navigator.doNotTrack || 'unknown',
+          page: location.href
+        }),
+        keepalive: true
+      }).catch(function() {});
+    });
+
+    window.docsLogin = docsLogin;
+    window.docsLogout = docsLogout;
+    window.DOCUMENT_SOURCE_REPO = DOCUMENT_SOURCE_REPO;
+  </script>
+</body>
+</html>
