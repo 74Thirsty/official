@@ -1078,8 +1078,10 @@
                 <h2>Guest <span class="orange">Book</span></h2>
                 <p style="color:var(--muted); margin-top:4px;">View, back up, or clear guestbook entries.</p>
               </div>
-              <div style="display:flex; gap:8px;">
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
                 <button class="btn btn-sm btn-primary" onclick="downloadGuestbook()">Backup JSON</button>
+                <button class="btn btn-sm" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.2);" onclick="document.getElementById('guestbookImport').click()">Import JSON</button>
+                <input type="file" id="guestbookImport" accept=".json,application/json" style="display:none;" onchange="importGuestbook(this.files[0])">
                 <button class="btn btn-sm" style="background:#ef4444; color:#fff;" onclick="clearGuestbook()">Clear All</button>
               </div>
             </div>
@@ -2513,32 +2515,105 @@
 
     // --- Guestbook ---
     async function loadGuestbook() {
-      const list = document.getElementById('guestbookList');
-      const empty = document.getElementById('guestbookEmpty');
       try {
         const res = await fetch('/api/guestbook?action=list');
         const data = await res.json();
-        if (!data.entries || !data.entries.length) {
-          list.innerHTML = '';
-          empty.style.display = 'block';
-          return;
+        if (data.entries && data.entries.length) {
+          renderGuestbookList(data.entries);
+        } else {
+          document.getElementById('guestbookList').innerHTML = '';
+          document.getElementById('guestbookEmpty').style.display = 'block';
         }
-        empty.style.display = 'none';
-        list.innerHTML = data.entries.map(e => `
-          <div style="border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; background:var(--card);">
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-              <div style="width:32px; height:32px; border-radius:50%; background:var(--orange); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:12px; color:#111; flex-shrink:0;">${escapeHtml((e.name||'?')[0].toUpperCase())}</div>
-              <div>
-                <div style="font-weight:800; font-size:14px;">${escapeHtml(e.name)}</div>
-                <div style="color:#666; font-size:12px;">${e.location ? escapeHtml(e.location) + ' &bull; ' : ''}${formatDate(e.savedAt)}</div>
-              </div>
-            </div>
-            <div style="color:#ccc; font-size:14px; line-height:1.5; padding:8px 12px; background:rgba(255,255,255,.03); border-radius:10px; border:1px solid var(--line);">"${escapeHtml(e.message)}"</div>
-          </div>
-        `).join('');
       } catch {
+        document.getElementById('guestbookList').innerHTML = '';
+        document.getElementById('guestbookEmpty').style.display = 'block';
+      }
+    }
+
+    async function deleteGuestbookEntry(savedAt) {
+      const status = document.getElementById('guestbookStatus');
+      if (!confirm('Delete this guestbook entry? This cannot be undone.')) return;
+      status.textContent = 'Deleting...';
+      try {
+        const res = await fetch('/api/guestbook?action=delete&key=' + encodeURIComponent(adminKey), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ savedAt }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          status.textContent = 'Entry deleted.';
+          if (data.entries && data.entries.length) {
+            renderGuestbookList(data.entries);
+          } else {
+            const empty = document.getElementById('guestbookEmpty');
+            document.getElementById('guestbookList').innerHTML = '';
+            empty.style.display = 'block';
+          }
+        } else {
+          status.textContent = data.error || 'Failed.';
+        }
+      } catch {
+        status.textContent = 'Network error.';
+      }
+    }
+
+    function renderGuestbookList(entries) {
+      const list = document.getElementById('guestbookList');
+      const empty = document.getElementById('guestbookEmpty');
+      if (!entries || !entries.length) {
         list.innerHTML = '';
         empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+      list.innerHTML = entries.map(e => `
+        <div style="border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; background:var(--card);">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <div style="width:32px; height:32px; border-radius:50%; background:var(--orange); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:12px; color:#111; flex-shrink:0;">${escapeHtml((e.name||'?')[0].toUpperCase())}</div>
+            <div>
+              <div style="font-weight:800; font-size:14px;">${escapeHtml(e.name)}</div>
+              <div style="color:#666; font-size:12px;">${e.location ? escapeHtml(e.location) + ' &bull; ' : ''}${formatDate(e.savedAt)}</div>
+            </div>
+            <button class="btn btn-sm" title="Delete this entry" style="margin-left:auto; background:transparent; color:#ef4444; border:1px solid rgba(239,68,68,.35);" onclick="deleteGuestbookEntry('${escapeHtml(e.savedAt)}')">Delete</button>
+          </div>
+          <div style="color:#ccc; font-size:14px; line-height:1.5; padding:8px 12px; background:rgba(255,255,255,.03); border-radius:10px; border:1px solid var(--line);">"${escapeHtml(e.message)}"</div>
+        </div>
+      `).join('');
+    }
+
+    async function importGuestbook(file) {
+      const status = document.getElementById('guestbookStatus');
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const entries = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.entries) ? parsed.entries : null);
+        if (!entries) {
+          status.textContent = 'Invalid file: expected an array of entries or { entries: [...] }.';
+          return;
+        }
+        if (!confirm('Replace the current guestbook with ' + entries.length + ' entries from this file? This cannot be undone.')) {
+          document.getElementById('guestbookImport').value = '';
+          return;
+        }
+        status.textContent = 'Importing...';
+        const res = await fetch('/api/guestbook?action=import&key=' + encodeURIComponent(adminKey), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ entries }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          status.textContent = 'Imported ' + (data.entries ? data.entries.length : 0) + ' entries.';
+          renderGuestbookList(data.entries);
+        } else {
+          status.textContent = data.error || 'Failed.';
+        }
+      } catch {
+        status.textContent = 'Invalid JSON file.';
+      } finally {
+        document.getElementById('guestbookImport').value = '';
       }
     }
 
