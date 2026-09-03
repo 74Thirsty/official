@@ -614,6 +614,12 @@
             <button type="button" class="menu-item" onclick="switchTab('comments', this)">Comments</button>
           </div>
         </div>
+        <div class="menu-group">
+          <button type="button" class="menu-btn" onclick="toggleMenu(this)">Administration <span class="menu-caret">&#9662;</span></button>
+          <div class="menu-drop">
+            <button type="button" class="menu-item" onclick="switchTab('documents', this)">Document Access</button>
+          </div>
+        </div>
       </nav>
 
       <!-- Subscribers panel -->
@@ -1093,6 +1099,23 @@
           </div>
         </div>
 
+        <!-- Document Access Panel -->
+        <div id="panel-documents" class="tab-panel">
+          <div class="panel">
+            <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin:0 0 10px;">Document Library Access</h3>
+            <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">Create or revoke credentials for internal library access. Compliance review and source validation controls are available in the library when signed in as admin.</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+              <input id="docsUserName" maxlength="60" placeholder="Authorized user name" style="flex:1; min-width:180px; padding:10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white);">
+              <input id="docsUserKey" type="password" maxlength="120" placeholder="Access key" style="flex:1; min-width:180px; padding:10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white);">
+              <button class="btn btn-primary" onclick="addDocsUser()">Add User</button>
+              <a class="btn" href="documentation.html" target="_blank" rel="noopener">Open Library</a>
+            </div>
+            <div id="docsUserStatus" style="font-size:13px; color:var(--muted); margin-bottom:12px;"></div>
+            <div id="docsUsersList"></div>
+            <div id="docsUsersEmpty" class="empty-state" style="display:none;">No document users configured.</div>
+          </div>
+        </div>
+
         <!-- Content Engine Panel -->
         <div id="panel-content" class="tab-panel">
           <div class="panel">
@@ -1282,6 +1305,7 @@
         if (name === 'testimonials') loadTestimonialPending();
         if (name === 'comments') loadCommentsPending();
         if (name === 'guestbook') loadGuestbook();
+        if (name === 'documents') loadDocsUsers();
         if (name === 'content') { loadContentSettings(); loadStoryLibrary(); }
         if (name === 'ideas') loadIdeas();
       }
@@ -2511,6 +2535,49 @@
         });
         if (res.ok) loadCommentsPending();
       } catch { alert('Network error.'); }
+    }
+
+    // --- Document access ---
+    async function loadDocsUsers() {
+      const status = document.getElementById('docsUserStatus');
+      try {
+        const res = await fetch(apiUrl('docs-users'));
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Unable to load document users.');
+        const list = document.getElementById('docsUsersList');
+        const empty = document.getElementById('docsUsersEmpty');
+        list.innerHTML = (data.users || []).map(user => '<div style="display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid var(--line)"><strong>' + escapeHtml(user.name) + '</strong><span style="color:var(--muted);font-size:12px">Added ' + escapeHtml(new Date(user.addedAt).toLocaleString()) + '</span><button class="btn btn-sm" style="margin-left:auto;background:#ef4444;color:#fff" onclick="removeDocsUser(decodeURIComponent(\'' + encodeURIComponent(user.name) + '\'))">Revoke</button></div>').join('');
+        empty.style.display = data.users?.length ? 'none' : 'block';
+        status.textContent = '';
+      } catch (error) { status.textContent = error.message; }
+    }
+
+    async function addDocsUser() {
+      const name = document.getElementById('docsUserName').value.trim();
+      const key = document.getElementById('docsUserKey').value.trim();
+      const status = document.getElementById('docsUserStatus');
+      if (!name || !key) { status.textContent = 'Name and access key are required.'; return; }
+      try {
+        const res = await fetch(apiUrl('docs-add-user'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, key }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Unable to add user.');
+        document.getElementById('docsUserName').value = '';
+        document.getElementById('docsUserKey').value = '';
+        status.textContent = 'Document user added.';
+        loadDocsUsers();
+      } catch (error) { status.textContent = error.message; }
+    }
+
+    async function removeDocsUser(name) {
+      if (!confirm('Revoke document access for ' + name + '?')) return;
+      const status = document.getElementById('docsUserStatus');
+      try {
+        const res = await fetch(apiUrl('docs-remove-user'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Unable to revoke user.');
+        status.textContent = 'Document access revoked.';
+        loadDocsUsers();
+      } catch (error) { status.textContent = error.message; }
     }
 
     // --- Guestbook ---

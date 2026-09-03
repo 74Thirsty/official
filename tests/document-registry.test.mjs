@@ -6,6 +6,7 @@ import {
   buildComplianceMatrix,
   evaluateRequirement,
   findDocumentByCode,
+  calculateComplianceScore,
 } from '../lib/document-registry.js';
 
 test('document registry keeps metadata only and preserves authoritative source paths', () => {
@@ -38,9 +39,47 @@ test('compliance matrix produces traceable evidence mappings', () => {
   assert.ok(requirement.evidence.every((entry) => entry.canonical_path.startsWith('documentation-source/')));
 });
 
-test('evaluateRequirement returns a traceable result for a known requirement', () => {
-  const result = evaluateRequirement('REQ-FIN-01');
+test('requirement remains unknown until document availability is verified', () => {
+  const result = evaluateRequirement('REQ-FIN-01', [], [], new Date('2026-09-02T00:00:00Z'));
+  assert.equal(result.status, 'Unknown');
+});
+
+test('verified evidence plus approval produces a compliant result', () => {
+  const documentState = [
+    { document_code: 'FIN-EXP-002', availability: 'available' },
+    { document_code: 'FIN-PUR-001', availability: 'available' },
+    { document_code: 'GOV-REC-001', availability: 'available' },
+  ];
+  const result = evaluateRequirement('REQ-FIN-01', documentState, [
+    { requirement_id: 'REQ-FIN-01', review_status: 'approved' },
+  ], new Date('2026-09-02T00:00:00Z'));
   assert.equal(result.status, 'Compliant');
   assert.equal(result.evidence[0].document_code, 'FIN-EXP-002');
   assert.ok(findDocumentByCode('FIN-EXP-002'));
+});
+
+test('missing evidence cannot be classified as compliant', () => {
+  const result = evaluateRequirement('REQ-FIN-01', [
+    { document_code: 'FIN-EXP-002', availability: 'available' },
+    { document_code: 'FIN-PUR-001', availability: 'missing' },
+    { document_code: 'GOV-REC-001', availability: 'available' },
+  ], [{ requirement_id: 'REQ-FIN-01', review_status: 'approved' }], new Date('2026-09-02T00:00:00Z'));
+  assert.equal(result.status, 'Missing');
+});
+
+test('date rules distinguish overdue, due soon, and expired', () => {
+  const available = getActiveDocuments().map((doc) => ({ document_code: doc.document_code, availability: 'available' }));
+  const now = new Date('2026-09-02T00:00:00Z');
+  assert.equal(evaluateRequirement('REQ-ORG-01', available, [{ requirement_id: 'REQ-ORG-01', due_date: '2026-09-01' }], now).status, 'Overdue');
+  assert.equal(evaluateRequirement('REQ-ORG-01', available, [{ requirement_id: 'REQ-ORG-01', due_date: '2026-09-20' }], now).status, 'Due Soon');
+  assert.equal(evaluateRequirement('REQ-ORG-01', available, [{ requirement_id: 'REQ-ORG-01', expires_at: '2026-08-31' }], now).status, 'Expired');
+});
+
+test('not-applicable requirements are excluded from the score', () => {
+  assert.equal(calculateComplianceScore([{ status: 'Compliant' }, { status: 'Missing' }, { status: 'Not Applicable' }]), 50);
+  assert.equal(calculateComplianceScore([{ status: 'Not Applicable' }]), null);
+});
+
+test('unknown requirement is reported as unknown, not compliant or applicable', () => {
+  assert.equal(evaluateRequirement('DOES-NOT-EXIST').status, 'Unknown');
 });

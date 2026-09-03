@@ -4,6 +4,7 @@ import { buildNewsletter, getUpcomingEvents, getUpcomingStreams, buildWelcomeEma
 import { sendEmail } from '../lib/email.js';
 import { addAudit } from '../lib/audit.js';
 import { randomBytes } from 'crypto';
+import { createHmac, scryptSync, timingSafeEqual } from 'crypto';
 import { parseBrowser } from '../lib/ua.js';
 import { facebookDetectionConfigured } from '../lib/stream.js';
 import { computeVisitorStats } from '../lib/visitor-stats.js';
@@ -12,16 +13,21 @@ import { notifyOwner } from '../lib/notify.js';
 import { normalizeIdeaPayload, validateIdea } from '../lib/event-model.js';
 import { normalizeStoryMeta, wordCount, buildHistorySummary, similarityFlags } from '../lib/story-model.js';
 import { buildStoryPrompt, buildIdeasPrompt, parseStoryResponse, parseIdeasResponse, pickSurpriseParams } from '../lib/generation.js';
+import { getActiveDocuments, findDocumentByCode, buildComplianceMatrix, calculateComplianceScore } from '../lib/document-registry.js';
 
 export const maxDuration = 60;
 
 export default function handler(req, res) {
   if (req.method === 'OPTIONS') return sendEmpty(res);
+  const action = getParam(req, 'action') || 'stats';
+  if (['docs-login', 'docs-list', 'docs-document', 'docs-validate', 'docs-compliance-update'].includes(action)) {
+    handleDocs(req, res, action).catch(() => sendJson(res, { error: 'Document service unavailable.' }, 500));
+    return;
+  }
   if (!isAdmin(req)) {
     return sendJson(res, { error: 'Admin access required.' }, 403);
   }
 
-  const action = getParam(req, 'action') || 'stats';
   const fail = () => sendJson(res, { error: 'Storage error.' }, 500);
 
   if (action === 'stats') {
@@ -318,11 +324,12 @@ export default function handler(req, res) {
       const name = clean(String(payload.name || ''), 60);
       const key = clean(String(payload.key || ''), 120);
       if (!name || !key) return sendJson(res, { error: 'Name and key are required.' }, 422);
+      if (key.length < 12) return sendJson(res, { error: 'Access key must be at least 12 characters.' }, 422);
       const users = await getList(KEYS.docsUsers);
       if (users.some(u => u.name.toLowerCase() === name.toLowerCase())) {
         return sendJson(res, { error: 'User already exists.' }, 422);
       }
-      users.push({ name, key, addedAt: new Date().toISOString() });
+      users.push({ name, keyHash: hashDocsKey(key), addedAt: new Date().toISOString() });
       await setList(KEYS.docsUsers, users);
       await addAudit('docs_user_added', 'admin', { name });
       sendJson(res, { ok: true, users: users.map(u => ({ name: u.name, addedAt: u.addedAt })) });
@@ -346,6 +353,192 @@ export default function handler(req, res) {
   }
 
   sendJson(res, { error: 'Unsupported action.' }, 404);
+}
+
+const DOC_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+const RAW_DOCUMENT_BASE = 'https://raw.githubusercontent.com/LostLimbRider/Autobiography/master/';
+
+function docsSecret() {
+  return process.env.ADMIN_KEY || '';
+}
+
+function issueDocsToken(name, role, version = '') {
+  const secret = docsSecret();
+  if (!secret) return '';
+  const body = Buffer.from(JSON.stringify({ name, role, version, exp: Date.now() + DOC_SESSION_TTL_MS })).toString('base64url');
+  const signature = createHmac('sha256', secret).update(body).digest('base64url');
+  return `${body}.${signature}`;
+}
+
+function readDocsSession(req) {
+  const header = String(req.headers?.authorization || '');
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  const [body, signature] = token.split('.');
+  const secret = docsSecret();
+  if (!body || !signature || !secret) return null;
+  const expected = createHmac('sha256', secret).update(body).digest();
+  let supplied;
+  try { supplied = Buffer.from(signature, 'base64url'); } catch { return null; }
+  if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) return null;
+  try {
+    const session = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    return session.exp > Date.now() && session.name && session.role ? session : null;
+  } catch { return null; }
+}
+
+export function hashDocsKey(key, salt = randomBytes(16).toString('hex')) {
+  return `scrypt:${salt}:${scryptSync(key, salt, 32).toString('hex')}`;
+}
+
+export function verifyDocsKey(stored, supplied) {
+  if (!stored || !supplied) return false;
+  if (!stored.startsWith('scrypt:')) {
+    const expected = createHmac('sha256', 'llr-docs-legacy').update(stored).digest();
+    const actual = createHmac('sha256', 'llr-docs-legacy').update(supplied).digest();
+    return timingSafeEqual(actual, expected);
+  }
+  const [, salt, expectedHex] = stored.split(':');
+  if (!salt || !expectedHex) return false;
+  const expected = Buffer.from(expectedHex, 'hex');
+  const actual = scryptSync(supplied, salt, expected.length);
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
+function publicDocument(doc) {
+  return {
+    document_code: doc.document_code,
+    title: doc.title,
+    type: doc.type,
+    domain: doc.domain,
+    section: doc.section,
+    access: doc.access,
+    status: doc.status,
+    version: doc.version,
+    effective_date: doc.effective_date,
+    responsible_area: doc.responsible_area,
+    description: doc.description,
+  };
+}
+
+async function handleDocs(req, res, action) {
+  let session = readDocsSession(req);
+  if (action === 'docs-login') {
+    if (req.method !== 'POST') return sendJson(res, { error: 'Method not allowed.' }, 405);
+    const payload = await readBody(req);
+    const name = clean(String(payload.name || ''), 60);
+    const key = clean(String(payload.key || ''), 120);
+    if (!name || !key) return sendJson(res, { error: 'Name and key are required.' }, 422);
+    const secret = docsSecret();
+    if (!secret) return sendJson(res, { error: 'Document authentication is not configured.' }, 503);
+    if (name.toLowerCase() === 'admin' && verifyDocsKey(hashDocsKey(secret, 'admin-fallback'), key)) {
+      return sendJson(res, { ok: true, name: 'admin', role: 'admin', token: issueDocsToken('admin', 'admin') });
+    }
+    const users = await getList(KEYS.docsUsers);
+    const index = users.findIndex((user) => user?.name?.toLowerCase() === name.toLowerCase());
+    const storedKey = index < 0 ? '' : String(users[index].keyHash || users[index].key || '');
+    if (index < 0 || !verifyDocsKey(storedKey, key)) {
+      return sendJson(res, { error: 'Invalid credentials.' }, 403);
+    }
+    if (!users[index].keyHash) {
+      users[index] = { ...users[index], keyHash: hashDocsKey(key) };
+      delete users[index].key;
+      await setList(KEYS.docsUsers, users);
+    }
+    return sendJson(res, { ok: true, name: users[index].name, role: 'user', token: issueDocsToken(users[index].name, 'user', users[index].addedAt || '') });
+  }
+
+  if (session?.role === 'user') {
+    const users = await getList(KEYS.docsUsers);
+    const activeUser = users.find((user) => user?.name === session.name && (user.addedAt || '') === session.version);
+    if (!activeUser) session = null;
+  }
+
+  if (action === 'docs-list') {
+    if (req.method !== 'GET') return sendJson(res, { error: 'Method not allowed.' }, 405);
+    const state = await getList(KEYS.documentState);
+    const allowed = getActiveDocuments().filter((doc) => doc.access === 'public' || session);
+    const documents = allowed.map((doc) => ({
+      ...publicDocument(doc),
+      availability: state.find((item) => item.document_code === doc.document_code)?.availability || 'unknown',
+    }));
+    const response = { documents, authenticated: Boolean(session), role: session?.role || null, name: session?.name || null };
+    if (session) {
+      const complianceState = await getList(KEYS.complianceState);
+      response.compliance = buildComplianceMatrix(state, complianceState);
+      response.score = calculateComplianceScore(response.compliance);
+    }
+    return sendJson(res, response);
+  }
+
+  if (action === 'docs-document') {
+    if (req.method !== 'GET') return sendJson(res, { error: 'Method not allowed.' }, 405);
+    const code = clean(String(getParam(req, 'code') || ''), 40);
+    const doc = findDocumentByCode(code);
+    if (!doc || doc.status !== 'active') return sendJson(res, { error: 'Document not found.' }, 404);
+    if (doc.access !== 'public' && !session) return sendJson(res, { error: 'Document access required.' }, 403);
+    const sourcePath = doc.canonical_path.replace(/^documentation-source\//, '');
+    const upstream = await fetch(`${RAW_DOCUMENT_BASE}${sourcePath}`, { headers: { Accept: 'text/plain' } });
+    if (!upstream.ok) return sendJson(res, { error: 'Source document is unavailable.' }, 502);
+    const content = await upstream.text();
+    if (Buffer.byteLength(content, 'utf8') > 2 * 1024 * 1024) return sendJson(res, { error: 'Source document is too large.' }, 502);
+    return sendJson(res, { document: publicDocument(doc), content });
+  }
+
+  if (!session || session.role !== 'admin') return sendJson(res, { error: 'Administrator access required.' }, 403);
+
+  if (action === 'docs-validate' && req.method === 'POST') {
+    const checkedAt = new Date().toISOString();
+    const results = [];
+    for (const doc of getActiveDocuments()) {
+      const sourcePath = doc.canonical_path.replace(/^documentation-source\//, '');
+      try {
+        const response = await fetch(`${RAW_DOCUMENT_BASE}${sourcePath}`, { method: 'HEAD' });
+        results.push({ document_code: doc.document_code, availability: response.ok ? 'available' : 'missing', checked_at: checkedAt, error: response.ok ? null : `HTTP ${response.status}` });
+      } catch {
+        results.push({ document_code: doc.document_code, availability: 'unavailable', checked_at: checkedAt, error: 'Source check failed.' });
+      }
+    }
+    await setList(KEYS.documentState, results);
+    await addAudit('document_sources_validated', session.name, { checked: results.length, available: results.filter((item) => item.availability === 'available').length });
+    return sendJson(res, { ok: true, results });
+  }
+
+  if (action === 'docs-compliance-update' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const requirementId = clean(String(payload.requirement_id || ''), 40);
+    const validRequirement = buildComplianceMatrix([], []).some((item) => item.id === requirementId);
+    if (!validRequirement) return sendJson(res, { error: 'Requirement not found.' }, 404);
+    const reviewStatus = String(payload.review_status || '');
+    if (!['', 'pending', 'approved'].includes(reviewStatus)) return sendJson(res, { error: 'Invalid review status.' }, 422);
+    for (const field of ['due_date', 'expires_at']) {
+      if (payload[field] && !/^\d{4}-\d{2}-\d{2}$/.test(String(payload[field]))) {
+        return sendJson(res, { error: `${field} must use YYYY-MM-DD format.` }, 422);
+      }
+      if (payload[field] && Number.isNaN(new Date(`${payload[field]}T00:00:00Z`).getTime())) {
+        return sendJson(res, { error: `${field} is not a valid date.` }, 422);
+      }
+    }
+    const states = await getList(KEYS.complianceState);
+    const index = states.findIndex((item) => item.requirement_id === requirementId);
+    const current = index < 0 ? {} : states[index];
+    const next = {
+      requirement_id: requirementId,
+      review_status: payload.review_status === undefined ? (current.review_status || null) : (reviewStatus || null),
+      not_applicable: payload.not_applicable === undefined ? current.not_applicable === true : payload.not_applicable === true,
+      due_date: payload.due_date === undefined ? (current.due_date || null) : (clean(String(payload.due_date || ''), 10) || null),
+      expires_at: payload.expires_at === undefined ? (current.expires_at || null) : (clean(String(payload.expires_at || ''), 10) || null),
+      reviewed_at: reviewStatus === 'approved' ? new Date().toISOString() : (current.reviewed_at || null),
+      updated_at: new Date().toISOString(),
+      updated_by: session.name,
+    };
+    if (index < 0) states.push(next); else states[index] = next;
+    await setList(KEYS.complianceState, states);
+    await addAudit('compliance_requirement_updated', session.name, { requirementId, reviewStatus: next.review_status, notApplicable: next.not_applicable });
+    const documentState = await getList(KEYS.documentState);
+    return sendJson(res, { ok: true, requirement: buildComplianceMatrix(documentState, states).find((item) => item.id === requirementId) });
+  }
+
+  return sendJson(res, { error: 'Unsupported action.' }, 404);
 }
 
 async function handleContentSettings(req, res) {

@@ -81,7 +81,7 @@
     .doc-status.draft { background:rgba(245,158,11,.15); color:#f59e0b; }
     .doc-status.superseded { background:rgba(239,68,68,.15); color:#ef4444; }
     .doc-status.archived { background:rgba(156,163,175,.15); color:#9ca3af; }
-    .doc-open { display:inline-flex; align-items:center; gap:6px; padding:8px 18px; background:var(--orange); color:var(--white); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; border-radius:8px; white-space:nowrap; transition:all .2s; text-decoration:none; }
+    .doc-open { display:inline-flex; align-items:center; gap:6px; padding:8px 18px; border:0; background:var(--orange); color:var(--white); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; border-radius:8px; white-space:nowrap; transition:all .2s; text-decoration:none; cursor:pointer; }
     .doc-open:hover { background:var(--orange-dark); color:var(--white); transform:scale(1.03); }
 
     /* LOGIN BOX */
@@ -233,6 +233,7 @@
           <div class="internal-banner">
             <span class="lock-icon">&#128274;</span>
             <span>Logged in as <strong id="loggedInUser"></strong></span>
+            <span id="docsAdminActions"></span>
             <span style="margin-left:auto;"><a href="#" onclick="docsLogout(); return false;" style="color:#ef4444; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.05em;">Logout</a></span>
           </div>
           <div id="internalList"></div>
@@ -272,30 +273,34 @@
     </div>
   </footer>
 
-  <script type="module">
-    import {
-      DOCUMENT_SOURCE_REPO,
-      getActiveDocuments,
-      classifyDocumentsByDomain,
-      buildComplianceMatrix,
-      filterDocuments,
-    } from './lib/document-registry.js';
+  <script>
+    var allDocs = [];
+    var ComplianceRequirements = [];
+    var docsSession = null;
 
-    const REPO_BASE = 'https://github.com/LostLimbRider/Autobiography/blob/master/';
-    const allDocs = getActiveDocuments();
-    const PUBLIC_DOCS = classifyDocumentsByDomain(filterDocuments('', allDocs.filter((doc) => doc.access === 'public')));
-    const INTERNAL_DOCS = classifyDocumentsByDomain(filterDocuments('', allDocs.filter((doc) => doc.access === 'internal')));
-    const ComplianceRequirements = buildComplianceMatrix();
+    function apiHeaders() {
+      var headers = { 'Content-Type': 'application/json' };
+      if (docsSession && docsSession.token) headers.Authorization = 'Bearer ' + docsSession.token;
+      return headers;
+    }
+
+    function groupDocuments(docs) {
+      var groups = {};
+      docs.forEach(function(doc) { (groups[doc.section] = groups[doc.section] || []).push(doc); });
+      return Object.keys(groups).sort().map(function(section) { return { section: section, items: groups[section] }; });
+    }
 
     function renderComplianceMatrix() {
       const host = document.getElementById('complianceMatrix');
       if (!host) return;
-      host.innerHTML = ComplianceRequirements.map((requirement) => {
-        const evidence = requirement.evidence.map((entry) => {
+      if (!ComplianceRequirements.length) {
+        host.innerHTML = '<div class="internal-banner">Sign in to view evidence-based compliance results.</div>';
+        return;
+      }
+      host.innerHTML = ComplianceRequirements.map(function(requirement) {
+        const evidence = requirement.evidence.map(function(entry) {
           const doc = entry.document || {};
           const label = doc.document_code || entry.document_code;
-          const canonical = doc.canonical_path || entry.canonical_path;
-          const source = canonical ? `${REPO_BASE}${canonical.replace('documentation-source/', '')}` : '#';
           return '<div class="doc-card" data-search="' + escapeHtml((label + ' ' + entry.section + ' ' + requirement.title).toLowerCase()) + '">' +
             '<div class="doc-info">' +
               '<div class="doc-title">' + escapeHtml(requirement.title) + '</div>' +
@@ -305,18 +310,17 @@
                 '<span class="doc-status ' + String(requirement.status).toLowerCase().replace(/\s+/g, '-') + '">' + escapeHtml(requirement.status) + '</span>' +
               '</div>' +
               '<div style="font-size:12px; color:var(--muted); margin-top:6px;">' + escapeHtml(requirement.summary) + '</div>' +
-              '<div style="font-size:11px; color:var(--muted); margin-top:6px;">Evidence: <strong style="color:var(--white);">' + escapeHtml(label) + '</strong> &middot; ' + escapeHtml(entry.section) + '</div>' +
+              '<div style="font-size:11px; color:var(--muted); margin-top:6px;">Evidence: <strong style="color:var(--white);">' + escapeHtml(label) + '</strong> &middot; ' + escapeHtml(entry.section) + ' &middot; ' + escapeHtml(entry.availability) + '</div>' +
             '</div>' +
-            '<a class="doc-open" href="' + escapeHtml(source) + '" target="_blank" rel="noopener">Trace Evidence &rarr;</a>' +
+            '<button class="doc-open" type="button" onclick="openDocument(\'' + escapeHtml(label) + '\')">Trace Evidence &rarr;</button>' +
           '</div>';
         }).join('');
-
-        return '<div class="dept-group"><div class="dept-header"><h3>' + escapeHtml(requirement.domain) + '</h3><span class="dept-count">' + requirement.evidence.length + '</span></div><div class="doc-list">' + evidence + '</div></div>';
+        var adminControls = docsSession && docsSession.role === 'admin' ? '<div style="margin:8px 0 16px;display:flex;gap:8px;flex-wrap:wrap"><button class="doc-open" type="button" onclick="updateCompliance(\'' + escapeHtml(requirement.id) + '\', \'approved\')">Approve</button><button class="doc-open" type="button" onclick="updateCompliance(\'' + escapeHtml(requirement.id) + '\', \'pending\')">Pending Review</button><button class="doc-open" type="button" onclick="scheduleCompliance(\'' + escapeHtml(requirement.id) + '\')">Set Dates</button><button class="doc-open" type="button" onclick="markNotApplicable(\'' + escapeHtml(requirement.id) + '\')">Not Applicable</button></div>' : '';
+        return '<div class="dept-group"><div class="dept-header"><h3>' + escapeHtml(requirement.domain) + '</h3><span class="dept-count">' + requirement.evidence.length + '</span></div>' + adminControls + '<div class="doc-list">' + evidence + '</div></div>';
       }).join('');
     }
 
     function renderDocCard(doc) {
-      var url = doc.source_url || (REPO_BASE + doc.canonical_path.replace('documentation-source/', ''));
       var statusClass = doc.status || 'active';
       var statusLabel = statusClass.charAt(0).toUpperCase() + statusClass.slice(1);
       var idHtml = doc.document_code ? '<span class="doc-id">' + escapeHtml(doc.document_code) + '</span>' : '';
@@ -331,11 +335,12 @@
           '</div>' +
           descHtml +
         '</div>' +
-        '<a class="doc-open" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">Open Document &rarr;</a>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="doc-open" type="button" onclick="openDocument(\'' + escapeHtml(doc.document_code) + '\')">View</button><button class="doc-open" type="button" onclick="downloadDocument(\'' + escapeHtml(doc.document_code) + '\')">Download</button></div>' +
       '</div>';
     }
 
     function renderGroup(container, groups) {
+      if (!groups.length) { container.innerHTML = '<div class="internal-banner">No documents are available in this section.</div>'; return; }
       var html = '';
       for (var i = 0; i < groups.length; i++) {
         var g = groups[i];
@@ -378,14 +383,15 @@
       var btn = document.getElementById('loginBtn');
       if (!name || !key) { errEl.textContent = 'Enter both name and key.'; return false; }
       btn.disabled = true; btn.textContent = 'Checking...'; errEl.textContent = '';
-      fetch('/api/docs-auth', {
+      fetch('/api/admin?action=docs-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name, key: key })
       }).then(function(r) { return r.json(); }).then(function(data) {
         if (data.ok) {
-          sessionStorage.setItem('llr-docs-user', data.name);
-          showInternalDocs(data.name);
+          docsSession = { name: data.name, role: data.role, token: data.token };
+          sessionStorage.setItem('llr-docs-session', JSON.stringify(docsSession));
+          loadLibrary(true);
         } else {
           errEl.textContent = data.error || 'Access denied.';
         }
@@ -401,23 +407,103 @@
       document.getElementById('loginArea').style.display = 'none';
       document.getElementById('internalDocs').style.display = '';
       document.getElementById('loggedInUser').textContent = name;
-      renderGroup(document.getElementById('internalList'), INTERNAL_DOCS);
+      document.getElementById('docsAdminActions').innerHTML = docsSession && docsSession.role === 'admin' ? '<button class="doc-open" type="button" onclick="validateSources()">Validate Sources</button>' : '';
+      renderGroup(document.getElementById('internalList'), groupDocuments(allDocs.filter(function(doc) { return doc.access === 'internal'; })));
     }
 
     function docsLogout() {
-      sessionStorage.removeItem('llr-docs-user');
+      sessionStorage.removeItem('llr-docs-session');
+      docsSession = null;
+      ComplianceRequirements = [];
       document.getElementById('loginArea').style.display = '';
       document.getElementById('internalDocs').style.display = 'none';
       document.getElementById('loginName').value = '';
       document.getElementById('loginKey').value = '';
       document.getElementById('loginError').textContent = '';
+      loadLibrary(false);
+    }
+
+    function loadLibrary(showLoginError) {
+      fetch('/api/admin?action=docs-list', { headers: apiHeaders() }).then(function(r) {
+        return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+      }).then(function(result) {
+        if (!result.ok) throw new Error(result.data.error || 'Unable to load documents.');
+        allDocs = result.data.documents || [];
+        ComplianceRequirements = result.data.compliance || [];
+        renderGroup(document.getElementById('publicList'), groupDocuments(allDocs.filter(function(doc) { return doc.access === 'public'; })));
+        renderComplianceMatrix();
+        if (result.data.authenticated) showInternalDocs(result.data.name);
+        else if (docsSession) docsLogout();
+      }).catch(function(err) {
+        if (showLoginError) document.getElementById('loginError').textContent = err.message;
+        document.getElementById('publicList').innerHTML = '<div class="internal-banner">Document library unavailable. Please try again later.</div>';
+      });
+    }
+
+    function openDocument(code) {
+      var win = window.open('about:blank', '_blank');
+      fetch('/api/admin?action=docs-document&code=' + encodeURIComponent(code), { headers: apiHeaders() }).then(function(r) {
+        return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+      }).then(function(result) {
+        if (!result.ok) throw new Error(result.data.error || 'Document unavailable.');
+        if (!win) throw new Error('Allow pop-ups to open this document.');
+        win.document.title = result.data.document.title;
+        var pre = win.document.createElement('pre');
+        pre.style.cssText = 'white-space:pre-wrap;max-width:960px;margin:32px auto;padding:0 20px;font:15px/1.6 system-ui;color:#222';
+        pre.textContent = result.data.content;
+        win.document.body.replaceChildren(pre);
+      }).catch(function(err) { if (win) win.close(); window.alert(err.message); });
+    }
+
+    function downloadDocument(code) {
+      fetch('/api/admin?action=docs-document&code=' + encodeURIComponent(code), { headers: apiHeaders() }).then(function(r) {
+        return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+      }).then(function(result) {
+        if (!result.ok) throw new Error(result.data.error || 'Document unavailable.');
+        var blob = new Blob([result.data.content], { type: 'text/markdown;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url;
+        link.download = result.data.document.document_code + '.md';
+        link.click();
+        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+      }).catch(function(err) { window.alert(err.message); });
+    }
+
+    function updateCompliance(requirementId, reviewStatus) {
+      fetch('/api/admin?action=docs-compliance-update', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ requirement_id: requirementId, review_status: reviewStatus }) })
+        .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+        .then(function(result) { if (!result.ok) throw new Error(result.data.error || 'Update failed.'); return loadLibrary(true); })
+        .catch(function(err) { window.alert(err.message); });
+    }
+
+    function scheduleCompliance(requirementId) {
+      var dueDate = window.prompt('Due date (YYYY-MM-DD), or blank to clear:') || '';
+      var expiresAt = window.prompt('Expiration date (YYYY-MM-DD), or blank to clear:') || '';
+      fetch('/api/admin?action=docs-compliance-update', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ requirement_id: requirementId, review_status: 'pending', due_date: dueDate, expires_at: expiresAt }) })
+        .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+        .then(function(result) { if (!result.ok) throw new Error(result.data.error || 'Update failed.'); return loadLibrary(true); })
+        .catch(function(err) { window.alert(err.message); });
+    }
+
+    function markNotApplicable(requirementId) {
+      if (!window.confirm('Mark this requirement not applicable?')) return;
+      fetch('/api/admin?action=docs-compliance-update', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ requirement_id: requirementId, not_applicable: true }) })
+        .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+        .then(function(result) { if (!result.ok) throw new Error(result.data.error || 'Update failed.'); return loadLibrary(true); })
+        .catch(function(err) { window.alert(err.message); });
+    }
+
+    function validateSources() {
+      fetch('/api/admin?action=docs-validate', { method: 'POST', headers: apiHeaders(), body: '{}' })
+        .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+        .then(function(result) { if (!result.ok) throw new Error(result.data.error || 'Validation failed.'); return loadLibrary(true); })
+        .catch(function(err) { window.alert(err.message); });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-      renderComplianceMatrix();
-      renderGroup(document.getElementById('publicList'), PUBLIC_DOCS);
-      var savedUser = sessionStorage.getItem('llr-docs-user');
-      if (savedUser) showInternalDocs(savedUser);
+      try { docsSession = JSON.parse(sessionStorage.getItem('llr-docs-session') || 'null'); } catch { docsSession = null; }
+      loadLibrary(false);
 
       fetch('/api/visit', {
         method: 'POST',
@@ -437,7 +523,12 @@
 
     window.docsLogin = docsLogin;
     window.docsLogout = docsLogout;
-    window.DOCUMENT_SOURCE_REPO = DOCUMENT_SOURCE_REPO;
+    window.openDocument = openDocument;
+    window.downloadDocument = downloadDocument;
+    window.updateCompliance = updateCompliance;
+    window.scheduleCompliance = scheduleCompliance;
+    window.markNotApplicable = markNotApplicable;
+    window.validateSources = validateSources;
   </script>
 </body>
 </html>
