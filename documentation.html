@@ -441,18 +441,8 @@
     }
 
     function openDocument(code) {
-      var win = window.open('about:blank', '_blank');
-      fetch('/api/admin?action=docs-document&code=' + encodeURIComponent(code), { headers: apiHeaders() }).then(function(r) {
-        return r.json().then(function(data) { return { ok: r.ok, data: data }; });
-      }).then(function(result) {
-        if (!result.ok) throw new Error(result.data.error || 'Document unavailable.');
-        if (!win) throw new Error('Allow pop-ups to open this document.');
-        win.document.title = result.data.document.title;
-        var pre = win.document.createElement('pre');
-        pre.style.cssText = 'white-space:pre-wrap;max-width:960px;margin:32px auto;padding:0 20px;font:15px/1.6 system-ui;color:#222';
-        pre.textContent = result.data.content;
-        win.document.body.replaceChildren(pre);
-      }).catch(function(err) { if (win) win.close(); window.alert(err.message); });
+      var win = window.open('documentation-viewer.html?code=' + encodeURIComponent(code), '_blank', 'noopener');
+      if (!win) window.alert('Allow pop-ups to open this document.');
     }
 
     function downloadDocument(code) {

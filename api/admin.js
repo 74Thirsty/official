@@ -481,7 +481,7 @@ async function handleDocs(req, res, action) {
     if (!upstream.ok) return sendJson(res, { error: 'Source document is unavailable.' }, 502);
     const content = await upstream.text();
     if (Buffer.byteLength(content, 'utf8') > 2 * 1024 * 1024) return sendJson(res, { error: 'Source document is too large.' }, 502);
-    return sendJson(res, { document: publicDocument(doc), content });
+    return sendJson(res, { document: publicDocument(doc), source_path: sourcePath, content });
   }
 
   if (!session || session.role !== 'admin') return sendJson(res, { error: 'Administrator access required.' }, 403);

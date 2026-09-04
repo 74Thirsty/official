@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Document Viewer | Lost Limb Riders</title>
+  <link rel="icon" type="image/png" href="assets/logo-nobg.png">
+  <style>
+    :root {
+      --orange: #ff6a00;
+      --orange-dark: #c94f00;
+      --orange-glow: rgba(255,106,0,.35);
+      --black: #050505;
+      --charcoal: #101010;
+      --card: #141414;
+      --card-hover: #1a1a1a;
+      --line: rgba(255,255,255,.10);
+      --muted: #9a9a9a;
+      --white: #ffffff;
+      --shadow: 0 24px 70px rgba(0,0,0,.5);
+      --radius: 18px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin:0; background:var(--black); color:var(--white); font-family:'Inter',system-ui,-apple-system,Helvetica,Arial,sans-serif; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+    body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse at 12% 6%, rgba(255,106,0,.06) 0%, transparent 55%), radial-gradient(ellipse at 90% 95%, rgba(255,106,0,.04) 0%, transparent 55%); pointer-events:none; z-index:0; }
+    a { color:var(--orange); text-decoration:none; transition:color .2s; }
+    a:hover { color:#ff8a33; }
+
+    /* TOP BAR */
+    .topbar { position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:16px; padding:12px 4vw; background:rgba(5,5,5,.94); border-bottom:1px solid var(--line); backdrop-filter:blur(20px) saturate(1.4); }
+    .topbar-brand { display:flex; align-items:center; gap:10px; color:var(--white); font-weight:900; font-size:13px; letter-spacing:.08em; text-transform:uppercase; text-decoration:none; }
+    .topbar-brand img { width:40px; height:40px; min-width:40px; border-radius:10px; }
+    .topbar-spacer { flex:1; }
+    .topbar-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:8px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; text-decoration:none; cursor:pointer; border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--white); transition:all .2s; white-space:nowrap; }
+    .btn:hover { border-color:rgba(255,106,0,.4); color:var(--white); }
+    .btn.primary { background:var(--orange); border-color:var(--orange); color:var(--white); }
+    .btn.primary:hover { background:var(--orange-dark); border-color:var(--orange-dark); }
+
+    /* READER LAYOUT */
+    .reader { max-width:920px; margin:0 auto; padding:40px 4vw 80px; position:relative; z-index:1; }
+
+    /* DOC HEADER */
+    .doc-header { margin-bottom:32px; }
+    .eyebrow { display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .pill { display:inline-block; padding:5px 12px; border:1px solid rgba(255,106,0,.45); border-radius:50px; font-size:10px; font-weight:900; letter-spacing:.16em; text-transform:uppercase; color:var(--orange); background:rgba(255,106,0,.06); }
+    .pill.soft { color:var(--muted); border-color:var(--line); background:rgba(255,255,255,.04); letter-spacing:.08em; }
+    .doc-code { font-family:'SF Mono',SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; font-weight:800; color:var(--orange); letter-spacing:.04em; }
+    .meta-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .meta-item { font-size:12px; color:var(--muted); }
+    .meta-item strong { color:var(--white); font-weight:700; }
+
+    /* FRONT MATTER / METADATA BLOCK */
+    .doc-metadata { border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-bottom:28px; background:var(--card); }
+    .doc-metadata-header { padding:10px 18px; background:rgba(255,106,0,.06); border-bottom:1px solid var(--line); font-size:10px; font-weight:900; letter-spacing:.18em; text-transform:uppercase; color:var(--orange); }
+    .doc-metadata-body { padding:12px 18px; display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px 24px; }
+    .doc-metadata-item { font-size:12px; color:var(--muted); }
+    .doc-metadata-item strong { display:block; color:var(--white); font-weight:600; margin-top:2px; }
+
+    /* STATE MESSAGES */
+    .state-box { text-align:center; padding:80px 24px; }
+    .state-icon { font-size:38px; margin-bottom:16px; }
+    .state-box h2 { font-size:20px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; margin:0 0 10px; }
+    .state-box p { color:var(--muted); font-size:14px; margin:0 0 24px; line-height:1.6; max-width:520px; margin-left:auto; margin-right:auto; }
+    .spinner { width:34px; height:34px; margin:0 auto 20px; border:3px solid var(--line); border-top-color:var(--orange); border-radius:50%; animation:spin 0.8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* RENDERED MARKDOWN */
+    .md-body { line-height:1.7; font-size:16px; color:#e8e8e8; word-wrap:break-word; overflow-wrap:break-word; }
+    .md-body > *:first-child { margin-top:0; }
+    .md-body h1, .md-body h2, .md-body h3, .md-body h4, .md-body h5, .md-body h6 { color:var(--white); font-weight:800; letter-spacing:-.02em; line-height:1.2; margin:2em 0 .7em; }
+    .md-body h1 { font-size:clamp(30px,4.5vw,46px); font-weight:900; letter-spacing:-.03em; text-transform:uppercase; margin:0 0 1.2em; padding-bottom:.45em; border-bottom:3px solid var(--orange); }
+    .md-body h2 { font-size:clamp(22px,3vw,30px); margin-top:2.2em; padding-top:.6em; border-top:1px solid var(--line); }
+    .md-body h3 { font-size:clamp(18px,2.2vw,23px); color:#ffd9bf; }
+    .md-body h4 { font-size:17px; color:#ffb37a; }
+    .md-body h5, .md-body h6 { font-size:15px; color:var(--orange); text-transform:uppercase; letter-spacing:.07em; }
+    .md-body p { margin:0 0 1.1em; }
+    .md-body p, .md-body li { overflow-wrap:anywhere; }
+    .md-body a { text-decoration:underline; text-underline-offset:2px; }
+    .md-body strong { color:var(--white); font-weight:700; }
+    .md-body ul, .md-body ol { margin:0 0 1.2em; padding-left:1.6em; }
+    .md-body ul { list-style:disc; }
+    .md-body ul li { margin:.35em 0; }
+    .md-body ol { list-style:decimal; }
+    .md-body ol li { margin:.35em 0; }
+    .md-body ul ul, .md-body ol ol, .md-body ul ol, .md-body ol ul { margin:.4em 0; }
+    .md-body blockquote { margin:0 0 1.2em; padding:14px 20px; background:rgba(255,106,0,.05); border-left:3px solid var(--orange); border-radius:0 10px 10px 0; color:#d9d9d9; }
+    .md-body blockquote p { margin:0; }
+    .md-body hr { border:0; height:1px; margin:2.2em auto; background:linear-gradient(90deg, transparent, rgba(255,106,0,.4), transparent); width:70%; }
+    .md-body code { font-family:'SF Mono',SFMono-Regular,Menlo,Consolas,monospace; font-size:.88em; background:rgba(255,255,255,.07); border:1px solid var(--line); border-radius:5px; padding:.1em .35em; color:#ffd9bf; }
+    .md-body pre { margin:0 0 1.4em; padding:18px 20px; background:#0b0b0b; border:1px solid var(--line); border-radius:12px; overflow-x:auto; line-height:1.55; }
+    .md-body pre code { background:none; border:0; padding:0; font-size:13.5px; color:#e6e6e6; white-space:pre; overflow-wrap:normal; display:block; }
+    .md-body img { max-width:100%; height:auto; border-radius:12px; border:1px solid var(--line); margin:.6em 0 1.2em; display:block; }
+    .md-body table { width:100%; border-collapse:collapse; font-size:14px; }
+    .md-body th, .md-body td { border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top; }
+    .md-body th { background:rgba(255,106,0,.08); color:#ffd9bf; font-weight:800; font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; }
+    .md-body tbody tr:nth-child(even) { background:rgba(255,255,255,.02); }
+    .md-table { overflow-x:auto; margin:0 0 1.4em; border-radius:12px; border:1px solid var(--line); }
+    .md-table table { margin:0; }
+    .md-body input[type="checkbox"] { accent-color:var(--orange); margin:0 .5em 0 0; transform:translateY(1px); }
+    .md-body li:has(> input[type="checkbox"]) { list-style:none; margin:0 -1.6em .3em; padding-left:1.6em; }
+
+    footer { border-top:1px solid var(--line); padding:24px 4vw; text-align:center; color:#555; font-size:12px; position:relative; z-index:1; }
+
+    @media(max-width:640px) {
+      .topbar { align-items:flex-start; }
+      .topbar-brand span { display:none; }
+      .reader { padding:28px 20px 60px; }
+      .md-body { font-size:15px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="topbar-brand" href="documentation.html">
+      <img src="assets/logo-nobg.png" alt="Lost Limb Riders logo">
+      <span>Documentation Library</span>
+    </a>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-actions">
+      <button type="button" class="btn" id="downloadBtn" data-hidden="1" style="display:none;">Download .md</button>
+      <a class="btn" href="documentation.html">Back to Library</a>
+    </div>
+  </div>
+
+  <main class="reader">
+    <div id="viewerState">
+      <div class="state-box" id="loadingState">
+        <div class="spinner" aria-hidden="true"></div>
+        <h2>Loading document</h2>
+        <p>Retrieving the document from the source repository…</p>
+      </div>
+    </div>
+
+    <article id="viewerContent" style="display:none;" hidden>
+      <header class="doc-header">
+        <div class="eyebrow">
+          <span class="pill" id="accessPill">Internal</span>
+          <span class="pill soft doc-code" id="docCode"></span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-item">Type: <strong id="metaType"></strong></span>
+          <span class="meta-item">Status: <strong id="metaStatus"></strong></span>
+          <span class="meta-item">Version: <strong id="metaVersion"></strong></span>
+          <span class="meta-item">Effective: <strong id="metaEffective"></strong></span>
+          <span class="meta-item" id="metaSectionWrap" style="display:none;">Section: <strong id="metaSection"></strong></span>
+        </div>
+      </header>
+      <div id="frontMatterArea"></div>
+      <div id="docContent" class="md-body"></div>
+    </article>
+  </main>
+
+  <footer>Lost Limb Riders Motorcycle Club &bull; Documentation is sourced from the authoritative Autobiography repository.</footer>
+
+  <script type="module">
+    import { renderDocument, escapeHtml } from '/assets/markdown-render.mjs';
+
+    var params = new URLSearchParams(location.search);
+    var code = (params.get('code') || '').trim();
+
+    var stateBox = document.getElementById('viewerState');
+    var loadingState = document.getElementById('loadingState');
+    var contentArticle = document.getElementById('viewerContent');
+    var downloadBtn = document.getElementById('downloadBtn');
+
+    function showState(icon, title, message, actionHtml) {
+      loadingState.style.display = 'none';
+      stateBox.innerHTML =
+        '<div class="state-box">' +
+          '<div class="state-icon">' + icon + '</div>' +
+          '<h2>' + escapeHtml(title) + '</h2>' +
+          '<p>' + escapeHtml(message) + '</p>' +
+          (actionHtml || '') +
+        '</div>';
+      stateBox.style.display = '';
+    }
+
+    function setLoading() {
+      stateBox.style.display = '';
+      loadingState.style.display = '';
+    }
+
+    function apiHeaders() {
+      var headers = { 'Content-Type': 'application/json' };
+      try {
+        var session = JSON.parse(sessionStorage.getItem('llr-docs-session') || 'null');
+        if (session && session.token) headers.Authorization = 'Bearer ' + session.token;
+      } catch (error) {}
+      return headers;
+    }
+
+    function tableWrap(html) {
+      var host = document.createElement('div');
+      host.innerHTML = html;
+      host.querySelectorAll('table').forEach(function(table) {
+        var wrap = document.createElement('div');
+        wrap.className = 'md-table';
+        table.parentNode.insertBefore(wrap, table);
+        wrap.appendChild(table);
+      });
+      return host;
+    }
+
+    function downloadDocument() {
+      if (!code) return;
+      downloadBtn.disabled = true;
+      var prevText = downloadBtn.textContent;
+      downloadBtn.textContent = 'Preparing…';
+      fetch('/api/admin?action=docs-document&code=' + encodeURIComponent(code), { headers: apiHeaders() })
+        .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+        .then(function(result) {
+          if (!result.ok) throw new Error(result.data.error || 'Document unavailable.');
+          var blob = new Blob([result.data.content], { type: 'text/markdown;charset=utf-8' });
+          var url = URL.createObjectURL(blob);
+          var link = document.createElement('a');
+          link.href = url;
+          link.download = code + '.md';
+          link.click();
+          setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+        })
+        .catch(function(err) { window.alert(err.message); })
+        .finally(function() {
+          downloadBtn.disabled = false;
+          downloadBtn.textContent = prevText;
+        });
+    }
+
+    downloadBtn.addEventListener('click', downloadDocument);
+
+    function runViewer() {
+      if (!code) {
+        showState('&#128209;', 'No document specified', 'No document reference was provided in the link.');
+        return;
+      }
+
+      setLoading();
+
+      fetch('/api/admin?action=docs-document&code=' + encodeURIComponent(code), { headers: apiHeaders() })
+        .then(function(r) {
+          return r.json().then(function(data) { return { ok: r.ok, status: r.status, data: data }; });
+        })
+        .then(function(result) {
+          if (!result.ok) {
+            if (result.status === 403 || result.status === 401) {
+              showState('&#128274;', 'Authorized personnel only', 'This document requires internal access. Please sign in from the Documentation Library.', '<a class="btn primary" href="documentation.html">Return to Library</a>');
+            } else if (result.status === 404) {
+              showState('&#128203;', 'Document not found', 'The requested document could not be located.');
+            } else {
+              showState('&#9888;&#65039;', 'Document unavailable', result.data.error || 'The document could not be retrieved from the source repository.');
+            }
+            return;
+          }
+
+          var doc = result.data.document || {};
+          var content = result.data.content || '';
+          var sourcePath = result.data.source_path || '';
+
+          if (!content.trim()) {
+            showState('&#128220;', 'Document is empty', 'This document contains no content.');
+            return;
+          }
+
+          document.title = doc.title + ' | Documentation Library';
+
+          document.getElementById('accessPill').textContent = doc.access === 'public' ? 'Public' : 'Internal';
+          document.getElementById('docCode').textContent = doc.document_code || code;
+          document.getElementById('metaType').textContent = doc.type || '';
+          var statusEl = document.getElementById('metaStatus');
+          statusEl.textContent = doc.status || 'active';
+          statusEl.className = 'pill soft ' + String(doc.status || '').toLowerCase().replace(/\s+/g, '-');
+          document.getElementById('metaVersion').textContent = doc.version || '';
+          document.getElementById('metaEffective').textContent = doc.effective_date || '';
+          if (doc.section) {
+            document.getElementById('metaSectionWrap').style.display = '';
+            document.getElementById('metaSection').textContent = doc.section;
+          }
+
+          var rendered;
+          try {
+            rendered = renderDocument(content, { basePath: sourcePath.split('/').slice(0, -1).join('/') });
+          } catch (error) {
+            showState('&#9888;&#65039;', 'Rendering error', 'The document could not be rendered. Please try again or download the source file.');
+            return;
+          }
+
+          var contentHost = document.getElementById('docContent');
+          contentHost.innerHTML = '';
+          contentHost.appendChild(tableWrap(rendered.html));
+
+          var frontArea = document.getElementById('frontMatterArea');
+          frontArea.innerHTML = '';
+          if (rendered.frontMatter && rendered.frontMatter.length) {
+            frontArea.innerHTML =
+              '<div class="doc-metadata">' +
+                '<div class="doc-metadata-header">Document Metadata</div>' +
+                '<div class="doc-metadata-body">' +
+                  rendered.frontMatter.map(function(item) {
+                    return '<div class="doc-metadata-item"><strong>' + escapeHtml(item.key) + '</strong>' + escapeHtml(item.value) + '</div>';
+                  }).join('') +
+                '</div>' +
+              '</div>';
+          }
+
+          downloadBtn.style.display = '';
+          downloadBtn.removeAttribute('data-hidden');
+          contentArticle.style.display = '';
+          contentArticle.removeAttribute('hidden');
+          stateBox.style.display = 'none';
+        })
+        .catch(function() {
+          showState('&#9888;&#65039;', 'Connection error', 'Unable to reach the document service. Please check your connection and try again.');
+        });
+    }
+
+    runViewer();
+  </script>
+</body>
+</html>
