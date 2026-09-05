@@ -13,14 +13,15 @@ import { notifyOwner } from '../lib/notify.js';
 import { normalizeIdeaPayload, validateIdea } from '../lib/event-model.js';
 import { normalizeStoryMeta, wordCount, buildHistorySummary, similarityFlags } from '../lib/story-model.js';
 import { buildStoryPrompt, buildIdeasPrompt, parseStoryResponse, parseIdeasResponse, pickSurpriseParams } from '../lib/generation.js';
-import { getActiveDocuments, findDocumentByCode, buildComplianceMatrix, calculateComplianceScore } from '../lib/document-registry.js';
+import { getAccessibleDocuments, findDocumentByCode, getDocumentIntegrity, DOCUMENT_SOURCE_REVISION } from '../lib/document-registry.js';
+import { expandDocument } from '../lib/document-references.js';
 
 export const maxDuration = 60;
 
 export default function handler(req, res) {
   if (req.method === 'OPTIONS') return sendEmpty(res);
   const action = getParam(req, 'action') || 'stats';
-  if (['docs-login', 'docs-list', 'docs-document', 'docs-validate', 'docs-compliance-update'].includes(action)) {
+  if (['docs-login', 'docs-list', 'docs-document', 'docs-validate', 'docs-integrity'].includes(action)) {
     handleDocs(req, res, action).catch(() => sendJson(res, { error: 'Document service unavailable.' }, 500));
     return;
   }
@@ -356,7 +357,7 @@ export default function handler(req, res) {
 }
 
 const DOC_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
-const RAW_DOCUMENT_BASE = 'https://raw.githubusercontent.com/LostLimbRider/Autobiography/master/';
+const RAW_DOCUMENT_BASE = `https://raw.githubusercontent.com/LostLimbRider/Autobiography/${DOCUMENT_SOURCE_REVISION}/`;
 
 function docsSecret() {
   return process.env.ADMIN_KEY || '';
@@ -407,6 +408,7 @@ export function verifyDocsKey(stored, supplied) {
 function publicDocument(doc) {
   return {
     document_code: doc.document_code,
+    document_id: doc.document_id,
     title: doc.title,
     type: doc.type,
     domain: doc.domain,
@@ -417,6 +419,8 @@ function publicDocument(doc) {
     effective_date: doc.effective_date,
     responsible_area: doc.responsible_area,
     description: doc.description,
+    canonical_path: doc.canonical_path,
+    source_url: doc.source_url,
   };
 }
 
@@ -456,17 +460,12 @@ async function handleDocs(req, res, action) {
   if (action === 'docs-list') {
     if (req.method !== 'GET') return sendJson(res, { error: 'Method not allowed.' }, 405);
     const state = await getList(KEYS.documentState);
-    const allowed = getActiveDocuments().filter((doc) => doc.access === 'public' || session);
+    const allowed = getAccessibleDocuments(Boolean(session));
     const documents = allowed.map((doc) => ({
       ...publicDocument(doc),
       availability: state.find((item) => item.document_code === doc.document_code)?.availability || 'unknown',
     }));
     const response = { documents, authenticated: Boolean(session), role: session?.role || null, name: session?.name || null };
-    if (session) {
-      const complianceState = await getList(KEYS.complianceState);
-      response.compliance = buildComplianceMatrix(state, complianceState);
-      response.score = calculateComplianceScore(response.compliance);
-    }
     return sendJson(res, response);
   }
 
@@ -474,23 +473,30 @@ async function handleDocs(req, res, action) {
     if (req.method !== 'GET') return sendJson(res, { error: 'Method not allowed.' }, 405);
     const code = clean(String(getParam(req, 'code') || ''), 40);
     const doc = findDocumentByCode(code);
-    if (!doc || doc.status !== 'active') return sendJson(res, { error: 'Document not found.' }, 404);
+    if (!doc || String(doc.status).toLowerCase() !== 'active') return sendJson(res, { error: 'Document not found.' }, 404);
     if (doc.access !== 'public' && !session) return sendJson(res, { error: 'Document access required.' }, 403);
-    const sourcePath = doc.canonical_path.replace(/^documentation-source\//, '');
-    const upstream = await fetch(`${RAW_DOCUMENT_BASE}${sourcePath}`, { headers: { Accept: 'text/plain' } });
-    if (!upstream.ok) return sendJson(res, { error: 'Source document is unavailable.' }, 502);
-    const content = await upstream.text();
+    const sourcePath = doc.canonical_path;
+    let content;
+    try { content = await fetchDocumentSource(doc); } catch { return sendJson(res, { error: 'Source document is unavailable.' }, 502); }
     if (Buffer.byteLength(content, 'utf8') > 2 * 1024 * 1024) return sendJson(res, { error: 'Source document is too large.' }, 502);
-    return sendJson(res, { document: publicDocument(doc), source_path: sourcePath, content });
+    const expansion = await expandDocument(doc, content, {
+      authenticated: Boolean(session),
+      fetchMarkdown: fetchDocumentSource,
+    });
+    return sendJson(res, { document: publicDocument(doc), source_path: sourcePath, content, ...expansion });
   }
 
   if (!session || session.role !== 'admin') return sendJson(res, { error: 'Administrator access required.' }, 403);
 
+  if (action === 'docs-integrity' && req.method === 'GET') {
+    return sendJson(res, getDocumentIntegrity());
+  }
+
   if (action === 'docs-validate' && req.method === 'POST') {
     const checkedAt = new Date().toISOString();
     const results = [];
-    for (const doc of getActiveDocuments()) {
-      const sourcePath = doc.canonical_path.replace(/^documentation-source\//, '');
+    for (const doc of getAccessibleDocuments(true)) {
+      const sourcePath = doc.canonical_path;
       try {
         const response = await fetch(`${RAW_DOCUMENT_BASE}${sourcePath}`, { method: 'HEAD' });
         results.push({ document_code: doc.document_code, availability: response.ok ? 'available' : 'missing', checked_at: checkedAt, error: response.ok ? null : `HTTP ${response.status}` });
@@ -503,42 +509,13 @@ async function handleDocs(req, res, action) {
     return sendJson(res, { ok: true, results });
   }
 
-  if (action === 'docs-compliance-update' && req.method === 'POST') {
-    const payload = await readBody(req);
-    const requirementId = clean(String(payload.requirement_id || ''), 40);
-    const validRequirement = buildComplianceMatrix([], []).some((item) => item.id === requirementId);
-    if (!validRequirement) return sendJson(res, { error: 'Requirement not found.' }, 404);
-    const reviewStatus = String(payload.review_status || '');
-    if (!['', 'pending', 'approved'].includes(reviewStatus)) return sendJson(res, { error: 'Invalid review status.' }, 422);
-    for (const field of ['due_date', 'expires_at']) {
-      if (payload[field] && !/^\d{4}-\d{2}-\d{2}$/.test(String(payload[field]))) {
-        return sendJson(res, { error: `${field} must use YYYY-MM-DD format.` }, 422);
-      }
-      if (payload[field] && Number.isNaN(new Date(`${payload[field]}T00:00:00Z`).getTime())) {
-        return sendJson(res, { error: `${field} is not a valid date.` }, 422);
-      }
-    }
-    const states = await getList(KEYS.complianceState);
-    const index = states.findIndex((item) => item.requirement_id === requirementId);
-    const current = index < 0 ? {} : states[index];
-    const next = {
-      requirement_id: requirementId,
-      review_status: payload.review_status === undefined ? (current.review_status || null) : (reviewStatus || null),
-      not_applicable: payload.not_applicable === undefined ? current.not_applicable === true : payload.not_applicable === true,
-      due_date: payload.due_date === undefined ? (current.due_date || null) : (clean(String(payload.due_date || ''), 10) || null),
-      expires_at: payload.expires_at === undefined ? (current.expires_at || null) : (clean(String(payload.expires_at || ''), 10) || null),
-      reviewed_at: reviewStatus === 'approved' ? new Date().toISOString() : (current.reviewed_at || null),
-      updated_at: new Date().toISOString(),
-      updated_by: session.name,
-    };
-    if (index < 0) states.push(next); else states[index] = next;
-    await setList(KEYS.complianceState, states);
-    await addAudit('compliance_requirement_updated', session.name, { requirementId, reviewStatus: next.review_status, notApplicable: next.not_applicable });
-    const documentState = await getList(KEYS.documentState);
-    return sendJson(res, { ok: true, requirement: buildComplianceMatrix(documentState, states).find((item) => item.id === requirementId) });
-  }
-
   return sendJson(res, { error: 'Unsupported action.' }, 404);
+}
+
+async function fetchDocumentSource(document) {
+  const response = await fetch(`${RAW_DOCUMENT_BASE}${document.canonical_path}`, { headers: { Accept: 'text/plain' } });
+  if (!response.ok) throw new Error(`Source returned HTTP ${response.status}`);
+  return response.text();
 }
 
 async function handleContentSettings(req, res) {

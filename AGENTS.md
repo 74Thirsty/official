@@ -151,6 +151,18 @@ These are guaranteed behaviors. Preserve them; changes that threaten them need e
 
 Do not implement the production compliance engine in Autobiography. Do not create an independently maintained controlled-document or policy corpus in `official` or a third system. Any machine-readable compliance manifest used by `official` must be reproducibly derived from, traceable to, and versioned against the canonical Autobiography source.
 
+### DOCUMENT LIBRARY INVARIANTS
+
+- **Complete Library:** The Document Library provides access to the complete canonical document corpus subject only to explicit access-control rules. It is not a curated compliance subset.
+- **Access:** Every canonical document has one authoritative access classification. Explicit `PUBLIC` documents are publicly readable. Internal or unclassified documents require authentication. Authenticated authorized users may access the complete canonical corpus.
+- **Authentication Monotonicity:** Authentication may grant additional document access but must not remove documents already publicly accessible.
+- **Session Continuity:** An authenticated Document Library session survives ordinary navigation between the library and document viewer according to the defined session lifetime.
+- **Feature Separation:** The Document Library and Compliance Engine are separate product features. The Library provides comprehensive document discovery and reading; the Compliance Engine enforces controlled organizational workflows.
+- **Source Preservation:** Render-time transformations, including reference expansion, never modify canonical source documents.
+- **Canonical Name Uniqueness:** Every canonical document name is unique across the authoritative corpus.
+- **Reference Transclusion:** When canonical documents reference other canonical material, the Document Library may resolve and transclude the relevant authorized material at render time to provide a coherent reading experience while preserving source provenance.
+- **Transclusion Authorization:** Render-time reference expansion never exposes material the requesting user is not authorized to access.
+
 ### MISSION PAGE NAVIGATION INVARIANT
 
 The Mission page contains **eight section-navigation tiles** in its Table of Contents: Our Story, Mission Statement, Our Vision, How the Funds Will Help, Why We're Asking for Help, How People Can Get Involved, Closing, and Organization Info. Each tile MUST navigate to its matching on-page `section[id]` (`#story`, `#mission-statement`, `#vision`, `#funds`, `#help`, `#involved`, `#closing`, `#org-info`) and land **clear of the sticky header**.
@@ -162,6 +174,14 @@ Changes touching Mission page markup, global CSS, scroll/overflow behavior, shar
 Authoritative organizational documents remain **Markdown source** (single source of truth in the Autobiography repo). The Document Library must render that Markdown as formatted, human-readable documents. Raw Markdown must never be the normal viewing experience, and source documents must never be rewritten to compensate for presentation-layer failures. Protected by `tests/markdown-render.test.mjs`.
 
 ## Incidents
+
+### 2026-09-04 — Document Library corpus, session, and feature-boundary failures
+
+- **Reported:** Authentication appeared to remove public documents, authenticated discovery exposed only a curated subset, opening an internal document lost the session, and the library presented a document matrix as a Compliance Engine.
+- **Root causes:** `lib/document-registry.js` contained 14 hand-maintained entries instead of a generated canonical inventory. The library stored its bearer token in `sessionStorage` but opened the viewer in a new `noopener` browsing context, which did not carry that session. Compliance review controls were embedded directly in the library page.
+- **Correction:** Generate the complete metadata-only manifest from the pinned Autobiography source and its canonical access register; treat unclassified documents as internal; navigate the viewer in the same browsing context; keep public results rendered after authentication; remove Compliance Engine presentation from the library; resolve authorized references into bounded, provenance-labelled render-time expansions.
+- **Canonical-name determination:** The two `00-FORMS-INDEX.md` basenames are scoped indexes with different canonical names and roles: the public handbook forms index and controlled `FRM-INDEX-001` transactional index. The canonical controlled naming system is Document ID plus Document Title; `validate_ops.py` explicitly limits filename uniqueness to active controlled documents. This is not a canonical-name collision.
+- **Regression protection:** `tests/document-registry.test.mjs`, `tests/document-references.test.mjs`, `tests/document-library.test.mjs`, `tests/docs-auth.test.mjs`, and `tests/markdown-render.test.mjs`.
 
 ### 2026-09-04 — Mission page navigation tiles not working
 

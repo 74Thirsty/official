@@ -101,6 +101,12 @@
     .md-table table { margin:0; }
     .md-body input[type="checkbox"] { accent-color:var(--orange); margin:0 .5em 0 0; transform:translateY(1px); }
     .md-body li:has(> input[type="checkbox"]) { list-style:none; margin:0 -1.6em .3em; padding-left:1.6em; }
+    .reference-card { margin:18px 0 28px; border:1px solid rgba(255,106,0,.35); border-radius:14px; background:rgba(255,106,0,.045); overflow:hidden; }
+    .reference-card summary { cursor:pointer; padding:14px 18px; color:#ffd9bf; font-weight:800; }
+    .reference-body { padding:4px 18px 18px; border-top:1px solid var(--line); }
+    .reference-source { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:12px 0 18px; color:var(--muted); font-size:12px; }
+    .reference-source a { color:var(--orange); }
+    .reference-notice { margin:12px 0 20px; padding:12px 16px; border-left:3px solid var(--orange); background:rgba(255,255,255,.035); color:var(--muted); }
 
     footer { border-top:1px solid var(--line); padding:24px 4vw; text-align:center; color:#555; font-size:12px; position:relative; z-index:1; }
 
@@ -204,6 +210,63 @@
       return host;
     }
 
+    function referenceNotice(reference) {
+      var notice = document.createElement('div');
+      notice.className = 'reference-notice';
+      var label = reference.document && (reference.document.document_id || reference.document.title) || reference.token;
+      if (reference.status === 'restricted') notice.textContent = 'Referenced internal document — authentication required: ' + label;
+      else if (reference.status === 'cycle') notice.textContent = 'Referenced material already included earlier in this composite view: ' + label;
+      else if (reference.status === 'limited') notice.textContent = 'Referenced material was not expanded because the composite-view limit was reached: ' + label;
+      else if (reference.status === 'broken-section') notice.textContent = 'Referenced section could not be resolved: ' + label + ' — ' + reference.section;
+      else notice.textContent = 'Referenced document could not be resolved: ' + label;
+      return notice;
+    }
+
+    function renderReference(reference) {
+      if (reference.status !== 'included') return referenceNotice(reference);
+      var details = document.createElement('details');
+      details.className = 'reference-card';
+      details.open = true;
+      var summary = document.createElement('summary');
+      var sourceLabel = reference.document.document_id || reference.document.title;
+      summary.textContent = 'Referenced requirement — ' + sourceLabel + (reference.section ? ' / ' + reference.section : '');
+      details.appendChild(summary);
+      var body = document.createElement('div');
+      body.className = 'reference-body';
+      var provenance = document.createElement('div');
+      provenance.className = 'reference-source';
+      provenance.appendChild(document.createTextNode(reference.document.title + ' · '));
+      var link = document.createElement('a');
+      link.href = reference.document.source_url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = 'Open canonical source';
+      provenance.appendChild(link);
+      body.appendChild(provenance);
+      var rendered = renderDocument(reference.content, { basePath: reference.document.canonical_path.split('/').slice(0, -1).join('/') });
+      body.appendChild(tableWrap(rendered.html));
+      (reference.children || []).forEach(function(child) { body.appendChild(renderReference(child)); });
+      details.appendChild(body);
+      return details;
+    }
+
+    function renderComposite(content, references, basePath) {
+      var host = document.createDocumentFragment();
+      var lines = content.split(/\r?\n/);
+      var grouped = {};
+      (references || []).forEach(function(reference) { (grouped[reference.line] = grouped[reference.line] || []).push(reference); });
+      var cursor = 0;
+      Object.keys(grouped).map(Number).sort(function(a, b) { return a - b; }).forEach(function(line) {
+        var chunk = lines.slice(cursor, line + 1).join('\n');
+        if (chunk.trim()) host.appendChild(tableWrap(renderDocument(chunk, { basePath: basePath }).html));
+        grouped[line].forEach(function(reference) { host.appendChild(renderReference(reference)); });
+        cursor = line + 1;
+      });
+      var remainder = lines.slice(cursor).join('\n');
+      if (remainder.trim()) host.appendChild(tableWrap(renderDocument(remainder, { basePath: basePath }).html));
+      return host;
+    }
+
     function downloadDocument() {
       if (!code) return;
       downloadBtn.disabled = true;
@@ -266,7 +329,7 @@
           document.title = doc.title + ' | Documentation Library';
 
           document.getElementById('accessPill').textContent = doc.access === 'public' ? 'Public' : 'Internal';
-          document.getElementById('docCode').textContent = doc.document_code || code;
+          document.getElementById('docCode').textContent = doc.document_id || doc.title || code;
           document.getElementById('metaType').textContent = doc.type || '';
           var statusEl = document.getElementById('metaStatus');
           statusEl.textContent = doc.status || 'active';
@@ -288,7 +351,7 @@
 
           var contentHost = document.getElementById('docContent');
           contentHost.innerHTML = '';
-          contentHost.appendChild(tableWrap(rendered.html));
+          contentHost.appendChild(renderComposite(content, result.data.references || [], sourcePath.split('/').slice(0, -1).join('/')));
 
           var frontArea = document.getElementById('frontMatterArea');
           frontArea.innerHTML = '';

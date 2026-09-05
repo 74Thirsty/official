@@ -15,10 +15,8 @@ test('controlled documents remain a submodule of the authoritative Autobiography
 
 test('production document retrieval reads the canonical repository, not the local materialization', async () => {
   const adminApi = await readFile(new URL('../api/admin.js', import.meta.url), 'utf8');
-  assert.match(
-    adminApi,
-    /const RAW_DOCUMENT_BASE = 'https:\/\/raw\.githubusercontent\.com\/LostLimbRider\/Autobiography\/master\/'/,
-  );
+  assert.match(adminApi, /DOCUMENT_SOURCE_REVISION/);
+  assert.match(adminApi, /https:\/\/raw\.githubusercontent\.com\/LostLimbRider\/Autobiography\/\$\{DOCUMENT_SOURCE_REVISION\}\//);
   assert.match(adminApi, /fetch\(`\$\{RAW_DOCUMENT_BASE\}\$\{sourcePath\}`/);
   assert.doesNotMatch(adminApi, /readFile(?:Sync)?\([^\n]*documentation-source/);
 });
