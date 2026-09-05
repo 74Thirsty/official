@@ -143,6 +143,14 @@ Edit `lib/seed.js` (embedded), then redeploy. Keep the `{{...}}` placeholders in
 
 These are guaranteed behaviors. Preserve them; changes that threaten them need explicit verification before deployment.
 
+### TWO-REPOSITORY COMPLIANCE ARCHITECTURE INVARIANT
+
+`LostLimbRider/Autobiography` is the authoritative institutional documentation and controlled-process source. Policies, procedures, forms, checklists, registers, canonical Document IDs, approval requirements, and workflow requirements remain authoritative there.
+
+`LostLimbRider/official` is the executable production application. Operational compliance enforcement—including workflow definitions, transaction instances, requirement status, evidence, approvals, gate evaluation, state transitions, audit history, persistence, APIs, and user interfaces—lives here and consumes controlled requirements derived from Autobiography.
+
+Do not implement the production compliance engine in Autobiography. Do not create an independently maintained controlled-document or policy corpus in `official` or a third system. Any machine-readable compliance manifest used by `official` must be reproducibly derived from, traceable to, and versioned against the canonical Autobiography source.
+
 ### MISSION PAGE NAVIGATION INVARIANT
 
 The Mission page contains **eight section-navigation tiles** in its Table of Contents: Our Story, Mission Statement, Our Vision, How the Funds Will Help, Why We're Asking for Help, How People Can Get Involved, Closing, and Organization Info. Each tile MUST navigate to its matching on-page `section[id]` (`#story`, `#mission-statement`, `#vision`, `#funds`, `#help`, `#involved`, `#closing`, `#org-info`) and land **clear of the sticky header**.
