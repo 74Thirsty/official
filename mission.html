@@ -429,6 +429,7 @@
       font-weight: 900;
       flex-shrink: 0;
     }
+    section[id] { scroll-margin-top: 96px; }
 
     .closing-footer {
       text-align: center;
@@ -909,5 +910,21 @@
       </div>
     </div>
   </footer>
+  <script>
+    (function () {
+      var items = document.querySelectorAll('.toc-item');
+      for (var i = 0; i < items.length; i++) {
+        items[i].addEventListener('click', function (event) {
+          var selector = this.getAttribute('href');
+          if (!selector || selector.charAt(0) !== '#') return;
+          var target = document.querySelector(selector);
+          if (!target) return;
+          event.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          history.replaceState(null, '', selector);
+        });
+      }
+    })();
+  </script>
 </body>
 </html>
