@@ -33,7 +33,7 @@ Static vanilla HTML/CSS/JS frontend (no build step, no bundler, no framework) wi
 
 ## Verification reality
 
-- Test suite: `node --test tests/facebook.test.mjs` (Facebook live-detection logic in `lib/stream.js`; extend it when touching that file).
+- Test suite: `node --test tests/facebook.test.mjs` (Facebook live-detection logic in `lib/stream.js`; extend it when touching that file), `node --test tests/mission-nav.test.mjs` (Mission page eight-tile navigation; extend when touching `mission.html`), plus `tests/admin-day.test.mjs`, `tests/content-engine.test.mjs`, `tests/docs-auth.test.mjs`, `tests/document-registry.test.mjs`, `tests/markdown-render.test.mjs`. Run the full suite with `node --test tests/`.
 - Syntax: `node --check <file>` for every JS file changed; for inline JS in HTML pages, extract `<script>` blocks to temp files and `node --check` them.
 - No lint, no formatter, no CI, no bundler.
 - `npm run dev` = `vercel dev` (serves site + functions at `localhost:3000`; requires linked project / `.env.local`). Note: invoking `vercel dev` from inside this repo can trip the CLI's recursive-invocation guard because the `dev` script itself is `vercel dev`.
@@ -44,7 +44,7 @@ Static vanilla HTML/CSS/JS frontend (no build step, no bundler, no framework) wi
 - `index.html` — hero, book offering, newsletter signup (welcome email delivers one-time e-book link), guestbook, contact. Calls `/api/newsletter`, `/api/visit`, `/api/guestbook`, `/api/contact`.
 - `events.html` — **public-only** interactive calendar (month/week views, category filters). Calls `/api/events?action=list`. No admin mode anywhere.
 - `media.html` — podcast player, YouTube vlogs, Coffee Talk, Facebook Live embed (auto-detects go-live, shows replay when offline) + schedule display, broadcast-alert signup. Calls `/api/media`, `/api/stream`, `/api/media?action=podcast-rss` (RSS subscribe link), `/api/stream?action=subscribe-alerts`.
-- `mission.html` — mission, board, programs, donate. No API calls.
+- `mission.html` — mission, board, programs, donate. **Eight section-navigation tiles** on the Table of Contents must navigate to their matching on-page `section[id]` (see Engineering invariants + `tests/mission-nav.test.mjs`). No API calls.
 - `community.html` — community hub: photo gallery, testimonials, comments. Public submit goes to a pending queue; calls `/api/community`.
 - `sponsors.html` — sponsor wall (Title/Major/Supporting tiers). Static.
 - `admin.html` — **the single admin dashboard**: key login (`sessionStorage` key `llr-admin-key`), tabs: Subscribers, Visitor Log, Send Newsletter (**Preview builds only; "Send to All Subscribers" performs a real blast** capped at 100), Live Stream, Events CRUD, Gallery / Testimonials / Comments moderation, Guestbook. Calls `/api/admin`, `/api/events`, `/api/stream`.
@@ -136,6 +136,32 @@ Full details: [`VERCEL_ENV_CHECKLIST.md`](VERCEL_ENV_CHECKLIST.md). User-facing 
 ## Editing seed data
 
 Edit `lib/seed.js` (embedded), then redeploy. Keep the `{{...}}` placeholders intact. `data/` is dead (empty `.gitkeep` only) — never read/write it at runtime.
+
+---
+
+## Engineering invariants
+
+These are guaranteed behaviors. Preserve them; changes that threaten them need explicit verification before deployment.
+
+### MISSION PAGE NAVIGATION INVARIANT
+
+The Mission page contains **eight section-navigation tiles** in its Table of Contents: Our Story, Mission Statement, Our Vision, How the Funds Will Help, Why We're Asking for Help, How People Can Get Involved, Closing, and Organization Info. Each tile MUST navigate to its matching on-page `section[id]` (`#story`, `#mission-statement`, `#vision`, `#funds`, `#help`, `#involved`, `#closing`, `#org-info`) and land **clear of the sticky header**.
+
+Changes touching Mission page markup, global CSS, scroll/overflow behavior, shared JavaScript, routing, or deployment behavior must preserve this. Protected by `tests/mission-nav.test.mjs`. **
+
+### DOCUMENT LIBRARY RENDERING INVARIANT
+
+Authoritative organizational documents remain **Markdown source** (single source of truth in the Autobiography repo). The Document Library must render that Markdown as formatted, human-readable documents. Raw Markdown must never be the normal viewing experience, and source documents must never be rewritten to compensate for presentation-layer failures. Protected by `tests/markdown-render.test.mjs`.
+
+## Incidents
+
+### 2026-09-04 — Mission page navigation tiles not working
+
+- **Reported:** On mobile, the section-navigation tiles did not visibly move the page; destinations could land underneath the sticky header.
+- **Root cause:** The tiles were plain native `<a href="#...">` anchors relying on default fragment jump against `html { scroll-behavior: smooth }` with `body { overflow-x: hidden }`. That combination renders fragment navigation unreliable across viewports (Chrome/smooth-scroll behavior), and there was no `scroll-margin-top` offset, so section tops landed `≈0px` from the viewport top — concealed behind the sticky nav. The bug existed since the page's creation but was aggravated by the sticky header; it was mis-attributed to the Document Library markdown work, which it was unrelated to.
+- **Correction:** Added an explicit click handler in `mission.html` that `preventDefault()`s the default jump, calls `target.scrollIntoView({ behavior: 'smooth', block: 'start' })`, and updates `history.replaceState`. Added `section[id] { scroll-margin-top: 96px }` so scripted and native navigation both land below the sticky header. No new dependencies.
+- **Verification:** Real Chromium (desktop `1440x900` + mobile `390x844`) against local and production — all 8 tiles scroll to their target with `targetTop ≈ 96px` (clear of header). Document Library markdown rendering re-verified unaffected.
+- **Regression protection:** `tests/mission-nav.test.mjs` (add/keep in the suite when touching `mission.html`).
 
 ---
 
