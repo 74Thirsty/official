@@ -1,6 +1,6 @@
 # Lost Limb Riders — Admin User Manual
 
-Complete reference for managing the website: events, live streaming (Facebook Live), newsletter, community moderation, guestbook, and visitor data.
+Complete reference for managing the website: events, live streaming (Facebook Live), newsletter, community moderation, guestbook, visitor data, the Document Library, and operational compliance.
 
 **Stack:** static HTML/CSS/JS frontend · Vercel serverless functions (Node) · Vercel KV (Redis) storage · Resend email · deployed at `lostlimbriders.org`. There are no PHP endpoints and no `data/*.json` files anymore — all data lives in KV under `llr:*` keys.
 
@@ -24,6 +24,7 @@ Complete reference for managing the website: events, live streaming (Facebook Li
 14. [Cron](#cron)
 15. [Troubleshooting](#troubleshooting)
 16. [Quick Reference Card](#quick-reference-card)
+17. [Compliance Engine](#compliance-engine)
 
 ---
 
@@ -40,6 +41,8 @@ Complete reference for managing the website: events, live streaming (Facebook Li
 | `community.html` | `/community.html` | Community hub — photo gallery, testimonials, comments (visitor submissions are moderated) |
 | `sponsors.html` | `/sponsors.html` | Sponsor wall — fully populated from sponsor records managed in admin (no hard-coded sponsors) |
 | `admin.html` | `/admin.html` | **Single admin dashboard** — everything is managed here |
+| `documentation.html` | `/documentation.html` | Canonical document discovery, authentication, and reading |
+| `compliance.html` | `/compliance.html` | Authenticated operational workflow enforcement |
 
 There is no hidden admin mode anywhere (the old press-A toggle is gone). Events and all other content are managed from `admin.html`.
 
@@ -61,6 +64,25 @@ There is no hidden admin mode anywhere (the old press-A toggle is gone). Events 
 | `/api/cron-newsletter` | Cron | Automated weekly sender (gated by `CRON_SECRET`) |
 
 Admin auth everywhere: `?key=YOUR_ADMIN_KEY` query param or `X-Admin-Key` header, timing-safe compared against the `ADMIN_KEY` env var.
+
+Document Library and Compliance Engine requests use the signed bearer session issued by `docs-login`. Bearer secrets remain in `sessionStorage` and are never placed in URLs.
+
+---
+
+## Compliance Engine
+
+The Compliance Engine is separate from the Document Library. The Library answers “what does the controlled document say?” The engine answers “what must I complete next, and what is blocking this transaction?”
+
+1. Sign in at `documentation.html`.
+2. Open `compliance.html`.
+3. Choose an intended action. The available workflows are generated from canonical `ADM-REF-002 — Transaction Map` in Autobiography.
+4. Enter a transaction title and responsible person; optionally record a counterparty and amount.
+5. At the current requirement, record a clear evidence description and an optional HTTPS record link.
+6. If the canonical stage is an authorization or approval stage, a different person must approve it. Approval actions require the administrator session.
+7. Advance only after the current gate reports complete. The server rejects skipped or incomplete stages.
+8. Continue until closeout. Every evidence, approval, and transition action appears in the transaction audit history and the central audit log.
+
+The engine stores operational records under `llr:compliance-transactions`. It does not copy or alter canonical documents. Workflow provenance records the canonical source document, section, version, and content hash used when the transaction was created.
 
 ---
 

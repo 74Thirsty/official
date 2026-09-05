@@ -51,3 +51,9 @@ test('unknown documents return not found without leaking source details', async 
   assert.equal(result.status, 404);
   assert.deepEqual(result.body, { error: 'Document not found.' });
 });
+
+test('compliance APIs reject anonymous access', async () => {
+  const result = await request('compliance-workflows');
+  assert.equal(result.status, 403);
+  assert.equal(result.body.error, 'Document access required.');
+});

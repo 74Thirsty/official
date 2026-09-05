@@ -46,6 +46,7 @@ Static vanilla HTML/CSS/JS frontend (no build step, no bundler, no framework) wi
 - `media.html` — podcast player, YouTube vlogs, Coffee Talk, Facebook Live embed (auto-detects go-live, shows replay when offline) + schedule display, broadcast-alert signup. Calls `/api/media`, `/api/stream`, `/api/media?action=podcast-rss` (RSS subscribe link), `/api/stream?action=subscribe-alerts`.
 - `mission.html` — mission, board, programs, donate. **Eight section-navigation tiles** on the Table of Contents must navigate to their matching on-page `section[id]` (see Engineering invariants + `tests/mission-nav.test.mjs`). No API calls.
 - `community.html` — community hub: photo gallery, testimonials, comments. Public submit goes to a pending queue; calls `/api/community`.
+- `compliance.html` — authenticated intent-driven Compliance Engine. Creates operational transactions from the generated `ADM-REF-002` workflow manifest and enforces evidence, approval, transition, and audit gates through `/api/admin?action=compliance-*`.
 - `sponsors.html` — sponsor wall (Title/Major/Supporting tiers). Static.
 - `admin.html` — **the single admin dashboard**: key login (`sessionStorage` key `llr-admin-key`), tabs: Subscribers, Visitor Log, Send Newsletter (**Preview builds only; "Send to All Subscribers" performs a real blast** capped at 100), Live Stream, Events CRUD, Gallery / Testimonials / Comments moderation, Guestbook. Calls `/api/admin`, `/api/events`, `/api/stream`.
 
@@ -99,6 +100,7 @@ Response conventions: JSON, errors as `{ "error": "..." }` with proper status (4
 | `llr:testimonials` | 500 | community |
 | `llr:comments` | 2000 | community |
 | `llr:audit` | 5000 | audit trail |
+| `llr:compliance-transactions` | 500 | Operational compliance transactions, requirement status, evidence, approvals, and transaction audit history |
 
 Re-seeding tip: deleting `llr:events`/`llr:media`/`llr:stream` in the Vercel KV dashboard causes the next public read to re-seed from `lib/seed.js`.
 
@@ -150,6 +152,17 @@ These are guaranteed behaviors. Preserve them; changes that threaten them need e
 `LostLimbRider/official` is the executable production application. Operational compliance enforcement—including workflow definitions, transaction instances, requirement status, evidence, approvals, gate evaluation, state transitions, audit history, persistence, APIs, and user interfaces—lives here and consumes controlled requirements derived from Autobiography.
 
 Do not implement the production compliance engine in Autobiography. Do not create an independently maintained controlled-document or policy corpus in `official` or a third system. Any machine-readable compliance manifest used by `official` must be reproducibly derived from, traceable to, and versioned against the canonical Autobiography source.
+
+### COMPLIANCE ENGINE INVARIANTS
+
+- **Intent First:** The Compliance Engine begins with an intended organizational action, not a filtered document list.
+- **Canonical Derivation:** Workflow definitions are reproducibly generated from the canonical Autobiography Transaction Map (`ADM-REF-002`) and retain source ID, path, version, and hash provenance.
+- **Operational Separation:** Transaction instances, requirement status, evidence, approvals, gates, transitions, and audit events are runtime records in `official`; they are not controlled-document copies.
+- **Server Enforcement:** The server rejects progression until the current requirement is complete. Approval-designated stages require evidence and a separate administrator approval; an evidence submitter cannot approve the same requirement.
+- **Shared Resolution:** Controlled Document IDs in workflows resolve through `lib/document-registry.js`, the same canonical abstraction used by the Document Library.
+- **Immutable Source:** Compliance operations never write to or rewrite canonical Markdown.
+
+Protected by `tests/compliance-engine.test.mjs`, `tests/compliance-ui.test.mjs`, and `tests/docs-auth.test.mjs`.
 
 ### DOCUMENT LIBRARY INVARIANTS
 
