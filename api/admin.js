@@ -15,7 +15,7 @@ import { normalizeStoryMeta, wordCount, buildHistorySummary, similarityFlags } f
 import { buildStoryPrompt, buildIdeasPrompt, parseStoryResponse, parseIdeasResponse, pickSurpriseParams } from '../lib/generation.js';
 import { getAccessibleDocuments, findDocumentByCode, getDocumentIntegrity, DOCUMENT_SOURCE_REVISION } from '../lib/document-registry.js';
 import { expandDocument } from '../lib/document-references.js';
-import { COMPLIANCE_WORKFLOWS, getComplianceWorkflow, publicWorkflow, createComplianceTransaction, addComplianceEvidence, approveComplianceRequirement, advanceComplianceTransaction } from '../lib/compliance-engine.js';
+import { COMPLIANCE_WORKFLOWS, WORKFLOW_PROVENANCE, getComplianceWorkflow, publicWorkflow, validateIntake, createComplianceTransaction, addComplianceEvidence, approveComplianceRequirement, advanceComplianceTransaction } from '../lib/compliance-engine.js';
 
 export const maxDuration = 60;
 
@@ -543,7 +543,7 @@ async function handleCompliance(req, res, action) {
   if (action === 'compliance-workflows' && req.method === 'GET') {
     return sendJson(res, {
       workflows: COMPLIANCE_WORKFLOWS.map(publicWorkflow),
-      source: { document_id: 'ADM-REF-002', revision: DOCUMENT_SOURCE_REVISION },
+      source: WORKFLOW_PROVENANCE,
     });
   }
 
@@ -560,14 +560,13 @@ async function handleCompliance(req, res, action) {
   if (action === 'compliance-create' && req.method === 'POST') {
     const payload = await readBody(req);
     const workflow = getComplianceWorkflow(clean(String(payload.workflow_id || ''), 100));
-    const title = clean(String(payload.title || ''), 140);
-    const responsiblePerson = clean(String(payload.responsible_person || ''), 80);
-    const counterparty = clean(String(payload.counterparty || ''), 120);
-    const amount = payload.amount === '' || payload.amount == null ? null : Number(payload.amount);
     if (!workflow) return sendJson(res, { error: 'Controlled workflow not found.' }, 404);
-    if (!title || !responsiblePerson) return sendJson(res, { error: 'Title and responsible person are required.' }, 422);
-    if (amount !== null && (!Number.isFinite(amount) || amount < 0)) return sendJson(res, { error: 'Amount must be a non-negative number.' }, 422);
-    const transaction = createComplianceTransaction(workflow, { title, responsible_person: responsiblePerson, counterparty, amount }, session.name);
+    const intakeResult = validateIntake(workflow, payload.intake);
+    if (intakeResult.errors) return sendJson(res, { error: intakeResult.errors.join(' ') }, 422);
+    const intake = intakeResult.values;
+    const title = clean(String(intake[workflow.titleField.name] ?? ''), 140);
+    if (!title) return sendJson(res, { error: `${workflow.titleField.label} is required.` }, 422);
+    const transaction = createComplianceTransaction(workflow, intake, session.name);
     transactions.unshift(transaction);
     await setList(KEYS.complianceTransactions, transactions.slice(0, LIMITS.complianceTransactions));
     await addAudit('compliance_transaction_created', session.name, { transactionId: transaction.id, workflowId: workflow.id });
@@ -588,22 +587,22 @@ async function handleCompliance(req, res, action) {
 
   try {
     if (action === 'compliance-evidence' && req.method === 'POST') {
-      const stageId = clean(String(payload.stage_id || ''), 120);
+      const requirementId = clean(String(payload.requirement_id || getParam(req, 'requirement_id') || ''), 120);
       const description = clean(String(payload.description || ''), 1000);
       const url = clean(String(payload.url || ''), 500);
       if (!description) return sendJson(res, { error: 'Evidence description is required.' }, 422);
       if (url && !/^https:\/\//i.test(url)) return sendJson(res, { error: 'Evidence URL must use HTTPS.' }, 422);
-      addComplianceEvidence(transaction, workflow, stageId, { description, url }, session.name);
-      await addAudit('compliance_evidence_added', session.name, { transactionId: id, stageId });
+      addComplianceEvidence(transaction, workflow, requirementId, { description, url }, session.name);
+      await addAudit('compliance_evidence_added', session.name, { transactionId: id, requirementId });
     } else if (action === 'compliance-approve' && req.method === 'POST') {
       if (session.role !== 'admin') return sendJson(res, { error: 'Administrator approval required.' }, 403);
-      const stageId = clean(String(payload.stage_id || ''), 120);
+      const requirementId = clean(String(payload.requirement_id || getParam(req, 'requirement_id') || ''), 120);
       const approvalRuleId = clean(String(payload.approval_rule_id || ''), 120);
-      approveComplianceRequirement(transaction, workflow, stageId, session.name, approvalRuleId);
-      await addAudit('compliance_requirement_approved', session.name, { transactionId: id, stageId });
+      approveComplianceRequirement(transaction, workflow, requirementId, session.name, approvalRuleId);
+      await addAudit('compliance_requirement_approved', session.name, { transactionId: id, requirementId });
     } else if (action === 'compliance-advance' && req.method === 'POST') {
       advanceComplianceTransaction(transaction, workflow, session.name);
-      await addAudit('compliance_transaction_advanced', session.name, { transactionId: id, stage: transaction.current_stage, status: transaction.status });
+      await addAudit('compliance_transaction_advanced', session.name, { transactionId: id, requirement: transaction.current_requirement, status: transaction.status });
     } else {
       return sendJson(res, { error: 'Unsupported action.' }, 404);
     }

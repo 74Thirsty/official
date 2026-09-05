@@ -28,3 +28,15 @@ test('Compliance Engine presents source provenance, evidence, approvals, gates, 
   assert.match(page, /Advance to next requirement/);
   assert.match(page, /Audit history/);
 });
+
+test('Compliance Engine drives an intent-limited intake form and requirement gates', () => {
+  assert.match(page, /intakeFields/);
+  assert.match(page, /workflow\.intake\.map\(intakeControl\)/);
+  assert.match(page, /requirement_id/);
+  assert.match(page, /enforced requirements/);
+  assert.match(page, /Satisfied by the information entered/);
+  assert.match(page, /renderRegister/);
+  assert.match(page, /selected\.registers/);
+  assert.match(page, /Controlled documents/);
+  assert.match(page, /Unresolved canonical document/);
+});

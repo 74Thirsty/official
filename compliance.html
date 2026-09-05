@@ -31,22 +31,28 @@
     button:hover,.button:hover { background:var(--orange-dark); color:var(--white); }
     button:disabled { opacity:.45; cursor:not-allowed; }
     .secondary { background:rgba(255,255,255,.06); border:1px solid var(--line); }
-    .intent { min-height:92px; padding:18px; text-align:left; background:var(--card); border:1px solid var(--line); font-size:15px; line-height:1.35; text-transform:none; letter-spacing:0; }
+    .intent { min-height:120px; padding:18px; text-align:left; background:var(--card); border:1px solid var(--line); font-size:15px; line-height:1.35; text-transform:none; letter-spacing:0; }
     .intent:hover { border-color:var(--orange); background:#1b1714; }
     .intent small { display:block; margin-top:8px; color:var(--muted); font-size:11px; font-weight:600; }
+    .intent .req-count { display:inline-block; margin-top:10px; padding:3px 8px; border-radius:20px; background:rgba(255,106,0,.12); color:var(--orange); font-size:10px; font-weight:900; text-transform:uppercase; }
     .panel { padding:24px; border:1px solid var(--line); border-radius:16px; background:var(--card); box-shadow:var(--shadow); }
     .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
     label { display:block; color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
-    input,textarea { width:100%; margin-top:7px; padding:12px 13px; border:1px solid var(--line); border-radius:9px; background:#0c0c0c; color:var(--white); font:inherit; }
+    label .hint { display:block; margin-top:5px; color:#6b6b6b; font-weight:500; letter-spacing:0; text-transform:none; line-height:1.4; }
+    input,textarea,select { width:100%; margin-top:7px; padding:12px 13px; border:1px solid var(--line); border-radius:9px; background:#0c0c0c; color:var(--white); font:inherit; }
     textarea { min-height:92px; resize:vertical; }
-    input:focus,textarea:focus { outline:1px solid var(--orange); }
+    select { -webkit-appearance:none; appearance:none; }
+    input:focus,textarea:focus,select:focus { outline:1px solid var(--orange); }
     .full { grid-column:1/-1; }
     .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
     .transactions { display:grid; gap:12px; }
     .transaction { display:grid; grid-template-columns:1fr auto; gap:18px; align-items:center; padding:18px; border:1px solid var(--line); border-radius:12px; background:var(--card); }
     .transaction h3 { margin:0 0 5px; font-size:17px; }
     .meta { color:var(--muted); font-size:12px; line-height:1.6; }
+    .meta strong { color:#cfcfcf; }
     .pill { display:inline-block; margin-right:5px; padding:4px 9px; border-radius:30px; background:rgba(255,106,0,.12); color:var(--orange); font-size:10px; font-weight:900; text-transform:uppercase; }
+    .pill.muted { background:rgba(255,255,255,.08); color:var(--muted); }
+    .pill.green { background:rgba(34,197,94,.16); color:#4ade80; }
     .progress { height:7px; margin-top:10px; overflow:hidden; border-radius:20px; background:#090909; }
     .progress span { display:block; height:100%; background:var(--orange); }
     .stage-list { display:grid; gap:9px; margin-top:20px; }
@@ -57,11 +63,20 @@
     .stage-number { color:var(--orange); min-width:26px; }
     .documents { margin:8px 0 0 36px; font-size:12px; }
     .documents a { margin-right:10px; }
+    .instructions { margin:16px 0 0; padding:14px 16px; border-left:3px solid var(--orange); background:rgba(255,255,255,.03); color:#d7d7d7; font-size:14px; line-height:1.6; }
+    .req-meta { margin:10px 0 0; color:var(--muted); font-size:12px; }
+    .recorded { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 22px; margin:16px 0 0; }
+    .recorded li { padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#0c0c0c; color:#cfcfcf; font-size:13px; line-height:1.5; }
+    .recorded li span { display:block; color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; margin-bottom:4px; }
+    .register { margin:16px 0 0; overflow-x:auto; }
+    .register table { width:100%; border-collapse:collapse; font-size:12px; }
+    .register th,.register td { padding:8px 10px; border:1px solid var(--line); text-align:left; vertical-align:top; color:#cfcfcf; }
+    .register th { background:rgba(255,106,0,.08); color:var(--orange); font-size:10px; font-weight:900; letter-spacing:.06em; text-transform:uppercase; }
     .audit { max-height:300px; overflow:auto; margin:20px 0 0; padding:0; list-style:none; }
     .audit li { padding:9px 0; border-bottom:1px solid var(--line); color:var(--muted); font-size:12px; }
     [hidden] { display:none!important; }
     footer { padding:30px 6vw; border-top:1px solid var(--line); color:#666; text-align:center; font-size:12px; }
-    @media(max-width:680px) { .wrap{width:min(92vw,1180px)} .nav{padding:10px 4vw}.brand span{display:none}.form-grid{grid-template-columns:1fr}.transaction{grid-template-columns:1fr}.full{grid-column:auto} }
+    @media(max-width:680px) { .wrap{width:min(92vw,1180px)} .nav{padding:10px 4vw}.brand span{display:none}.form-grid{grid-template-columns:1fr}.recorded{grid-template-columns:1fr}.transaction{grid-template-columns:1fr}.full{grid-column:auto} }
   </style>
 </head>
 <body>
@@ -70,12 +85,12 @@
     <div class="nav-actions"><a class="button secondary" href="documentation.html">Document Library</a><button type="button" class="secondary" id="logoutBtn" hidden>Logout</button></div>
   </nav>
   <main class="wrap">
-    <header><div class="eyebrow">Operational Enforcement</div><h1>Compliance <span style="color:var(--orange)">Engine</span></h1><p class="lead">Choose what you are trying to do. The engine creates a transaction, identifies the controlled sequence, records evidence and approvals, and blocks progression until the current requirement is satisfied.</p></header>
+    <header><div class="eyebrow">Operational Enforcement</div><h1>Compliance <span style="color:var(--orange)">Engine</span></h1><p class="lead">Choose what you are trying to do. The engine creates a controlled transaction from the canonical workflow definition (derived from ADM-REF-002), records your intake, and enforces a controlled sequence of requirements — evidence, approvals, register entries, and audit — blocking progression until the current requirement is satisfied.</p></header>
     <div id="message" hidden></div>
     <section id="authGate" hidden><div class="panel"><h2>Authentication required</h2><p class="section-copy">Compliance transactions contain internal operational records. Sign in through the Document Library, then return here.</p><a class="button" href="documentation.html#internal-gate">Sign in</a></div></section>
     <div id="engine" hidden>
-      <section><h2>What are you trying to do?</h2><p class="section-copy">Workflows below are generated from <strong>ADM-REF-002 — Transaction Map</strong>.</p><div class="intent-grid" id="intentGrid"></div></section>
-      <section id="starter" hidden><div class="panel"><h2 id="starterTitle">Start transaction</h2><form id="createForm"><input type="hidden" id="workflowId"><div class="form-grid"><label>Transaction title<input id="transactionTitle" required maxlength="140"></label><label>Responsible person<input id="responsiblePerson" required maxlength="80"></label><label>Counterparty, if applicable<input id="counterparty" maxlength="120"></label><label>Amount, if applicable<input id="amount" type="number" min="0" step="0.01"></label></div><div class="actions"><button type="submit">Create controlled transaction</button><button type="button" class="secondary" id="cancelCreate">Cancel</button></div></form></div></section>
+      <section><h2>What are you trying to do?</h2><p class="section-copy">Controlled workflows below are derived from <strong>ADM-REF-002 — Transaction Map</strong> and the governing procedures that define them.</p><div class="intent-grid" id="intentGrid"></div></section>
+      <section id="starter" hidden><div class="panel"><h2 id="starterTitle">Start transaction</h2><p class="section-copy" id="starterSummary"></p><form id="createForm"><input type="hidden" id="workflowId"><div class="form-grid" id="intakeFields"></div><div class="actions"><button type="submit">Create controlled transaction</button><button type="button" class="secondary" id="cancelCreate">Cancel</button></div></form></div></section>
       <section><h2>Transactions</h2><p class="section-copy">Active and completed operational records.</p><div class="transactions" id="transactionList"></div></section>
       <section id="detail" hidden></section>
     </div>
@@ -92,27 +107,74 @@
     function showMessage(text,error) { var el=document.getElementById('message'); el.className=error?'error':'notice'; el.textContent=text; el.hidden=false; window.scrollTo({top:0,behavior:'smooth'}); }
     function clearMessage() { document.getElementById('message').hidden=true; }
     async function api(action,options) { var response=await fetch('/api/admin?action='+encodeURIComponent(action),Object.assign({headers:apiHeaders()},options||{})); var body=await response.json(); if(!response.ok) throw new Error(body.error||'Request failed.'); return body; }
-    function documentLink(document) { return document.document_code ? '<a href="documentation-viewer.html?code='+encodeURIComponent(document.document_code)+'">'+escapeHtml(document.document_id)+'</a>' : '<span title="Unresolved canonical document">'+escapeHtml(document.document_id)+'</span>'; }
+    function documentLink(document) { return document.document_code ? '<a href="documentation-viewer.html?code='+encodeURIComponent(document.document_code)+'">'+escapeHtml(document.document_id)+'</a>' : '<span title="Unresolved canonical document" style="color:#f87171;">'+escapeHtml(document.document_id)+'</span>'; }
+    function statusPill(status) { return status==='complete'?'<span class="pill green">complete</span>':status==='awaiting_approval'?'<span class="pill">awaiting approval</span>':'<span class="pill muted">'+escapeHtml(status.replace(/_/g,' '))+'</span>'; }
 
     function renderIntents() {
-      document.getElementById('intentGrid').innerHTML=workflows.map(function(workflow){return '<button class="intent" type="button" data-workflow="'+escapeHtml(workflow.id)+'">'+escapeHtml(workflow.intent)+'<small>'+workflow.stages.length+' enforced stages</small></button>';}).join('');
+      document.getElementById('intentGrid').innerHTML=workflows.map(function(workflow){return '<button class="intent" type="button" data-workflow="'+escapeHtml(workflow.id)+'"><span style="color:var(--orange);font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;">'+escapeHtml(workflow.domain)+'</span><br>'+escapeHtml(workflow.intent)+'<small>'+escapeHtml(workflow.summary)+'</small><span class="req-count">'+workflow.requirements.length+' enforced requirements</span></button>';}).join('');
+    }
+    function intakeControl(field) {
+      var required=field.required?' required':'';
+      var hint=field.help?'<span class="hint">'+escapeHtml(field.help)+'</span>':'';
+      var max=field.maxlen?' maxlength="'+field.maxlen+'"':'';
+      var full=field.type==='textarea'?' class="full"':'';
+      var control='';
+      if(field.type==='textarea'){control='<textarea name="'+escapeHtml(field.name)+'"'+max+required+'></textarea>';}
+      else if(field.type==='select'){control='<select name="'+escapeHtml(field.name)+'"'+required+'><option value="">Select…</option>'+field.options.map(function(option){return '<option value="'+escapeHtml(option)+'">'+escapeHtml(option)+'</option>';}).join('')+'</select>';}
+      else if(field.type==='number'){control='<input type="number" step="any" name="'+escapeHtml(field.name)+'"'+required+'>';}
+      else if(field.type==='date'||field.type==='time'){control='<input type="'+field.type+'" name="'+escapeHtml(field.name)+'"'+required+'>';}
+      else{control='<input type="text" name="'+escapeHtml(field.name)+'"'+max+required+'>';}
+      return '<label'+full+'>'+escapeHtml(field.label)+hint+control+'</label>';
+    }
+    function openStarter(workflow) {
+      document.getElementById('workflowId').value=workflow.id;
+      document.getElementById('starterTitle').textContent='Start: '+workflow.intent;
+      document.getElementById('starterSummary').textContent=workflow.summary;
+      document.getElementById('intakeFields').innerHTML=workflow.intake.map(intakeControl).join('');
+      document.getElementById('starter').hidden=false;
+      var first=document.querySelector('#intakeFields input,#intakeFields textarea,#intakeFields select'); if(first) first.focus();
     }
     function renderTransactions() {
       var host=document.getElementById('transactionList');
       if(!transactions.length){host.innerHTML='<div class="notice">No compliance transactions yet. Choose an intended action above to begin.</div>';return;}
-      host.innerHTML=transactions.map(function(transaction){var percent=Math.round(transaction.progress.completed/transaction.progress.total*100);return '<article class="transaction"><div><h3>'+escapeHtml(transaction.title)+'</h3><div class="meta"><span class="pill">'+escapeHtml(transaction.status)+'</span>'+escapeHtml(transaction.id)+' · '+escapeHtml(transaction.workflow?transaction.workflow.intent:transaction.workflow_id)+' · Responsible: '+escapeHtml(transaction.responsible_person)+'</div><div class="progress" aria-label="'+percent+' percent complete"><span style="width:'+percent+'%"></span></div><div class="meta">'+transaction.progress.completed+' of '+transaction.progress.total+' requirements complete</div></div><button type="button" data-transaction="'+escapeHtml(transaction.id)+'">Open</button></article>';}).join('');
+      host.innerHTML=transactions.map(function(transaction){var percent=Math.round(transaction.progress.completed/transaction.progress.total*100);return '<article class="transaction"><div><h3>'+escapeHtml(transaction.title)+'</h3><div class="meta"><span class="pill">'+escapeHtml(transaction.status)+'</span>'+escapeHtml(transaction.id)+' · '+escapeHtml(transaction.workflow?transaction.workflow.intent:transaction.workflow_id)+' · Created by <strong>'+escapeHtml(transaction.created_by)+'</strong> on '+escapeHtml(new Date(transaction.created_at).toLocaleDateString())+'</div><div class="progress" aria-label="'+percent+' percent complete"><span style="width:'+percent+'%"></span></div><div class="meta">'+transaction.progress.completed+' of '+transaction.progress.total+' requirements complete</div></div><button type="button" data-transaction="'+escapeHtml(transaction.id)+'">Open</button></article>';}).join('');
+    }
+    function renderIntakeRecorded(transaction) {
+      var workflow=transaction.workflow;
+      if(!workflow||!workflow.intake||!workflow.intake.length) return '';
+      return '<ul class="recorded">'+workflow.intake.map(function(field){return '<li><span>'+escapeHtml(field.label)+'</span>'+escapeHtml(transaction.intake[field.name]??'')+'</li>';}).join('')+'</ul>';
+    }
+    function renderRegister(requirement) {
+      if(!requirement||!requirement.auto_register) return '';
+      var rows=(selected.registers||[]).filter(function(row){return row.requirement_id===requirement.id;});
+      if(!rows.length) return '';
+      var headers=Object.keys(rows[0].columns||{});
+      var table='<div class="register"><table><thead><tr>'+headers.map(function(header){return '<th>'+escapeHtml(header)+'</th>';}).join('')+(rows[0].closed_at?'<th>Closed at</th>':'')+'</tr></thead><tbody>'+rows.map(function(row){return '<tr>'+headers.map(function(header){return '<td>'+escapeHtml(row.columns[header])+'</td>';}).join('')+(row.closed_at?'<td>'+escapeHtml(new Date(row.closed_at).toLocaleString())+'</td>':'')+'</tr>';}).join('')+'</tbody></table></div>';
+      return table;
+    }
+    function renderRequirement(requirement,definition,transaction) {
+      var controls='';
+      if(transaction.status==='active'&&requirement.status==='incomplete'){
+        controls='<div class="instructions">'+escapeHtml(definition.instructions)+'</div><div class="req-meta"><strong>Purpose:</strong> '+escapeHtml(definition.purpose)+' · <strong>Role:</strong> '+escapeHtml(definition.role)+'</div>'+renderRegister(definition)+'<form id="evidenceForm" style="margin-top:18px"><label>Evidence description<textarea id="evidenceDescription" required maxlength="1000" placeholder="Describe the completed work and where its record is retained."></textarea></label><label>Evidence URL, optional<input id="evidenceUrl" type="url" maxlength="500" placeholder="https://..."></label><div class="actions"><button type="submit">Record evidence</button></div></form>';
+      }
+      if(transaction.status==='active'&&requirement.status==='awaiting_approval'){
+        controls='<div class="instructions">'+escapeHtml(definition.instructions)+'</div><div class="req-meta"><strong>Purpose:</strong> '+escapeHtml(definition.purpose)+' · <strong>Role:</strong> '+escapeHtml(definition.role)+'</div><div class="notice">Evidence recorded. This authorization/approval stage requires a separate administrator approval; the evidence submitter cannot approve their own work.</div>'+(session.role==='admin'?'<div class="actions"><button type="button" id="approveBtn">Approve requirement</button></div>':'');
+      }
+      if(transaction.status==='active'&&requirement.status==='complete'){
+        controls='<button type="button" id="advanceBtn">'+(transaction.current_requirement===transaction.workflow.requirements.length-1?'Complete transaction':'Advance to next requirement')+'</button>'+(definition.satisfied_by_intake?'<div class="notice">Satisfied by the information entered when this transaction was created.</div>':'');
+      }
+      return controls;
     }
     function renderDetail(transaction) {
       selected=transaction;
       var workflow=transaction.workflow;
-      var current=workflow.stages[transaction.current_stage];
-      var currentRequirement=transaction.requirements[transaction.current_stage];
-      var controls='';
-      if(transaction.status==='active'&&currentRequirement.status==='incomplete') controls='<form id="evidenceForm"><label>Evidence description<textarea id="evidenceDescription" required maxlength="1000" placeholder="Describe the completed work and where its record is retained."></textarea></label><label>Evidence URL, optional<input id="evidenceUrl" type="url" maxlength="500" placeholder="https://..."></label><div class="actions"><button type="submit">Record evidence</button></div></form>';
-      if(transaction.status==='active'&&currentRequirement.status==='awaiting_approval') controls='<div class="notice">Evidence recorded. This authorization/approval stage is blocked pending a separate administrator approval.</div>'+(session.role==='admin'?(current.approval_rules.length?'<label>Applicable canonical authority<select id="approvalRule" style="width:100%;margin:7px 0 12px;padding:12px;background:#0c0c0c;color:#fff;border:1px solid var(--line);border-radius:9px"><option value="">Select the FIN-CTRL-001 rule</option>'+current.approval_rules.map(function(rule){return '<option value="'+escapeHtml(rule.id)+'">'+escapeHtml(rule.action+' — '+rule.authority+' — '+rule.condition)+'</option>';}).join('')+'</select></label>':'<div class="notice">Authority must be documented in the referenced stage control record.</div>')+'<button type="button" id="approveBtn">Approve requirement</button>':'');
-      if(transaction.status==='active'&&currentRequirement.status==='complete') controls='<button type="button" id="advanceBtn">'+(transaction.current_stage===workflow.stages.length-1?'Complete transaction':'Advance to next requirement')+'</button>';
-      var stages=workflow.stages.map(function(stage,index){var req=transaction.requirements[index];var css=index===transaction.current_stage&&transaction.status==='active'?' current':req.status==='complete'?' complete':'';return '<div class="stage'+css+'"><div class="stage-title"><span class="stage-number">'+stage.sequence+'</span><span>'+escapeHtml(stage.label)+'</span><span class="pill">'+escapeHtml(req.status.replace(/_/g,' '))+'</span></div>'+(stage.documents.length?'<div class="documents">Controlled documents: '+stage.documents.map(documentLink).join(' ')+'</div>':'')+(req.evidence.length?'<div class="documents">Evidence: '+req.evidence.map(function(item){return escapeHtml(item.description)+' — '+escapeHtml(item.actor);}).join('; ')+'</div>':'')+(req.approval?'<div class="documents">Approved by '+escapeHtml(req.approval.actor)+' at '+escapeHtml(new Date(req.approval.at).toLocaleString())+'</div>':'')+'</div>';}).join('');
-      document.getElementById('detail').innerHTML='<div class="panel"><div class="eyebrow">'+escapeHtml(transaction.id)+'</div><h2>'+escapeHtml(transaction.title)+'</h2><p class="section-copy">'+escapeHtml(workflow.intent)+' · Source: '+escapeHtml(workflow.source_document_id)+' § '+escapeHtml(workflow.source_section)+' · Version '+escapeHtml(workflow.source_version)+'</p>'+(current?'<h3>Current requirement: '+escapeHtml(current.label)+'</h3>':'')+controls+'<div class="stage-list">'+stages+'</div><h3 style="margin-top:28px">Audit history</h3><ul class="audit">'+transaction.audit.map(function(item){return '<li>'+escapeHtml(new Date(item.at).toLocaleString())+' — '+escapeHtml(item.type.replace(/_/g,' '))+' — '+escapeHtml(item.actor)+'</li>';}).join('')+'</ul></div>';
+      var currentIndex=Math.min(transaction.current_requirement,workflow.requirements.length-1);
+      var current=workflow.requirements[currentIndex];
+      var currentRequirement=transaction.requirements[currentIndex];
+      var sources=workflow.source||[];
+      var richSource=[].concat(workflow.source_provenance.document_id,workflow.source_provenance.source_path).concat(sources.map(function(s){return s.id+' § '+s.section;})).join(' · ');
+      var stages=workflow.requirements.map(function(definition,index){var req=transaction.requirements[index];var css=index===transaction.current_requirement&&transaction.status==='active'?' current':req.status==='complete'?' complete':'';var documents=definition.documents.length?'<div class="documents">Controlled documents: '+definition.documents.map(documentLink).join(' ')+'</div>':'';var evidence=req.evidence.map(function(item){return '<div class="documents">Evidence: '+escapeHtml(item.description)+' — '+escapeHtml(item.actor)+(item.kind==='intake'?' (from intake)':'')+'</div>';}).join('');var approval=req.approval?'<div class="documents">Approved by '+escapeHtml(req.approval.actor)+' (authority: '+escapeHtml(req.approval.authority)+') at '+escapeHtml(new Date(req.approval.at).toLocaleString())+'</div>':'';return '<div class="stage'+css+'"><div class="stage-title"><span class="stage-number">'+(index+1)+'</span><span>'+escapeHtml(definition.title)+'</span><span class="pill">'+escapeHtml(req.status.replace(/_/g,' '))+'</span></div>'+documents+evidence+approval+'</div>';}).join('');
+      document.getElementById('detail').innerHTML='<div class="panel"><div class="eyebrow">'+escapeHtml(transaction.id)+'</div><h2>'+escapeHtml(transaction.title)+'</h2><p class="section-copy"><span class="pill">'+escapeHtml(transaction.status)+'</span>'+escapeHtml(workflow.intent)+' · '+escapeHtml(workflow.domain)+'<br>Source: '+escapeHtml(richSource)+' · Version '+escapeHtml(workflow.source_provenance.source_version)+'</p>'+renderIntakeRecorded(transaction)+'<div class="stage-list">'+stages+'</div>'+(current&&currentRequirement?'<div style="margin-top:26px"><div class="eyebrow">Current requirement '+(currentIndex+1)+' of '+workflow.requirements.length+'</div><h3>'+escapeHtml(current.title)+'</h3>'+renderRequirement(currentRequirement,current,transaction)+'</div>':'')+'<h3 style="margin-top:28px">Audit history</h3><ul class="audit">'+transaction.audit.map(function(item){return '<li>'+escapeHtml(new Date(item.at).toLocaleString())+' — '+escapeHtml(item.type.replace(/_/g,' '))+' — '+escapeHtml(item.actor)+'</li>';}).join('')+'</ul></div>';
       document.getElementById('detail').hidden=false;
       bindDetailControls();
       document.getElementById('detail').scrollIntoView({behavior:'smooth'});
@@ -123,14 +185,14 @@
       var advance=document.getElementById('advanceBtn'); if(advance)advance.addEventListener('click',advanceTransaction);
     }
     async function refreshTransactions() { var data=await api('compliance-list'); transactions=data.transactions||[]; renderTransactions(); if(selected){var updated=transactions.find(function(item){return item.id===selected.id;});if(updated)renderDetail(updated);} }
-    async function submitEvidence(event) { event.preventDefault();clearMessage();try{var stage=selected.workflow.stages[selected.current_stage];await api('compliance-evidence',{method:'POST',body:JSON.stringify({transaction_id:selected.id,stage_id:stage.id,description:document.getElementById('evidenceDescription').value,url:document.getElementById('evidenceUrl').value})});await refreshTransactions();showMessage('Evidence recorded. The gate was reevaluated.',false);}catch(error){showMessage(error.message,true);} }
-    async function approveRequirement() { clearMessage();try{var stage=selected.workflow.stages[selected.current_stage];var rule=document.getElementById('approvalRule');await api('compliance-approve',{method:'POST',body:JSON.stringify({transaction_id:selected.id,stage_id:stage.id,approval_rule_id:rule?rule.value:''})});await refreshTransactions();showMessage('Requirement approved.',false);}catch(error){showMessage(error.message,true);} }
+    async function submitEvidence(event) { event.preventDefault();clearMessage();try{var requirement=selected.workflow.requirements[selected.current_requirement];await api('compliance-evidence',{method:'POST',body:JSON.stringify({transaction_id:selected.id,requirement_id:requirement.id,description:document.getElementById('evidenceDescription').value,url:document.getElementById('evidenceUrl').value})});await refreshTransactions();showMessage('Evidence recorded. The gate was reevaluated.',false);}catch(error){showMessage(error.message,true);} }
+    async function approveRequirement() { clearMessage();try{var requirement=selected.workflow.requirements[selected.current_requirement];await api('compliance-approve',{method:'POST',body:JSON.stringify({transaction_id:selected.id,requirement_id:requirement.id})});await refreshTransactions();showMessage('Requirement approved.',false);}catch(error){showMessage(error.message,true);} }
     async function advanceTransaction() { clearMessage();try{await api('compliance-advance',{method:'POST',body:JSON.stringify({transaction_id:selected.id})});await refreshTransactions();showMessage('Transaction advanced.',false);}catch(error){showMessage(error.message,true);} }
 
-    document.getElementById('intentGrid').addEventListener('click',function(event){var button=event.target.closest('[data-workflow]');if(!button)return;var workflow=workflows.find(function(item){return item.id===button.dataset.workflow;});document.getElementById('workflowId').value=workflow.id;document.getElementById('starterTitle').textContent='Start: '+workflow.intent;document.getElementById('starter').hidden=false;document.getElementById('transactionTitle').focus();});
+    document.getElementById('intentGrid').addEventListener('click',function(event){var button=event.target.closest('[data-workflow]');if(!button)return;var workflow=workflows.find(function(item){return item.id===button.dataset.workflow;});if(workflow)openStarter(workflow);});
     document.getElementById('transactionList').addEventListener('click',function(event){var button=event.target.closest('[data-transaction]');if(!button)return;var transaction=transactions.find(function(item){return item.id===button.dataset.transaction;});if(transaction)renderDetail(transaction);});
     document.getElementById('cancelCreate').addEventListener('click',function(){document.getElementById('starter').hidden=true;});
-    document.getElementById('createForm').addEventListener('submit',async function(event){event.preventDefault();clearMessage();try{var data=await api('compliance-create',{method:'POST',body:JSON.stringify({workflow_id:document.getElementById('workflowId').value,title:document.getElementById('transactionTitle').value,responsible_person:document.getElementById('responsiblePerson').value,counterparty:document.getElementById('counterparty').value,amount:document.getElementById('amount').value})});event.target.reset();document.getElementById('starter').hidden=true;await refreshTransactions();renderDetail(data.transaction);showMessage('Controlled transaction created.',false);}catch(error){showMessage(error.message,true);}});
+    document.getElementById('createForm').addEventListener('submit',async function(event){event.preventDefault();clearMessage();var form=new FormData(document.getElementById('createForm'));var intake={};workflows.forEach(function(workflow){if(workflow.id===document.getElementById('workflowId').value){workflow.intake.forEach(function(field){intake[field.name]=form.get(field.name);});}});try{var data=await api('compliance-create',{method:'POST',body:JSON.stringify({workflow_id:document.getElementById('workflowId').value,intake:intake})});event.target.reset();document.getElementById('starter').hidden=true;await refreshTransactions();renderDetail(data.transaction);showMessage('Controlled transaction created.',false);}catch(error){showMessage(error.message,true);}});
     document.getElementById('logoutBtn').addEventListener('click',function(){sessionStorage.removeItem('llr-docs-session');location.reload();});
 
     document.addEventListener('DOMContentLoaded',async function(){try{session=JSON.parse(sessionStorage.getItem('llr-docs-session')||'null');}catch(error){session=null;}if(!session||!session.token){document.getElementById('authGate').hidden=false;return;}document.getElementById('logoutBtn').hidden=false;try{var result=await Promise.all([api('compliance-workflows'),api('compliance-list')]);workflows=result[0].workflows||[];transactions=result[1].transactions||[];renderIntents();renderTransactions();document.getElementById('engine').hidden=false;}catch(error){sessionStorage.removeItem('llr-docs-session');document.getElementById('authGate').hidden=false;showMessage(error.message,true);}});
