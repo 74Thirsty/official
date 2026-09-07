@@ -5,13 +5,12 @@ import { readFile } from 'node:fs/promises';
 const page = await readFile(new URL('../compliance.html', import.meta.url), 'utf8');
 const library = await readFile(new URL('../documentation.html', import.meta.url), 'utf8');
 
-test('Compliance Engine is a separate intent-driven route', () => {
-  assert.match(page, /What are you trying to do\?/);
+test('Compliance Engine is a separate catalog-driven route', () => {
+  assert.match(page, /Workflow catalog/);
   assert.match(page, /compliance-workflows/);
+  assert.match(page, /compliance-start/);
   assert.match(page, /compliance-create/);
-  assert.match(page, /compliance-evidence/);
-  assert.match(page, /compliance-approve/);
-  assert.match(page, /compliance-advance/);
+  assert.match(page, /predefined and deterministic/);
   assert.match(library, /href="compliance\.html"/);
 });
 
@@ -21,22 +20,29 @@ test('Compliance Engine reuses the Document Library bearer session without URL s
   assert.doesNotMatch(page, /[?&](?:key|token)=/i);
 });
 
-test('Compliance Engine presents source provenance, evidence, approvals, gates, and audit history', () => {
+test('Compliance Engine presents predefined stages, provenance, evidence, approvals, gates, and audit history', () => {
   assert.match(page, /ADM-REF-002/);
+  assert.match(page, /predefined stages/);
   assert.match(page, /Evidence description/);
-  assert.match(page, /Approve requirement/);
-  assert.match(page, /Advance to next requirement/);
+  assert.match(page, /Approve stage/);
   assert.match(page, /Audit history/);
+  assert.match(page, /Current stage gate/);
 });
 
-test('Compliance Engine drives an intent-limited intake form and requirement gates', () => {
-  assert.match(page, /intakeFields/);
-  assert.match(page, /workflow\.intake\.map\(intakeControl\)/);
-  assert.match(page, /requirement_id/);
-  assert.match(page, /enforced requirements/);
-  assert.match(page, /Satisfied by the information entered/);
-  assert.match(page, /renderRegister/);
-  assert.match(page, /selected\.registers/);
-  assert.match(page, /Controlled documents/);
-  assert.match(page, /Unresolved canonical document/);
+test('Compliance Engine renders controlled template sections and works from a managed catalog', () => {
+  assert.match(page, /creationSection/);
+  assert.match(page, /canonical approval authority/);
+  assert.match(page, /data-save-section/);
+  assert.match(page, /compliance-doc-create/);
+  assert.match(page, /compliance-doc-sign/);
+  assert.match(page, /compliance-doc-finalize/);
+  assert.match(page, /compliance-export/);
+  assert.match(page, /Controlled working document/);
+  assert.match(page, /controlled template/);
+  assert.match(page, /flattened legacy template/);
+});
+
+test('Compliance Engine lists legacy records as read-only migrations', () => {
+  assert.match(page, /legacy \u00b7 read-only/);
+  assert.match(page, /legacy definition/);
 });

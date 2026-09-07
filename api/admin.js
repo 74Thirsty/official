@@ -15,7 +15,8 @@ import { normalizeStoryMeta, wordCount, buildHistorySummary, similarityFlags } f
 import { buildStoryPrompt, buildIdeasPrompt, parseStoryResponse, parseIdeasResponse, pickSurpriseParams } from '../lib/generation.js';
 import { getAccessibleDocuments, findDocumentByCode, getDocumentIntegrity, DOCUMENT_SOURCE_REVISION } from '../lib/document-registry.js';
 import { expandDocument } from '../lib/document-references.js';
-import { COMPLIANCE_WORKFLOWS, WORKFLOW_PROVENANCE, getComplianceWorkflow, publicWorkflow, validateIntake, createComplianceTransaction, addComplianceEvidence, approveComplianceRequirement, advanceComplianceTransaction } from '../lib/compliance-engine.js';
+import { getWorkflow, getTemplate, publicWorkflow, publicTemplate, resolveCategoryGroups, workflowSourceRevision } from '../lib/compliance-engine.js';
+import { createInstance, saveFieldValues, addEvidence, approveStage, advanceStage, createDocumentInstance, saveDocumentFieldValues, applySignature, finalizeDocument, cancelInstance, isAceInstance, summarizeInstance, detailInstance, buildInstanceExport } from '../lib/compliance-engine.js';
 
 export const maxDuration = 60;
 
@@ -527,82 +528,122 @@ async function handleDocs(req, res, action) {
   return sendJson(res, { error: 'Unsupported action.' }, 404);
 }
 
-function complianceSummary(transaction, workflow) {
-  const completed = transaction.requirements.filter((requirement) => requirement.status === 'complete').length;
-  return {
-    ...transaction,
-    workflow: publicWorkflow(workflow),
-    progress: { completed, total: transaction.requirements.length },
-  };
-}
-
 async function handleCompliance(req, res, action) {
   const session = await activeDocsSession(req);
   if (!session) return sendJson(res, { error: 'Document access required.' }, 403);
 
   if (action === 'compliance-workflows' && req.method === 'GET') {
     return sendJson(res, {
-      workflows: COMPLIANCE_WORKFLOWS.map(publicWorkflow),
-      source: WORKFLOW_PROVENANCE,
+      categories: resolveCategoryGroups(),
+      workflows: getCategoryWorkflowList(),
+      source: workflowSourceRevision(),
     });
   }
 
   const transactions = await getList(KEYS.complianceTransactions);
+
   if (action === 'compliance-list' && req.method === 'GET') {
     return sendJson(res, {
       transactions: transactions.map((transaction) => {
-        const workflow = getComplianceWorkflow(transaction.workflow_id);
-        return workflow ? complianceSummary(transaction, workflow) : { ...transaction, workflow: null };
+        if (!isAceInstance(transaction)) {
+          return { ...transaction, legacyRecord: true, workflow: null, currentStage: null };
+        }
+        const workflow = getWorkflow(transaction.workflowId);
+        const template = getTemplate(transaction.templateId);
+        return workflow ? summarizeInstance(transaction, workflow, template) : { ...transaction, workflow: null };
       }),
     });
   }
 
+  if (action === 'compliance-start' && req.method === 'GET') {
+    const workflowId = clean(String(getParam(req, 'workflow_id') || ''), 100);
+    const workflow = getWorkflow(workflowId);
+    if (!workflow) return sendJson(res, { error: 'Controlled workflow not found.' }, 404);
+    const template = getTemplate(workflow.templateId);
+    if (!template) return sendJson(res, { error: 'Controlled template is unavailable.' }, 409);
+    return sendJson(res, { workflow: publicWorkflow(workflow), template: publicTemplate(template) });
+  }
+
   if (action === 'compliance-create' && req.method === 'POST') {
     const payload = await readBody(req);
-    const workflow = getComplianceWorkflow(clean(String(payload.workflow_id || ''), 100));
+    const workflow = getWorkflow(clean(String(payload.workflow_id || ''), 100));
     if (!workflow) return sendJson(res, { error: 'Controlled workflow not found.' }, 404);
-    const intakeResult = validateIntake(workflow, payload.intake);
-    if (intakeResult.errors) return sendJson(res, { error: intakeResult.errors.join(' ') }, 422);
-    const intake = intakeResult.values;
-    const title = clean(String(intake[workflow.titleField.name] ?? ''), 140);
-    if (!title) return sendJson(res, { error: `${workflow.titleField.label} is required.` }, 422);
-    const transaction = createComplianceTransaction(workflow, intake, session.name);
-    transactions.unshift(transaction);
+    const instance = createInstance(workflow, payload.values || {}, session.name, new Set(transactions.map((item) => item.id)));
+    transactions.unshift(instance);
     await setList(KEYS.complianceTransactions, transactions.slice(0, LIMITS.complianceTransactions));
-    await addAudit('compliance_transaction_created', session.name, { transactionId: transaction.id, workflowId: workflow.id });
-    return sendJson(res, { transaction: complianceSummary(transaction, workflow) }, 201);
+    await addAudit('compliance_instance_created', session.name, { instanceId: instance.id, workflowId: workflow.id });
+    return sendJson(res, { transaction: summarizeInstance(instance, workflow, getTemplate(workflow.templateId)) }, 201);
+  }
+
+  if (action === 'compliance-export' && req.method === 'GET') {
+    const id = clean(String(getParam(req, 'id') || ''), 80);
+    const format = clean(String(getParam(req, 'format') || 'html'), 20);
+    const transaction = transactions.find((item) => item.id === id);
+    const workflow = transaction && getWorkflow(transaction.workflowId);
+    const template = workflow && getTemplate(workflow.templateId);
+    if (!transaction || !workflow || !template) return sendJson(res, { error: 'Compliance record not found.' }, 404);
+    try {
+      const result = buildInstanceExport(transaction, workflow, template, format);
+      return sendJson(res, result, 200);
+    } catch (error) {
+      return sendJson(res, { error: error.message }, 400);
+    }
   }
 
   const payload = req.method === 'POST' ? await readBody(req) : {};
-  const id = clean(String(payload.transaction_id || getParam(req, 'id') || ''), 80);
+  const id = clean(String(payload.id || payload.instance_id || getParam(req, 'id') || ''), 80);
   const index = transactions.findIndex((transaction) => transaction.id === id);
-  if (index < 0) return sendJson(res, { error: 'Compliance transaction not found.' }, 404);
+  if (index < 0) return sendJson(res, { error: 'Compliance record not found.' }, 404);
   const transaction = transactions[index];
-  const workflow = getComplianceWorkflow(transaction.workflow_id);
-  if (!workflow) return sendJson(res, { error: 'Controlled workflow is unavailable.' }, 409);
+  if (!isAceInstance(transaction)) return sendJson(res, { error: 'Legacy records are read-only under the new compliance engine.' }, 409);
+  const workflow = getWorkflow(transaction.workflowId);
+  const template = getTemplate(transaction.templateId);
+  if (!workflow || !template) return sendJson(res, { error: 'Controlled workflow or template is unavailable.' }, 409);
 
   if (action === 'compliance-detail' && req.method === 'GET') {
-    return sendJson(res, { transaction: complianceSummary(transaction, workflow) });
+    return sendJson(res, { transaction: detailInstance(transaction, workflow, template) });
   }
 
   try {
-    if (action === 'compliance-evidence' && req.method === 'POST') {
-      const requirementId = clean(String(payload.requirement_id || getParam(req, 'requirement_id') || ''), 120);
-      const description = clean(String(payload.description || ''), 1000);
+    if (action === 'compliance-save' && req.method === 'POST') {
+      const sectionId = clean(String(payload.section_id || ''), 60);
+      saveFieldValues(transaction, workflow, sectionId, payload.values || {}, session.name);
+      await addAudit('compliance_section_saved', session.name, { instanceId: id, sectionId });
+    } else if (action === 'compliance-evidence' && req.method === 'POST') {
+      const description = clean(String(payload.description || ''), 4000);
       const url = clean(String(payload.url || ''), 500);
-      if (!description) return sendJson(res, { error: 'Evidence description is required.' }, 422);
       if (url && !/^https:\/\//i.test(url)) return sendJson(res, { error: 'Evidence URL must use HTTPS.' }, 422);
-      addComplianceEvidence(transaction, workflow, requirementId, { description, url }, session.name);
-      await addAudit('compliance_evidence_added', session.name, { transactionId: id, requirementId });
+      addEvidence(transaction, workflow, session.name, description, url);
+      await addAudit('compliance_evidence_added', session.name, { instanceId: id, stageId: workflow.lifecycle[transaction.currentStageIndex]?.id });
     } else if (action === 'compliance-approve' && req.method === 'POST') {
       if (session.role !== 'admin') return sendJson(res, { error: 'Administrator approval required.' }, 403);
-      const requirementId = clean(String(payload.requirement_id || getParam(req, 'requirement_id') || ''), 120);
       const approvalRuleId = clean(String(payload.approval_rule_id || ''), 120);
-      approveComplianceRequirement(transaction, workflow, requirementId, session.name, approvalRuleId);
-      await addAudit('compliance_requirement_approved', session.name, { transactionId: id, requirementId });
+      approveStage(transaction, workflow, session.name, approvalRuleId);
+      await addAudit('compliance_stage_approved', session.name, { instanceId: id, stageId: workflow.lifecycle[transaction.currentStageIndex]?.id });
     } else if (action === 'compliance-advance' && req.method === 'POST') {
-      advanceComplianceTransaction(transaction, workflow, session.name);
-      await addAudit('compliance_transaction_advanced', session.name, { transactionId: id, requirement: transaction.current_requirement, status: transaction.status });
+      advanceStage(transaction, workflow, session.name);
+      await addAudit('compliance_stage_advanced', session.name, { instanceId: id, stageIndex: transaction.currentStageIndex, status: transaction.status });
+    } else if (action === 'compliance-cancel' && req.method === 'POST') {
+      cancelInstance(transaction, workflow, session.name, clean(String(payload.reason || ''), 500));
+      await addAudit('compliance_instance_cancelled', session.name, { instanceId: id, reason: transaction.cancelReason });
+    } else if (action === 'compliance-doc-create' && req.method === 'POST') {
+      const documentId = clean(String(payload.document_id || ''), 60);
+      createDocumentInstance(transaction, workflow, documentId, session.name);
+      await addAudit('compliance_document_created', session.name, { instanceId: id, documentId });
+    } else if (action === 'compliance-doc-save' && req.method === 'POST') {
+      const documentInstanceId = clean(String(payload.document_instance_id || ''), 40);
+      saveDocumentFieldValues(transaction, documentInstanceId, payload.values || {}, session.name);
+      await addAudit('compliance_document_saved', session.name, { instanceId: id, documentInstanceId });
+    } else if (action === 'compliance-doc-sign' && req.method === 'POST') {
+      const documentInstanceId = clean(String(payload.document_instance_id || ''), 40);
+      const signatureId = clean(String(payload.signature_id || ''), 80);
+      const name = clean(String(payload.name || session.name), 120);
+      applySignature(transaction, documentInstanceId, signatureId, session.name, name);
+      await addAudit('compliance_document_signed', session.name, { instanceId: id, documentInstanceId, signatureId });
+    } else if (action === 'compliance-doc-finalize' && req.method === 'POST') {
+      const documentInstanceId = clean(String(payload.document_instance_id || ''), 40);
+      finalizeDocument(transaction, documentInstanceId, session.name);
+      await addAudit('compliance_document_finalized', session.name, { instanceId: id, documentInstanceId });
     } else {
       return sendJson(res, { error: 'Unsupported action.' }, 404);
     }
@@ -612,7 +653,17 @@ async function handleCompliance(req, res, action) {
 
   transactions[index] = transaction;
   await setList(KEYS.complianceTransactions, transactions);
-  return sendJson(res, { transaction: complianceSummary(transaction, workflow) });
+  return sendJson(res, { transaction: detailInstance(transaction, workflow, template) });
+}
+
+function getCategoryWorkflowList() {
+  const list = [];
+  for (const category of Object.values(resolveCategoryGroups())) {
+    for (const workflow of category.workflows) {
+      list.push({ ...workflow, category: category.id, categoryName: category.name });
+    }
+  }
+  return list;
 }
 
 async function fetchDocumentSource(document) {

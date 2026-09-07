@@ -20,21 +20,32 @@
     header { padding:80px 0 48px; }
     .eyebrow { color:var(--orange); font-size:11px; font-weight:900; letter-spacing:.22em; text-transform:uppercase; }
     h1 { margin:12px 0 14px; font-size:clamp(40px,7vw,78px); line-height:.92; letter-spacing:-.045em; text-transform:uppercase; }
-    .lead { max-width:720px; color:var(--muted); font-size:18px; line-height:1.6; }
+    .lead { max-width:760px; color:var(--muted); font-size:18px; line-height:1.6; }
     .notice,.error { padding:14px 18px; border:1px solid rgba(255,106,0,.28); border-radius:12px; background:rgba(255,106,0,.06); color:#d7d7d7; margin:18px 0; }
     .error { border-color:rgba(239,68,68,.45); background:rgba(239,68,68,.08); color:#fecaca; }
+    .warn { padding:12px 16px; border:1px solid rgba(245,158,11,.4); border-radius:12px; background:rgba(245,158,11,.08); color:#fde68a; margin:14px 0; }
     section { margin:0 0 56px; }
     h2 { margin:0 0 8px; font-size:28px; text-transform:uppercase; letter-spacing:-.02em; }
+    h3 { margin:0 0 8px; font-size:19px; }
     .section-copy { margin:0 0 22px; color:var(--muted); }
-    .intent-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:12px; }
+    .category-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; }
+    .category { padding:16px; border:1px solid var(--line); border-radius:14px; background:var(--card); }
+    .category h3 { margin:0 0 4px; }
+    .category p { margin:0 0 12px; color:var(--muted); font-size:13px; }
+    .category .flows { display:grid; gap:8px; }
     button,.button { border:0; border-radius:10px; padding:11px 16px; background:var(--orange); color:var(--white); font:inherit; font-size:12px; font-weight:900; letter-spacing:.05em; text-transform:uppercase; cursor:pointer; }
     button:hover,.button:hover { background:var(--orange-dark); color:var(--white); }
     button:disabled { opacity:.45; cursor:not-allowed; }
     .secondary { background:rgba(255,255,255,.06); border:1px solid var(--line); }
-    .intent { min-height:120px; padding:18px; text-align:left; background:var(--card); border:1px solid var(--line); font-size:15px; line-height:1.35; text-transform:none; letter-spacing:0; }
-    .intent:hover { border-color:var(--orange); background:#1b1714; }
-    .intent small { display:block; margin-top:8px; color:var(--muted); font-size:11px; font-weight:600; }
-    .intent .req-count { display:inline-block; margin-top:10px; padding:3px 8px; border-radius:20px; background:rgba(255,106,0,.12); color:var(--orange); font-size:10px; font-weight:900; text-transform:uppercase; }
+    .flow { min-height:96px; padding:15px; text-align:left; background:var(--card); border:1px solid var(--line); font-size:14px; line-height:1.35; text-transform:none; letter-spacing:0; }
+    .flow:hover { border-color:var(--orange); background:#1b1714; }
+    .flow small { display:block; margin-top:7px; color:var(--muted); font-size:11px; font-weight:600; }
+    .flow .stage-count { display:inline-block; margin-top:9px; padding:3px 8px; border-radius:20px; background:rgba(255,106,0,.12); color:var(--orange); font-size:10px; font-weight:900; text-transform:uppercase; }
+    .badge { display:inline-block; margin:4px 5px 0 0; padding:3px 8px; border-radius:20px; background:rgba(255,255,255,.08); color:var(--muted); font-size:10px; font-weight:900; text-transform:uppercase; }
+    .badge.orange { background:rgba(255,106,0,.12); color:var(--orange); }
+    .badge.green { background:rgba(34,197,94,.16); color:#4ade80; }
+    .badge.red { background:rgba(239,68,68,.14); color:#f87171; }
+    .badge.purple { background:rgba(168,85,247,.16); color:#c084fc; }
     .panel { padding:24px; border:1px solid var(--line); border-radius:16px; background:var(--card); box-shadow:var(--shadow); }
     .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
     label { display:block; color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
@@ -53,6 +64,8 @@
     .pill { display:inline-block; margin-right:5px; padding:4px 9px; border-radius:30px; background:rgba(255,106,0,.12); color:var(--orange); font-size:10px; font-weight:900; text-transform:uppercase; }
     .pill.muted { background:rgba(255,255,255,.08); color:var(--muted); }
     .pill.green { background:rgba(34,197,94,.16); color:#4ade80; }
+    .pill.red { background:rgba(239,68,68,.14); color:#f87171; }
+    .pill.purple { background:rgba(168,85,247,.16); color:#c084fc; }
     .progress { height:7px; margin-top:10px; overflow:hidden; border-radius:20px; background:#090909; }
     .progress span { display:block; height:100%; background:var(--orange); }
     .stage-list { display:grid; gap:9px; margin-top:20px; }
@@ -65,6 +78,9 @@
     .documents a { margin-right:10px; }
     .instructions { margin:16px 0 0; padding:14px 16px; border-left:3px solid var(--orange); background:rgba(255,255,255,.03); color:#d7d7d7; font-size:14px; line-height:1.6; }
     .req-meta { margin:10px 0 0; color:var(--muted); font-size:12px; }
+    .gate { display:grid; gap:7px; margin-top:16px; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:#0c0c0c; font-size:12px; }
+    .gate .ok { color:#4ade80; }
+    .gate .no { color:#f87171; }
     .recorded { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 22px; margin:16px 0 0; }
     .recorded li { padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#0c0c0c; color:#cfcfcf; font-size:13px; line-height:1.5; }
     .recorded li span { display:block; color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; margin-bottom:4px; }
@@ -74,6 +90,15 @@
     .register th { background:rgba(255,106,0,.08); color:var(--orange); font-size:10px; font-weight:900; letter-spacing:.06em; text-transform:uppercase; }
     .audit { max-height:300px; overflow:auto; margin:20px 0 0; padding:0; list-style:none; }
     .audit li { padding:9px 0; border-bottom:1px solid var(--line); color:var(--muted); font-size:12px; }
+    .accordion { margin-top:18px; }
+    .accordion details { border:1px solid var(--line); border-radius:10px; margin-bottom:9px; background:#0c0c0c; }
+    .accordion summary { padding:12px 14px; cursor:pointer; color:#d7d7d7; font-size:13px; font-weight:800; }
+    .accordion .inner { padding:0 14px 14px; }
+    .doc-card { margin-top:12px; padding:14px; border:1px solid var(--line); border-radius:10px; background:#0c0c0c; }
+    .doc-card h4 { margin:0 0 6px; font-size:14px; }
+    .sig-line { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:7px; font-size:12px; }
+    .sig-line .signed { color:#4ade80; }
+    .evidence-item { padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#0c0c0c; color:#cfcfcf; font-size:13px; margin-top:8px; line-height:1.5; }
     [hidden] { display:none!important; }
     footer { padding:30px 6vw; border-top:1px solid var(--line); color:#666; text-align:center; font-size:12px; }
     @media(max-width:680px) { .wrap{width:min(92vw,1180px)} .nav{padding:10px 4vw}.brand span{display:none}.form-grid{grid-template-columns:1fr}.recorded{grid-template-columns:1fr}.transaction{grid-template-columns:1fr}.full{grid-column:auto} }
@@ -85,13 +110,13 @@
     <div class="nav-actions"><a class="button secondary" href="documentation.html">Document Library</a><button type="button" class="secondary" id="logoutBtn" hidden>Logout</button></div>
   </nav>
   <main class="wrap">
-    <header><div class="eyebrow">Operational Enforcement</div><h1>Compliance <span style="color:var(--orange)">Engine</span></h1><p class="lead">Choose what you are trying to do. The engine creates a controlled transaction from the canonical workflow definition (derived from ADM-REF-002), records your intake, and enforces a controlled sequence of requirements — evidence, approvals, register entries, and audit — blocking progression until the current requirement is satisfied.</p></header>
+    <header><div class="eyebrow">Operational Enforcement</div><h1>Compliance <span style="color:var(--orange)">Engine</span></h1><p class="lead">Predefined compliance workflows are organized by organizational activity. Each workflow is built from a controlled template with a predefined set of applicable sections, and carries a versioned, hash-anchored definition (derived from ADM-REF-002 — the Transaction Map). Start a workflow, complete its stages, and the engine records evidence, approvals, controlled documents and signatures, registers, and an audit trail.</p></header>
     <div id="message" hidden></div>
-    <section id="authGate" hidden><div class="panel"><h2>Authentication required</h2><p class="section-copy">Compliance transactions contain internal operational records. Sign in through the Document Library, then return here.</p><a class="button" href="documentation.html#internal-gate">Sign in</a></div></section>
+    <section id="authGate" hidden><div class="panel"><h2>Authentication required</h2><p class="section-copy">Compliance records contain internal operational information. Sign in through the Document Library, then return here.</p><a class="button" href="documentation.html#internal-gate">Sign in</a></div></section>
     <div id="engine" hidden>
-      <section><h2>What are you trying to do?</h2><p class="section-copy">Controlled workflows below are derived from <strong>ADM-REF-002 — Transaction Map</strong> and the governing procedures that define them.</p><div class="intent-grid" id="intentGrid"></div></section>
-      <section id="starter" hidden><div class="panel"><h2 id="starterTitle">Start transaction</h2><p class="section-copy" id="starterSummary"></p><form id="createForm"><input type="hidden" id="workflowId"><div class="form-grid" id="intakeFields"></div><div class="actions"><button type="submit">Create controlled transaction</button><button type="button" class="secondary" id="cancelCreate">Cancel</button></div></form></div></section>
-      <section><h2>Transactions</h2><p class="section-copy">Active and completed operational records.</p><div class="transactions" id="transactionList"></div></section>
+      <section id="catalogSection"><h2>Workflow catalog</h2><p class="section-copy">Definitions are predefined and deterministic — the engine never invents a workflow, section, or approval at runtime.</p><div class="category-grid" id="categoryGrid"></div></section>
+      <section id="starter" hidden><div class="panel"><h2 id="starterTitle">Start workflow</h2><p class="section-copy" id="starterSummary"></p><p class="section-copy" id="starterMeta"></p><form id="createForm"><input type="hidden" id="workflowId"><div class="form-grid" id="creationFields"></div><div class="actions"><button type="submit">Create controlled record</button><button type="button" class="secondary" id="cancelCreate">Cancel</button></div></form></div></section>
+      <section><h2>Compliance records</h2><p class="section-copy">Active, awaiting-approval, completed, cancelled, and legacy records.</p><div class="transactions" id="transactionList"></div></section>
       <section id="detail" hidden></section>
     </div>
   </main>
@@ -99,103 +124,312 @@
   <script>
     var session = null;
     var workflows = [];
+    var categories = {};
     var transactions = [];
-    var selected = null;
+    var open = null;
+    var openWorkflow = null;
+    var openTemplate = null;
 
+    function $(id) { return document.getElementById(id); }
     function escapeHtml(value) { return String(value == null ? '' : value).replace(/[&<>"']/g,function(char){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char];}); }
     function apiHeaders() { return {'Content-Type':'application/json','Authorization':'Bearer '+session.token}; }
-    function showMessage(text,error) { var el=document.getElementById('message'); el.className=error?'error':'notice'; el.textContent=text; el.hidden=false; window.scrollTo({top:0,behavior:'smooth'}); }
-    function clearMessage() { document.getElementById('message').hidden=true; }
+    function showMessage(text,error) { var el=$('message'); el.className=error?'error':'notice'; el.textContent=text; el.hidden=false; window.scrollTo({top:0,behavior:'smooth'}); }
+    function clearMessage() { $('message').hidden=true; }
     async function api(action,options) { var response=await fetch('/api/admin?action='+encodeURIComponent(action),Object.assign({headers:apiHeaders()},options||{})); var body=await response.json(); if(!response.ok) throw new Error(body.error||'Request failed.'); return body; }
-    function documentLink(document) { return document.document_code ? '<a href="documentation-viewer.html?code='+encodeURIComponent(document.document_code)+'">'+escapeHtml(document.document_id)+'</a>' : '<span title="Unresolved canonical document" style="color:#f87171;">'+escapeHtml(document.document_id)+'</span>'; }
-    function statusPill(status) { return status==='complete'?'<span class="pill green">complete</span>':status==='awaiting_approval'?'<span class="pill">awaiting approval</span>':'<span class="pill muted">'+escapeHtml(status.replace(/_/g,' '))+'</span>'; }
-
-    function renderIntents() {
-      document.getElementById('intentGrid').innerHTML=workflows.map(function(workflow){return '<button class="intent" type="button" data-workflow="'+escapeHtml(workflow.id)+'"><span style="color:var(--orange);font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;">'+escapeHtml(workflow.domain)+'</span><br>'+escapeHtml(workflow.intent)+'<small>'+escapeHtml(workflow.summary)+'</small><span class="req-count">'+workflow.requirements.length+' enforced requirements</span></button>';}).join('');
+    function documentLink(entry) { return entry.document_code ? '<a href="documentation-viewer.html?code='+encodeURIComponent(entry.document_code)+'">'+escapeHtml(entry.document_id)+'</a>' : '<span title="Unresolved canonical document" style="color:#f87171;">'+escapeHtml(entry.document_id)+'</span>'; }
+    function statusPill(status) {
+      var classes='pill';
+      if(status==='completed') classes='pill green';
+      else if(status==='awaiting_approval') classes='pill';
+      else if(status==='cancelled'||status==='archived') classes='pill red';
+      else classes='pill muted';
+      return '<span class="'+classes+'">'+escapeHtml(String(status||'unknown').replace(/_/g,' '))+'</span>';
     }
-    function intakeControl(field) {
+    function fieldControl(field,value) {
       var required=field.required?' required':'';
       var hint=field.help?'<span class="hint">'+escapeHtml(field.help)+'</span>':'';
       var max=field.maxlen?' maxlength="'+field.maxlen+'"':'';
       var full=field.type==='textarea'?' class="full"':'';
+      var val=value==null?'':escapeHtml(value);
       var control='';
-      if(field.type==='textarea'){control='<textarea name="'+escapeHtml(field.name)+'"'+max+required+'></textarea>';}
-      else if(field.type==='select'){control='<select name="'+escapeHtml(field.name)+'"'+required+'><option value="">Select…</option>'+field.options.map(function(option){return '<option value="'+escapeHtml(option)+'">'+escapeHtml(option)+'</option>';}).join('')+'</select>';}
-      else if(field.type==='number'){control='<input type="number" step="any" name="'+escapeHtml(field.name)+'"'+required+'>';}
-      else if(field.type==='date'||field.type==='time'){control='<input type="'+field.type+'" name="'+escapeHtml(field.name)+'"'+required+'>';}
-      else{control='<input type="text" name="'+escapeHtml(field.name)+'"'+max+required+'>';}
+      if(field.type==='textarea'){control='<textarea data-field="'+escapeHtml(field.name)+'"'+max+required+'>'+val+'</textarea>';}
+      else if(field.type==='select'){control='<select data-field="'+escapeHtml(field.name)+'"'+required+'><option value="">Select…</option>'+field.options.map(function(option){return '<option value="'+escapeHtml(option)+'"'+(String(value)===String(option)?' selected':'')+'>'+escapeHtml(option)+'</option>';}).join('')+'</select>';}
+      else if(field.type==='number'){control='<input type="number" step="any" data-field="'+escapeHtml(field.name)+'" value="'+val+'"'+required+'>';}
+      else if(field.type==='date'||field.type==='time'){control='<input type="'+field.type+'" data-field="'+escapeHtml(field.name)+'" value="'+val+'"'+required+'>';}
+      else{control='<input type="text" data-field="'+escapeHtml(field.name)+'" value="'+val+'"'+max+required+'>';}
       return '<label'+full+'>'+escapeHtml(field.label)+hint+control+'</label>';
     }
-    function openStarter(workflow) {
-      document.getElementById('workflowId').value=workflow.id;
-      document.getElementById('starterTitle').textContent='Start: '+workflow.intent;
-      document.getElementById('starterSummary').textContent=workflow.summary;
-      document.getElementById('intakeFields').innerHTML=workflow.intake.map(intakeControl).join('');
-      document.getElementById('starter').hidden=false;
-      var first=document.querySelector('#intakeFields input,#intakeFields textarea,#intakeFields select'); if(first) first.focus();
+    function renderCatalog() {
+      $('categoryGrid').innerHTML=Object.keys(categories).map(function(key){
+        var category=categories[key];
+        return '<div class="category"><h3>'+escapeHtml(category.name)+'</h3><p>'+escapeHtml(category.description||'')+'</p><div class="flows">'+category.workflows.map(function(workflow){
+          return '<button class="flow" type="button" data-workflow="'+escapeHtml(workflow.id)+'"><span style="color:var(--orange);font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;">'+escapeHtml(workflow.category+'').toUpperCase()+'</span><br>'+escapeHtml(workflow.name)+'<small>'+escapeHtml(workflow.summary)+'</small><span class="stage-count">'+workflow.lifecycle.length+' predefined stages</span>'+(workflow.legacy?'<span class="badge purple">legacy definition</span>':'<span class="badge green">reference workflow</span>')+'</button>';
+        }).join('')+'</div></div>';
+      }).join('');
+    }
+    async function openStarter(workflowId) {
+      clearMessage();
+      try {
+        var data=await api('compliance-start?workflow_id='+encodeURIComponent(workflowId));
+        var workflow=data.workflow, template=data.template;
+        var creationSection=template.sections.find(function(section){return section.id===workflow.creationSection;});
+        $('workflowId').value=workflow.id;
+        $('starterTitle').textContent='Start: '+workflow.name;
+        $('starterSummary').textContent=workflow.summary;
+        $('starterMeta').innerHTML='Definition version <strong>'+escapeHtml(workflow.workflowVersion)+'</strong> · Source: <strong>'+escapeHtml(workflow.source_provenance.document_id)+'</strong> ('+escapeHtml(workflow.source_provenance.source_hash.slice(0,12))+'…) · Template: <strong>'+escapeHtml(template.name)+'</strong>'+(template.legacyGenerated?' <span class="badge purple">flattened legacy template</span>':' <span class="badge green">controlled template</span>');
+        $('creationFields').innerHTML=creationSection.fields.map(function(field){return fieldControl(field,'');}).join('');
+        $('starter').hidden=false;
+        var first=$('creationFields').querySelector('input,select,textarea'); if(first) first.focus();
+        $('starter').scrollIntoView({behavior:'smooth'});
+      } catch(error) { showMessage(error.message,true); }
     }
     function renderTransactions() {
-      var host=document.getElementById('transactionList');
-      if(!transactions.length){host.innerHTML='<div class="notice">No compliance transactions yet. Choose an intended action above to begin.</div>';return;}
-      host.innerHTML=transactions.map(function(transaction){var percent=Math.round(transaction.progress.completed/transaction.progress.total*100);return '<article class="transaction"><div><h3>'+escapeHtml(transaction.title)+'</h3><div class="meta"><span class="pill">'+escapeHtml(transaction.status)+'</span>'+escapeHtml(transaction.id)+' · '+escapeHtml(transaction.workflow?transaction.workflow.intent:transaction.workflow_id)+' · Created by <strong>'+escapeHtml(transaction.created_by)+'</strong> on '+escapeHtml(new Date(transaction.created_at).toLocaleDateString())+'</div><div class="progress" aria-label="'+percent+' percent complete"><span style="width:'+percent+'%"></span></div><div class="meta">'+transaction.progress.completed+' of '+transaction.progress.total+' requirements complete</div></div><button type="button" data-transaction="'+escapeHtml(transaction.id)+'">Open</button></article>';}).join('');
+      var host=$('transactionList');
+      if(!transactions.length){host.innerHTML='<div class="notice">No compliance records yet. Choose a workflow from the catalog above to begin.</div>';return;}
+      host.innerHTML=transactions.map(function(transaction){
+        var percent=Math.round((transaction.progress?transaction.progress.completed:0)/(transaction.progress&&transaction.progress.total?transaction.progress.total:1)*100);
+        var title=transaction.legacyRecord?(transaction.incident_title||transaction.grant_title||transaction.title||'Legacy record'):transaction.title;
+        var workflowName=transaction.legacyRecord?(transaction.workflow_id||'legacy'):(transaction.workflow?transaction.workflow.name:transaction.workflowName||transaction.workflowId);
+        var openBtn=transaction.legacyRecord?'<span class="pill purple">legacy · read-only</span>':'<button type="button" data-transaction="'+escapeHtml(transaction.id)+'">Open</button>';
+        return '<article class="transaction"><div><h3>'+escapeHtml(title)+'</h3><div class="meta">'+statusPill(transaction.legacyRecord?'migrated':transaction.status)+'<span class="pill muted">'+escapeHtml(workflowName)+'</span>'+escapeHtml(transaction.id||'')+(transaction.created_by?' · Created by <strong>'+escapeHtml(transaction.created_by)+'</strong>':'')+(transaction.created_at?' · '+escapeHtml(new Date(transaction.created_at).toLocaleDateString()):'')+'</div>'+(transaction.progress?'<div class="progress" aria-label="'+percent+' percent"><span style="width:'+percent+'%"></span></div><div class="meta">'+transaction.progress.completed+' of '+transaction.progress.total+' stages complete</div>':'')+'</div>'+openBtn+'</article>';
+      }).join('');
     }
-    function renderIntakeRecorded(transaction) {
-      var workflow=transaction.workflow;
-      if(!workflow||!workflow.intake||!workflow.intake.length) return '';
-      return '<ul class="recorded">'+workflow.intake.map(function(field){return '<li><span>'+escapeHtml(field.label)+'</span>'+escapeHtml(transaction.intake[field.name]??'')+'</li>';}).join('')+'</ul>';
+    function sectionSatisfied(sectionId) {
+      var section=openTemplate.sections.find(function(section){return section.id===sectionId;});
+      if(!section) return false;
+      var stored=open.fieldValues[sectionId]||{};
+      for(var i=0;i<section.fields.length;i++){var field=section.fields[i];if(field.required&&(stored[field.name]==null||String(stored[field.name]).trim()===''))return false;}
+      return true;
     }
-    function renderRegister(requirement) {
-      if(!requirement||!requirement.auto_register) return '';
-      var rows=(selected.registers||[]).filter(function(row){return row.requirement_id===requirement.id;});
-      if(!rows.length) return '';
-      var headers=Object.keys(rows[0].columns||{});
-      var table='<div class="register"><table><thead><tr>'+headers.map(function(header){return '<th>'+escapeHtml(header)+'</th>';}).join('')+(rows[0].closed_at?'<th>Closed at</th>':'')+'</tr></thead><tbody>'+rows.map(function(row){return '<tr>'+headers.map(function(header){return '<td>'+escapeHtml(row.columns[header])+'</td>';}).join('')+(row.closed_at?'<td>'+escapeHtml(new Date(row.closed_at).toLocaleString())+'</td>':'')+'</tr>';}).join('')+'</tbody></table></div>';
-      return table;
+    function gateStatus() {
+      var stage=openWorkflow.lifecycle[open.currentStageIndex];
+      var state=open.stageStates[open.currentStageIndex];
+      var items=[];
+      (stage.sectionsRequired||[]).forEach(function(sectionId){items.push({ok:sectionSatisfied(sectionId),message:sectionId+' section complete'});});
+      (stage.documentsRequired||[]).forEach(function(required){var doc=open.documents.find(function(d){return d.documentId===required.documentId;});var ok=!!doc&&(doc.status==='finalized'||doc.status==='completed');items.push({ok:ok,message:required.documentId+' finalized'});});
+      (stage.signaturesRequired||[]).forEach(function(signature){var doc=open.documents.find(function(d){return d.documentId===signature.documentId;});var ok=!!doc&&doc.signatures.some(function(s){return s.signatureId===signature.signatureId;});items.push({ok:ok,message:'Signature '+signature.signatureId+' on '+signature.documentId});});
+      if(stage.evidenceRequired)items.push({ok:(state.evidence||[]).length>0,message:'Evidence recorded'});
+      if(stage.approvalRequired)items.push({ok:!!state.approval,message:'Approval recorded'});
+      return items;
     }
-    function renderRequirement(requirement,definition,transaction) {
-      var controls='';
-      if(transaction.status==='active'&&requirement.status==='incomplete'){
-        controls='<div class="instructions">'+escapeHtml(definition.instructions)+'</div><div class="req-meta"><strong>Purpose:</strong> '+escapeHtml(definition.purpose)+' · <strong>Role:</strong> '+escapeHtml(definition.role)+'</div>'+renderRegister(definition)+'<form id="evidenceForm" style="margin-top:18px"><label>Evidence description<textarea id="evidenceDescription" required maxlength="1000" placeholder="Describe the completed work and where its record is retained."></textarea></label><label>Evidence URL, optional<input id="evidenceUrl" type="url" maxlength="500" placeholder="https://..."></label><div class="actions"><button type="submit">Record evidence</button></div></form>';
+    function renderGate() {
+      var items=gateStatus();
+      var allOk=items.every(function(item){return item.ok;});
+      var rows=items.map(function(item){return '<div class="'+(item.ok?'ok':'no')+'">'+(item.ok?'✓':'✗')+' '+escapeHtml(item.message)+'</div>';}).join('');
+      return '<div class="gate"><strong style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);">Current stage gate</strong>'+rows+(allOk?(open.currentStageIndex===openWorkflow.lifecycle.length-1?'<div class="ok">All stages complete — ready to close.</div>':'<div class="ok">All gates satisfied — can advance.</div>'):'')+'</div>';
+    }
+    function renderStageForm(sectionId,label) {
+      var section=openTemplate.sections.find(function(section){return section.id===sectionId;});
+      var stored=open.fieldValues[sectionId]||{};
+      return '<details data-section="'+escapeHtml(sectionId)+'"><summary>'+escapeHtml(section.name||sectionId)+(sectionSatisfied(sectionId)?' <span class="pill green">complete</span>':'')+'</summary><div class="inner"><div class="form-grid">'+section.fields.map(function(field){return fieldControl(field,stored[field.name]);}).join('')+'</div><div class="actions"><button type="button" data-save-section="'+escapeHtml(sectionId)+'">Save '+escapeHtml(section.name||sectionId)+'</button></div></div></details>';
+    }
+    function renderDocuments() {
+      var stage=openWorkflow.lifecycle[open.currentStageIndex];
+      var required=(stage.documentsRequired||[]);
+      if(!required.length) return '';
+      return required.map(function(entry){
+        var doc=open.documents.find(function(d){return d.documentId===entry.documentId;});
+        var body;
+        if(!doc){
+          body='<div class="actions"><button type="button" data-doc-create="'+escapeHtml(entry.documentId)+'">Open '+escapeHtml(entry.documentId)+'</button></div>';
+        }else{
+          var sigs=doc.signatureIds.map(function(signatureId){
+            var signed=doc.signatures.find(function(s){return s.signatureId===signatureId;});
+            if(signed)return '<span class="signed">✓ signed: '+escapeHtml(signed.name)+' ('+escapeHtml(signatureId)+')</span>';
+            return '<button type="button" data-doc-sign="'+escapeHtml(doc.id)+'" data-signature="'+escapeHtml(signatureId)+'">Sign '+escapeHtml(signatureId)+'</button>';
+          }).join('');
+          var status=(doc.status==='finalized'||doc.status==='completed')?'<span class="pill green">'+escapeHtml(doc.status)+'</span>':'<span class="pill muted">'+escapeHtml(doc.status)+'</span>';
+          body='<h4>'+escapeHtml(doc.documentId)+' — '+escapeHtml(doc.title)+' '+status+'</h4><label>Notes / form data<textarea data-doc-notes="'+escapeHtml(doc.id)+'" maxlength="5000">'+escapeHtml(doc.notes||'')+'</textarea></label><div class="sig-line">'+sigs+'</div><div class="actions"><button type="button" data-doc-save="'+escapeHtml(doc.id)+'">Save</button>'+(doc.status==='open'||doc.status==='saved'?'<button type="button" data-doc-finalize="'+escapeHtml(doc.id)+'">Finalize '+escapeHtml(doc.documentId)+'</button>':'')+'</div>';
+        }
+        return '<div class="doc-card"><div class="eyebrow">Controlled working document</div>'+body+'</div>';
+      }).join('');
+    }
+    function renderRegisters() {
+      if(!(open.registers||[]).length) return '';
+      var tables=open.registers.map(function(row){
+        var headers=Object.keys(row.columns||{});
+        return '<div class="register"><table><thead><tr>'+headers.map(function(header){return '<th>'+escapeHtml(header)+'</th>';}).join('')+(row.closedAt?'<th>Closed</th>':'')+'</tr></thead><tbody><tr>'+headers.map(function(header){return '<td>'+escapeHtml(row.columns[header])+'</td>';}).join('')+(row.closedAt?'<td>'+escapeHtml(new Date(row.closedAt).toLocaleString())+'</td>':'')+'</tr></tbody></table></div>';
+      }).join('');
+      return '<h3 style="margin-top:28px">Registers</h3>'+tables+'';
+    }
+    function stageControls() {
+      var stage=openWorkflow.lifecycle[open.currentStageIndex];
+      var state=open.stageStates[open.currentStageIndex];
+      if(open.status==='completed') return '<div class="notice">This record is complete. No further changes are permitted.</div>';
+      if(open.status==='cancelled') return '<div class="warn">This record was cancelled'+(open.cancelReason?' — '+escapeHtml(open.cancelReason):'')+'.</div>';
+      var html='<div class="instructions">'+escapeHtml(stage.instructions)+'<div class="req-meta"><strong>Purpose:</strong> '+escapeHtml(stage.purpose)+' · <strong>Role:</strong> '+escapeHtml(stage.role)+'</div>'+(stage.source&&stage.source.id?'<div class="req-meta">Source: '+documentLink(stage.source)+' · '+escapeHtml(stage.source.section)+'</div>':'')+'</div>';
+      html+='<div class="accordion">'+stage.sectionsRequired.map(function(sectionId){return renderStageForm(sectionId,'Required');}).join('')+'</div>';
+      html+='<div class="documents" style="margin:16px 0 0">'+(stage.evidenceRequired?'<strong>Evidence required</strong>':'')+'</div>';
+      if(stage.evidenceRequired){
+        html+='<div class="evidence-list">'+(state.evidence||[]).map(function(item){return '<div class="evidence-item"><strong>'+escapeHtml(item.actor)+'</strong> — '+escapeHtml(item.description)+(item.url?' (<a href="'+escapeHtml(item.url)+'">link</a>)':'')+'<br><span class="meta">'+escapeHtml(new Date(item.at).toLocaleString())+'</span></div>';}).join('')+'</div>';
+        if(open.status==='active'||open.status==='awaiting_approval'){
+          html+='<label style="margin-top:14px">Evidence description<textarea id="evidenceDescription" maxlength="4000" placeholder="Describe what was completed and where its record is retained. HTTPS link optional below."></textarea></label><label>Evidence URL, optional<input id="evidenceUrl" type="url" maxlength="500" placeholder="https://..."></label><div class="actions"><button type="button" id="addEvidenceBtn">Record evidence</button></div>';
+        }
       }
-      if(transaction.status==='active'&&requirement.status==='awaiting_approval'){
-        controls='<div class="instructions">'+escapeHtml(definition.instructions)+'</div><div class="req-meta"><strong>Purpose:</strong> '+escapeHtml(definition.purpose)+' · <strong>Role:</strong> '+escapeHtml(definition.role)+'</div><div class="notice">Evidence recorded. This authorization/approval stage requires a separate administrator approval; the evidence submitter cannot approve their own work.</div>'+(session.role==='admin'?'<div class="actions"><button type="button" id="approveBtn">Approve requirement</button></div>':'');
+      if(stage.approvalRequired&&state.approval){
+        html+='<div class="notice">Approved by <strong>'+escapeHtml(state.approval.actor)+'</strong> — ' + escapeHtml(state.approval.authority)+' at '+escapeHtml(new Date(state.approval.at).toLocaleString())+'</div>';
       }
-      if(transaction.status==='active'&&requirement.status==='complete'){
-        controls='<button type="button" id="advanceBtn">'+(transaction.current_requirement===transaction.workflow.requirements.length-1?'Complete transaction':'Advance to next requirement')+'</button>'+(definition.satisfied_by_intake?'<div class="notice">Satisfied by the information entered when this transaction was created.</div>':'');
+      if(stage.approvalRequired&&!state.approval&&open.status==='awaiting_approval'){
+        if(session.role==='admin'){
+          var rules=stage.approvalRules&&stage.approvalRules.length?'<label>Applicable canonical approval authority<select id="approvalRule">'+stage.approvalRules.map(function(rule){return '<option value="'+escapeHtml(rule.id)+'">'+escapeHtml(rule.action+' — '+rule.authority)+'</option>';}).join('')+'</select></label>':'';
+          html+='<div class="notice" style="margin-top:16px">Evidence recorded. This stage requires a separate administrator approval; the evidence submitter cannot approve their own stage.</div>'+rules+'<div class="actions"><button type="button" id="approveBtn">Approve stage</button></div>';
+        }else{
+          html+='<div class="notice" style="margin-top:16px">Evidence recorded. This stage now requires a separate administrator approval.</div>';
+        }
       }
-      return controls;
+      html+=renderDocuments();
+      html+=renderGate();
+      if(open.status==='active'||open.status==='awaiting_approval'){
+        var last=open.currentStageIndex===openWorkflow.lifecycle.length-1;
+        html+='<div class="actions"><button type="button" id="advanceBtn">'+(last?'Complete workflow':'Advance to next stage')+'</button><button type="button" id="cancelBtn" class="secondary">Cancel record</button></div>';
+      }
+      return html;
     }
-    function renderDetail(transaction) {
-      selected=transaction;
-      var workflow=transaction.workflow;
-      var currentIndex=Math.min(transaction.current_requirement,workflow.requirements.length-1);
-      var current=workflow.requirements[currentIndex];
-      var currentRequirement=transaction.requirements[currentIndex];
-      var sources=workflow.source||[];
-      var richSource=[].concat(workflow.source_provenance.document_id,workflow.source_provenance.source_path).concat(sources.map(function(s){return s.id+' § '+s.section;})).join(' · ');
-      var stages=workflow.requirements.map(function(definition,index){var req=transaction.requirements[index];var css=index===transaction.current_requirement&&transaction.status==='active'?' current':req.status==='complete'?' complete':'';var documents=definition.documents.length?'<div class="documents">Controlled documents: '+definition.documents.map(documentLink).join(' ')+'</div>':'';var evidence=req.evidence.map(function(item){return '<div class="documents">Evidence: '+escapeHtml(item.description)+' — '+escapeHtml(item.actor)+(item.kind==='intake'?' (from intake)':'')+'</div>';}).join('');var approval=req.approval?'<div class="documents">Approved by '+escapeHtml(req.approval.actor)+' (authority: '+escapeHtml(req.approval.authority)+') at '+escapeHtml(new Date(req.approval.at).toLocaleString())+'</div>':'';return '<div class="stage'+css+'"><div class="stage-title"><span class="stage-number">'+(index+1)+'</span><span>'+escapeHtml(definition.title)+'</span><span class="pill">'+escapeHtml(req.status.replace(/_/g,' '))+'</span></div>'+documents+evidence+approval+'</div>';}).join('');
-      document.getElementById('detail').innerHTML='<div class="panel"><div class="eyebrow">'+escapeHtml(transaction.id)+'</div><h2>'+escapeHtml(transaction.title)+'</h2><p class="section-copy"><span class="pill">'+escapeHtml(transaction.status)+'</span>'+escapeHtml(workflow.intent)+' · '+escapeHtml(workflow.domain)+'<br>Source: '+escapeHtml(richSource)+' · Version '+escapeHtml(workflow.source_provenance.source_version)+'</p>'+renderIntakeRecorded(transaction)+'<div class="stage-list">'+stages+'</div>'+(current&&currentRequirement?'<div style="margin-top:26px"><div class="eyebrow">Current requirement '+(currentIndex+1)+' of '+workflow.requirements.length+'</div><h3>'+escapeHtml(current.title)+'</h3>'+renderRequirement(currentRequirement,current,transaction)+'</div>':'')+'<h3 style="margin-top:28px">Audit history</h3><ul class="audit">'+transaction.audit.map(function(item){return '<li>'+escapeHtml(new Date(item.at).toLocaleString())+' — '+escapeHtml(item.type.replace(/_/g,' '))+' — '+escapeHtml(item.actor)+'</li>';}).join('')+'</ul></div>';
-      document.getElementById('detail').hidden=false;
+    function renderDetail() {
+      var currentStage=open.currentStage?open.currentStage:null;
+      var stages=openWorkflow.lifecycle.map(function(definition,index){
+        var state=open.stageStates[index]||{status:'incomplete',evidence:[],approval:null};
+        var css=index===open.currentStageIndex&&(open.status==='active'||open.status==='awaiting_approval')?' current':state.status==='complete'?' complete':'';
+        var docRefs=((definition.documentsRequired||[]).map(function(d){return d.documentId;})).concat(definition.referenceDocuments||[]);
+        var documents=docRefs.length?'<div class="documents">Controlled docs: '+docRefs.map(function(id){return '<span>'+escapeHtml(id)+'</span>';}).join(' ')+'</div>':'';
+        var evidence=(state.evidence||[]).map(function(item){return '<div class="documents">Evidence: '+escapeHtml(item.description)+' — '+escapeHtml(item.actor)+'</div>';}).join('');
+        var approval=state.approval?'<div class="documents">Approved by '+escapeHtml(state.approval.actor)+' (authority: '+escapeHtml(state.approval.authority)+')</div>':'';
+        return '<div class="stage'+css+'"><div class="stage-title"><span class="stage-number">'+(index+1)+'</span><span>'+escapeHtml(definition.label)+'</span>'+statusPill(state.status)+'</div>'+documents+evidence+approval+'</div>';
+      }).join('');
+      var sources=(openWorkflow.source||[]).map(function(s){return s.id;}).join(' · ');
+      var provenance='ADM-REF-002 · '+escapeHtml((open.workflow_source&&open.workflow_source.source_version)||'');
+      var activeWorkDocuments=((open.workingDocuments)||[]).map(function(id){return escapeHtml(id);}).join(', ');
+      $('detail').innerHTML='<div class="panel"><div class="eyebrow">'+escapeHtml(open.id)+'</div><h2>'+escapeHtml(open.title)+'</h2><p class="section-copy">'+statusPill(open.status)+'<span class="pill muted">'+escapeHtml(open.workflowName)+'</span><span class="badge">v'+escapeHtml(open.workflowVersion)+'</span><br>Source: '+escapeHtml(sources)+' · Version '+escapeHtml(provenance)+'</p>'+(open.legacy?'<span class="badge purple">legacy definition</span>':'')+renderRegisters()+'<div class="stage-list">'+stages+'</div>'+(currentStage?'<div style="margin-top:26px"><div class="eyebrow">Current stage '+(open.currentStageIndex+1)+' of '+openWorkflow.lifecycle.length+'</div><h3>'+escapeHtml(currentStage.label)+'</h3>'+stageControls()+'</div>':'')+'<h3 style="margin-top:28px">Audit history</h3><ul class="audit">'+(open.audit||[]).map(function(item){return '<li>'+escapeHtml(new Date(item.at).toLocaleString())+' — '+escapeHtml(item.type.replace(/_/g,' '))+' — '+escapeHtml(item.actor)+'</li>';}).join('')+'</ul><div class="actions"><button type="button" id="exportJsonBtn" class="secondary">Export JSON</button><button type="button" id="exportCsvBtn" class="secondary">Export CSV</button><button type="button" id="exportHtmlBtn" class="secondary">Export HTML</button></div></div>';
+      $('detail').hidden=false;
       bindDetailControls();
-      document.getElementById('detail').scrollIntoView({behavior:'smooth'});
+      $('detail').scrollIntoView({behavior:'smooth'});
     }
     function bindDetailControls() {
-      var evidence=document.getElementById('evidenceForm'); if(evidence)evidence.addEventListener('submit',submitEvidence);
-      var approve=document.getElementById('approveBtn'); if(approve)approve.addEventListener('click',approveRequirement);
-      var advance=document.getElementById('advanceBtn'); if(advance)advance.addEventListener('click',advanceTransaction);
+      var saveBtns=document.querySelectorAll('[data-save-section]');
+      for(var i=0;i<saveBtns.length;i++)saveBtns[i].addEventListener('click',saveSection);
+      var createBtns=document.querySelectorAll('[data-doc-create]');
+      for(var j=0;j<createBtns.length;j++)createBtns[j].addEventListener('click',documentCreate);
+      var signBtns=document.querySelectorAll('[data-doc-sign]');
+      for(var k=0;k<signBtns.length;k++)signBtns[k].addEventListener('click',documentSign);
+      var saveDocBtns=document.querySelectorAll('[data-doc-save]');
+      for(var l=0;l<saveDocBtns.length;l++)saveDocBtns[l].addEventListener('click',documentSave);
+      var finalizeBtns=document.querySelectorAll('[data-doc-finalize]');
+      for(var m=0;m<finalizeBtns.length;m++)finalizeBtns[m].addEventListener('click',documentFinalize);
+      var evidenceBtn=$('addEvidenceBtn'); if(evidenceBtn)evidenceBtn.addEventListener('click',submitEvidence);
+      var approveBtn=$('approveBtn'); if(approveBtn)approveBtn.addEventListener('click',approveStageAction);
+      var advanceBtn=$('advanceBtn'); if(advanceBtn)advanceBtn.addEventListener('click',advanceAction);
+      var cancelBtn=$('cancelBtn'); if(cancelBtn)cancelBtn.addEventListener('click',cancelAction);
+      var exportJson=$('exportJsonBtn'); if(exportJson)exportJson.addEventListener('click',function(){exportRecord('json');});
+      var exportCsv=$('exportCsvBtn'); if(exportCsv)exportCsv.addEventListener('click',function(){exportRecord('csv');});
+      var exportHtml=$('exportHtmlBtn'); if(exportHtml)exportHtml.addEventListener('click',function(){exportRecord('html');});
     }
-    async function refreshTransactions() { var data=await api('compliance-list'); transactions=data.transactions||[]; renderTransactions(); if(selected){var updated=transactions.find(function(item){return item.id===selected.id;});if(updated)renderDetail(updated);} }
-    async function submitEvidence(event) { event.preventDefault();clearMessage();try{var requirement=selected.workflow.requirements[selected.current_requirement];await api('compliance-evidence',{method:'POST',body:JSON.stringify({transaction_id:selected.id,requirement_id:requirement.id,description:document.getElementById('evidenceDescription').value,url:document.getElementById('evidenceUrl').value})});await refreshTransactions();showMessage('Evidence recorded. The gate was reevaluated.',false);}catch(error){showMessage(error.message,true);} }
-    async function approveRequirement() { clearMessage();try{var requirement=selected.workflow.requirements[selected.current_requirement];await api('compliance-approve',{method:'POST',body:JSON.stringify({transaction_id:selected.id,requirement_id:requirement.id})});await refreshTransactions();showMessage('Requirement approved.',false);}catch(error){showMessage(error.message,true);} }
-    async function advanceTransaction() { clearMessage();try{await api('compliance-advance',{method:'POST',body:JSON.stringify({transaction_id:selected.id})});await refreshTransactions();showMessage('Transaction advanced.',false);}catch(error){showMessage(error.message,true);} }
+    async function refreshList() { var data=await api('compliance-list'); transactions=data.transactions||[]; renderTransactions(); }
+    function refreshOpen(raw) { open=raw.transaction; openWorkflow=open.workflow; openTemplate=open.template; renderDetail(); }
+    async function openTransaction(id) {
+      clearMessage();
+      try { var data=await api('compliance-detail?id='+encodeURIComponent(id)); refreshOpen(data); }
+      catch(error) { showMessage(error.message,true); }
+    }
+    async function saveSection(event) {
+      clearMessage();
+      var sectionId=event.target.dataset.saveSection;
+      var details=document.querySelector('details[data-section="'+sectionId+'"]');
+      var values={};
+      details.querySelectorAll('[data-field]').forEach(function(input){values[input.dataset.field]=input.value;});
+      try { var data=await api('compliance-save',{method:'POST',body:JSON.stringify({id:open.id,section_id:sectionId,values:values})}); refreshOpen(data); showMessage(sectionId+' section saved.',false); }
+      catch(error){ showMessage(error.message,true); }
+    }
+    async function submitEvidence() {
+      clearMessage();
+      var description=$('evidenceDescription').value, url=$('evidenceUrl').value;
+      try { var data=await api('compliance-evidence',{method:'POST',body:JSON.stringify({id:open.id,description:description,url:url})}); refreshOpen(data); showMessage('Evidence recorded.',false); }
+      catch(error){ showMessage(error.message,true); }
+    }
+    async function approveStageAction() {
+      clearMessage();
+      var rule=$('approvalRule')?$('approvalRule').value:'';
+      try { var data=await api('compliance-approve',{method:'POST',body:JSON.stringify({id:open.id,approval_rule_id:rule})}); refreshOpen(data); showMessage('Stage approved.',false); }
+      catch(error){ showMessage(error.message,true); }
+    }
+    async function advanceAction() {
+      clearMessage();
+      try { var data=await api('compliance-advance',{method:'POST',body:JSON.stringify({id:open.id})}); refreshOpen(data); showMessage('Stage advanced.',false); }
+      catch(error){ showMessage(error.message,true); }
+    }
+    async function cancelAction() {
+      clearMessage();
+      var reason=window.prompt('Reason for cancelling this record?');
+      if(reason===null)return;
+      try { var data=await api('compliance-cancel',{method:'POST',body:JSON.stringify({id:open.id,reason:reason})}); refreshOpen(data); showMessage('Record cancelled.',false); }
+      catch(error){ showMessage(error.message,true); }
+      await refreshList();
+    }
+    async function documentCreate(event) {
+      clearMessage();
+      try { var data=await api('compliance-doc-create',{method:'POST',body:JSON.stringify({id:open.id,document_id:event.target.dataset.docCreate})}); refreshOpen(data); showMessage('Working document opened.',false); }
+      catch(error){ showMessage(error.message,true); }
+    }
+    async function documentSave(event) {
+      clearMessage();
+      var docId=event.target.dataset.docSave;
+      var notesInput=document.querySelector('[data-doc-notes="'+docId+'"]');
+      try { var data=await api('compliance-doc-save',{method:'POST',body:JSON.stringify({id:open.id,document_instance_id:docId,values:{notes:notesInput?notesInput.value:''}})}); refreshOpen(data); showMessage('Document saved.',false); }
+      catch(error){ showMessage(error.message,true); }
+    }
+    async function documentSign(event) {
+      clearMessage();
+      var name=window.prompt('Signing as (name):',session.name);
+      if(name===null)return;
+      try { var data=await api('compliance-doc-sign',{method:'POST',body:JSON.stringify({id:open.id,document_instance_id:event.target.dataset.docSign,signature_id:event.target.dataset.signature,name:name})}); refreshOpen(data); showMessage('Signature recorded.',false); }
+      catch(error){ showMessage(error.message,true); }
+    }
+    async function documentFinalize(event) {
+      clearMessage();
+      try { var data=await api('compliance-doc-finalize',{method:'POST',body:JSON.stringify({id:open.id,document_instance_id:event.target.dataset.docFinalize})}); refreshOpen(data); showMessage('Document finalized.',false); }
+      catch(error){ showMessage(error.message,true); }
+    }
+    function exportRecord(format) {
+      var url='/api/admin?action=compliance-export&id='+encodeURIComponent(open.id)+'&format='+encodeURIComponent(format);
+      fetch(url,{headers:apiHeaders()}).then(function(response){
+        if(!response.ok)return response.json().then(function(body){throw new Error(body.error||'Export failed.');});
+        return response.json();
+      }).then(function(data){
+        var content=format==='html'?data.html:format==='csv'?data.csv:JSON.stringify(data.detail,null,2);
+        var blob=new Blob([content],{type:format==='html'?'text/html':format==='csv'?'text/csv':'application/json'});
+        var link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download=open.id+'.'+format; document.body.appendChild(link); link.click(); link.remove();
+      }).catch(function(error){showMessage(error.message,true);});
+    }
 
-    document.getElementById('intentGrid').addEventListener('click',function(event){var button=event.target.closest('[data-workflow]');if(!button)return;var workflow=workflows.find(function(item){return item.id===button.dataset.workflow;});if(workflow)openStarter(workflow);});
-    document.getElementById('transactionList').addEventListener('click',function(event){var button=event.target.closest('[data-transaction]');if(!button)return;var transaction=transactions.find(function(item){return item.id===button.dataset.transaction;});if(transaction)renderDetail(transaction);});
-    document.getElementById('cancelCreate').addEventListener('click',function(){document.getElementById('starter').hidden=true;});
-    document.getElementById('createForm').addEventListener('submit',async function(event){event.preventDefault();clearMessage();var form=new FormData(document.getElementById('createForm'));var intake={};workflows.forEach(function(workflow){if(workflow.id===document.getElementById('workflowId').value){workflow.intake.forEach(function(field){intake[field.name]=form.get(field.name);});}});try{var data=await api('compliance-create',{method:'POST',body:JSON.stringify({workflow_id:document.getElementById('workflowId').value,intake:intake})});event.target.reset();document.getElementById('starter').hidden=true;await refreshTransactions();renderDetail(data.transaction);showMessage('Controlled transaction created.',false);}catch(error){showMessage(error.message,true);}});
-    document.getElementById('logoutBtn').addEventListener('click',function(){sessionStorage.removeItem('llr-docs-session');location.reload();});
+    $('categoryGrid').addEventListener('click',function(event){var button=event.target.closest('[data-workflow]');if(button)openStarter(button.dataset.workflow);});
+    $('transactionList').addEventListener('click',function(event){var button=event.target.closest('[data-transaction]');if(button)openTransaction(button.dataset.transaction);});
+    $('cancelCreate').addEventListener('click',function(){$('starter').hidden=true;});
+    $('createForm').addEventListener('submit',async function(event){
+      event.preventDefault();clearMessage();
+      var values={};
+      $('creationFields').querySelectorAll('[data-field]').forEach(function(input){values[input.dataset.field]=input.value;});
+      try {
+        var data=await api('compliance-create',{method:'POST',body:JSON.stringify({workflow_id:$('workflowId').value,values:values})});
+        event.target.reset();$('starter').hidden=true;
+        await refreshList();openTransaction(data.transaction.id);showMessage('Controlled record created.',false);
+      }catch(error){showMessage(error.message,true);}
+    });
+    $('logoutBtn').addEventListener('click',function(){sessionStorage.removeItem('llr-docs-session');location.reload();});
 
-    document.addEventListener('DOMContentLoaded',async function(){try{session=JSON.parse(sessionStorage.getItem('llr-docs-session')||'null');}catch(error){session=null;}if(!session||!session.token){document.getElementById('authGate').hidden=false;return;}document.getElementById('logoutBtn').hidden=false;try{var result=await Promise.all([api('compliance-workflows'),api('compliance-list')]);workflows=result[0].workflows||[];transactions=result[1].transactions||[];renderIntents();renderTransactions();document.getElementById('engine').hidden=false;}catch(error){sessionStorage.removeItem('llr-docs-session');document.getElementById('authGate').hidden=false;showMessage(error.message,true);}});
+    document.addEventListener('DOMContentLoaded',async function(){
+      try{session=JSON.parse(sessionStorage.getItem('llr-docs-session')||'null');}catch(error){session=null;}
+      if(!session||!session.token){$('authGate').hidden=false;return;}
+      $('logoutBtn').hidden=false;
+      try {
+        var result=await Promise.all([api('compliance-workflows'),api('compliance-list')]);
+        var data=result[0];
+        categories=data.categories||{};
+        workflows=data.workflows||[];
+        Object.values(categories).forEach(function(category){category.workflows.forEach(function(workflow){workflow.category=category.id;});});
+        transactions=result[1].transactions||[];
+        renderCatalog();renderTransactions();
+        $('engine').hidden=false;
+      }catch(error){sessionStorage.removeItem('llr-docs-session');$('authGate').hidden=false;showMessage(error.message,true);}
+    });
   </script>
 </body>
 </html>
