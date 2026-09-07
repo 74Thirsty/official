@@ -46,6 +46,13 @@
     .recent { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
     .record-filters { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 18px; }
     .record-filters button.active { background:var(--orange); border-color:var(--orange); }
+    .workflow-guide { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; margin:16px 0 22px; }
+    .guide-card { padding:15px; border:1px solid var(--line); border-radius:12px; background:#0d0d0d; }
+    .guide-card h3 { color:var(--orange); font-size:13px; text-transform:uppercase; letter-spacing:.06em; }
+    .guide-card p,.guide-card li { color:#d0d0d0; font-size:13px; line-height:1.55; }
+    .guide-card ul { margin:8px 0 0; padding-left:18px; }
+    .field-kind { margin-left:7px; color:var(--muted); font-size:9px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
+    .example { display:block; margin:6px 0; color:#b9b9b9; font-size:12px; font-style:italic; }
     button,.button { border:0; border-radius:10px; padding:11px 16px; background:var(--orange); color:var(--white); font:inherit; font-size:12px; font-weight:900; letter-spacing:.05em; text-transform:uppercase; cursor:pointer; }
     button:hover,.button:hover { background:var(--orange-dark); color:var(--white); }
     button:disabled { opacity:.45; cursor:not-allowed; }
@@ -130,7 +137,7 @@
       <section id="dashboardSection"><h2>Operational dashboard</h2><p class="section-copy">Resume work that needs attention or start a controlled process.</p><div class="dashboard-grid" id="dashboardGrid"></div><button type="button" id="browseWorkflows">Start new compliance workflow</button></section>
       <section id="recordsSection"><h2>Compliance records</h2><p class="section-copy">Workflow executions are separate from reusable workflow definitions.</p><div class="record-filters" id="recordFilters"></div><div class="transactions" id="transactionList"></div></section>
       <section id="catalogSection"><h2>Workflow library</h2><p class="section-copy">Definitions are predefined and deterministic. Browse a category or search the managed definitions; the complete library is never rendered as one giant card wall.</p><div class="library-toolbar"><input type="search" id="workflowSearch" placeholder="Search employee, grant, expense, volunteer, board…" autocomplete="off"><button type="button" class="secondary" id="clearWorkflowSearch">Clear</button></div><div id="recentArea" hidden><div class="eyebrow">Recently used workflows</div><div class="recent" id="recentWorkflows"></div></div><div class="category-grid" id="categoryGrid"></div><div id="workflowPanel" hidden><div class="focused-header"><div><div class="eyebrow">Focused workflow view</div><h3 id="workflowPanelTitle"></h3></div><button type="button" class="secondary" id="backToCategories">All categories</button></div><div class="workflow-results" id="workflowResults"></div></div></section>
-      <section id="starter" hidden><div class="panel"><h2 id="starterTitle">Start workflow</h2><p class="section-copy" id="starterSummary"></p><p class="section-copy" id="starterMeta"></p><form id="createForm"><input type="hidden" id="workflowId"><div class="form-grid" id="creationFields"></div><div class="actions"><button type="submit" id="startWorkflowBtn">Start workflow</button><button type="button" class="secondary" id="cancelCreate">Cancel</button></div></form></div></section>
+      <section id="starter" hidden><div class="panel"><h2 id="starterTitle">Start workflow</h2><p class="section-copy" id="starterSummary"></p><div class="workflow-guide" id="starterGuide"></div><p class="section-copy" id="starterMeta"></p><form id="createForm"><input type="hidden" id="workflowId"><div class="form-grid" id="creationFields"></div><div class="actions"><button type="submit" id="startWorkflowBtn">Start workflow</button><button type="button" class="secondary" id="cancelCreate">Cancel</button></div></form></div></section>
       <section id="detail" hidden></section>
     </div>
   </main>
@@ -165,8 +172,11 @@
     function fieldControl(field,value) {
       var required=field.required?' required':'';
       var hint=field.help?'<span class="hint">'+escapeHtml(field.help)+'</span>':'';
+      var example=field.example?'<span class="example">Example: “'+escapeHtml(field.example)+'”</span>':'';
+      var kind=field.when?'Conditional':field.required?'Required':'Optional';
       var max=field.maxlen?' maxlength="'+field.maxlen+'"':'';
-      var full=field.type==='textarea'?' class="full"':'';
+      var classes=field.type==='textarea'?'full':'';
+      var condition=field.when?' data-when-field="'+escapeHtml(field.when.field)+'" data-when-values="'+escapeHtml(JSON.stringify(field.when.in||[field.when.equals]))+'"':'';
       var val=value==null?'':escapeHtml(value);
       var control='';
       if(field.type==='textarea'){control='<textarea data-field="'+escapeHtml(field.name)+'"'+max+required+'>'+val+'</textarea>';}
@@ -174,7 +184,31 @@
       else if(field.type==='number'){control='<input type="number" step="any" data-field="'+escapeHtml(field.name)+'" value="'+val+'"'+required+'>';}
       else if(field.type==='date'||field.type==='time'){control='<input type="'+field.type+'" data-field="'+escapeHtml(field.name)+'" value="'+val+'"'+required+'>';}
       else{control='<input type="text" data-field="'+escapeHtml(field.name)+'" value="'+val+'"'+max+required+'>';}
-      return '<label'+full+'>'+escapeHtml(field.label)+hint+control+'</label>';
+      return '<label class="'+classes+'"'+condition+'>'+escapeHtml(field.label)+'<span class="field-kind">'+kind+'</span>'+hint+example+control+'</label>';
+    }
+    function listItems(items) { return '<ul>'+(items||[]).map(function(item){return '<li>'+escapeHtml(item)+'</li>';}).join('')+'</ul>'; }
+    function workflowGuide(workflow) {
+      return '<div class="guide-card"><h3>Purpose</h3><p>'+escapeHtml(workflow.purpose||workflow.summary)+'</p></div>'+
+        '<div class="guide-card"><h3>When to use</h3>'+listItems(workflow.whenToUse)+'</div>'+
+        '<div class="guide-card"><h3>Do not use when</h3>'+listItems(workflow.whenNotToUse)+'</div>'+
+        '<div class="guide-card"><h3>Before you begin</h3>'+listItems((workflow.prerequisites||[]).concat(workflow.beforeYouBegin||[]))+'</div>'+
+        '<div class="guide-card"><h3>Successful completion produces</h3>'+listItems(workflow.outputs)+'</div>'+
+        '<div class="guide-card"><h3>Completion criteria</h3>'+listItems(workflow.completionCriteria)+'</div>'+
+        '<div class="guide-card"><h3>If something is unavailable</h3>'+listItems(workflow.exceptions)+'</div>'+
+        '<div class="guide-card"><h3>After completion</h3>'+listItems(workflow.followUp)+(workflow.retention?'<p><strong>Record retention:</strong> '+escapeHtml(workflow.retention)+'</p>':'')+'</div>';
+    }
+    function applyConditionalFields(scope) {
+      (scope||document).querySelectorAll('[data-when-field]').forEach(function(wrapper){
+        var source=(wrapper.closest('.form-grid')||scope||document).querySelector('[data-field="'+CSS.escape(wrapper.dataset.whenField)+'"]');
+        var allowed=JSON.parse(wrapper.dataset.whenValues||'[]');
+        var applies=!!source&&allowed.includes(source.value);
+        wrapper.hidden=!applies;
+        wrapper.querySelectorAll('input,select,textarea').forEach(function(input){input.disabled=!applies;if(input.dataset.baseRequired==='true')input.required=applies;});
+      });
+    }
+    function bindConditionalFields(scope) {
+      (scope||document).querySelectorAll('[data-field]').forEach(function(input){input.dataset.baseRequired=input.required?'true':'false';input.addEventListener('change',function(){applyConditionalFields(scope);});});
+      applyConditionalFields(scope);
     }
     function workflowCard(workflow) {
       return '<button class="flow" type="button" data-workflow="'+escapeHtml(workflow.id)+'"><span style="color:var(--orange);font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;">'+escapeHtml(workflow.categoryName||workflow.category||'workflow').toUpperCase()+'</span><br>'+escapeHtml(workflow.name)+'<small>'+escapeHtml(workflow.summary)+'</small><span class="stage-count">'+workflow.lifecycle.length+' predefined stages</span>'+(workflow.legacy?'<span class="badge purple">adapted definition</span>':'<span class="badge green">controlled definition</span>')+'</button>';
@@ -216,8 +250,10 @@
         $('workflowId').value=workflow.id;
         $('starterTitle').textContent='Start: '+workflow.name;
         $('starterSummary').textContent=workflow.summary;
+        $('starterGuide').innerHTML=workflowGuide(workflow);
         $('starterMeta').innerHTML='Definition version <strong>'+escapeHtml(workflow.workflowVersion)+'</strong> · Source: <strong>'+escapeHtml(workflow.source_provenance.document_id)+'</strong> ('+escapeHtml(workflow.source_provenance.source_hash.slice(0,12))+'…) · Template: <strong>'+escapeHtml(template.name)+'</strong>'+(template.legacyGenerated?' <span class="badge purple">flattened legacy template</span>':' <span class="badge green">controlled template</span>');
         $('creationFields').innerHTML=creationSection.fields.map(function(field){return fieldControl(field,'');}).join('');
+        bindConditionalFields($('creationFields'));
         currentStartKey=(self.crypto&&self.crypto.randomUUID)?self.crypto.randomUUID():'start-'+Date.now()+'-'+Math.random().toString(36).slice(2);
         $('startWorkflowBtn').disabled=false;
         $('starter').hidden=false;
@@ -257,14 +293,19 @@
       var section=openTemplate.sections.find(function(section){return section.id===sectionId;});
       if(!section) return false;
       var stored=open.fieldValues[sectionId]||{};
-      for(var i=0;i<section.fields.length;i++){var field=section.fields[i];if(field.required&&(stored[field.name]==null||String(stored[field.name]).trim()===''))return false;}
+      for(var i=0;i<section.fields.length;i++){var field=section.fields[i];if(field.when){var conditionalValue=stored[field.when.field];var allowed=field.when.in||[field.when.equals];if(!allowed.includes(conditionalValue))continue;}if(field.required&&(stored[field.name]==null||String(stored[field.name]).trim()===''))return false;}
       return true;
+    }
+    function missingSectionFields(sectionId) {
+      var section=openTemplate.sections.find(function(item){return item.id===sectionId;});var stored=open.fieldValues[sectionId]||{};
+      if(!section)return ['Section definition unavailable'];
+      return section.fields.filter(function(field){if(field.when){var allowed=field.when.in||[field.when.equals];if(!allowed.includes(stored[field.when.field]))return false;}return field.required&&(stored[field.name]==null||String(stored[field.name]).trim()==='');}).map(function(field){return field.label;});
     }
     function gateStatus() {
       var stage=openWorkflow.lifecycle[open.currentStageIndex];
       var state=open.stageStates[open.currentStageIndex];
       var items=[];
-      (stage.sectionsRequired||[]).forEach(function(sectionId){items.push({ok:sectionSatisfied(sectionId),message:sectionId+' section complete'});});
+      (stage.sectionsRequired||[]).forEach(function(sectionId){var section=openTemplate.sections.find(function(item){return item.id===sectionId;});var missing=missingSectionFields(sectionId);items.push({ok:!missing.length,message:missing.length?(section?section.name:sectionId)+' missing: '+missing.join(', '):(section?section.name:sectionId)+' complete'});});
       (stage.documentsRequired||[]).forEach(function(required){var doc=open.documents.find(function(d){return d.documentId===required.documentId;});var ok=!!doc&&(doc.status==='finalized'||doc.status==='completed');items.push({ok:ok,message:required.documentId+' finalized'});});
       (stage.signaturesRequired||[]).forEach(function(signature){var doc=open.documents.find(function(d){return d.documentId===signature.documentId;});var ok=!!doc&&doc.signatures.some(function(s){return s.signatureId===signature.signatureId;});items.push({ok:ok,message:'Signature '+signature.signatureId+' on '+signature.documentId});});
       if(stage.evidenceRequired)items.push({ok:(state.evidence||[]).length>0,message:'Evidence recorded'});
@@ -280,7 +321,7 @@
     function renderStageForm(sectionId,label) {
       var section=openTemplate.sections.find(function(section){return section.id===sectionId;});
       var stored=open.fieldValues[sectionId]||{};
-      return '<details data-section="'+escapeHtml(sectionId)+'"><summary>'+escapeHtml(section.name||sectionId)+(sectionSatisfied(sectionId)?' <span class="pill green">complete</span>':'')+'</summary><div class="inner"><div class="form-grid">'+section.fields.map(function(field){return fieldControl(field,stored[field.name]);}).join('')+'</div><div class="actions"><button type="button" data-save-section="'+escapeHtml(sectionId)+'">Save '+escapeHtml(section.name||sectionId)+'</button></div></div></details>';
+      return '<details data-section="'+escapeHtml(sectionId)+'" open><summary>'+escapeHtml(section.name||sectionId)+(sectionSatisfied(sectionId)?' <span class="pill green">complete</span>':'')+'</summary><div class="inner">'+(section.description?'<p class="section-copy">'+escapeHtml(section.description)+'</p>':'')+'<div class="form-grid">'+section.fields.map(function(field){return fieldControl(field,stored[field.name]);}).join('')+'</div><div class="actions"><button type="button" data-save-section="'+escapeHtml(sectionId)+'">Save '+escapeHtml(section.name||sectionId)+'</button></div></div></details>';
     }
     function renderDocuments() {
       var stage=openWorkflow.lifecycle[open.currentStageIndex];
@@ -292,15 +333,16 @@
         if(!doc){
           body='<div class="actions"><button type="button" data-doc-create="'+escapeHtml(entry.documentId)+'">Open '+escapeHtml(entry.documentId)+'</button></div>';
         }else{
+          var definition=openTemplate.documents.find(function(item){return item.id===doc.documentId;})||{fields:[]};
           var sigs=doc.signatureIds.map(function(signatureId){
             var signed=doc.signatures.find(function(s){return s.signatureId===signatureId;});
             if(signed)return '<span class="signed">✓ signed: '+escapeHtml(signed.name)+' ('+escapeHtml(signatureId)+')</span>';
             return '<button type="button" data-doc-sign="'+escapeHtml(doc.id)+'" data-signature="'+escapeHtml(signatureId)+'">Sign '+escapeHtml(signatureId)+'</button>';
           }).join('');
           var status=(doc.status==='finalized'||doc.status==='completed')?'<span class="pill green">'+escapeHtml(doc.status)+'</span>':'<span class="pill muted">'+escapeHtml(doc.status)+'</span>';
-          body='<h4>'+escapeHtml(doc.documentId)+' — '+escapeHtml(doc.title)+' '+status+'</h4><label>Notes / form data<textarea data-doc-notes="'+escapeHtml(doc.id)+'" maxlength="5000">'+escapeHtml(doc.notes||'')+'</textarea></label><div class="sig-line">'+sigs+'</div><div class="actions"><button type="button" data-doc-save="'+escapeHtml(doc.id)+'">Save</button>'+(doc.status==='open'||doc.status==='saved'?'<button type="button" data-doc-finalize="'+escapeHtml(doc.id)+'">Finalize '+escapeHtml(doc.documentId)+'</button>':'')+'</div>';
+          body='<h4>'+escapeHtml(doc.documentId)+' — '+escapeHtml(doc.title)+' '+status+'</h4><div class="form-grid">'+(definition.fields||[]).map(function(field){return fieldControl(field,doc.fieldValues&&doc.fieldValues[field.name]);}).join('')+'</div><div class="sig-line">'+sigs+'</div><div class="actions"><button type="button" data-doc-save="'+escapeHtml(doc.id)+'">Save '+escapeHtml(doc.documentId)+'</button>'+(doc.status==='open'||doc.status==='saved'?'<button type="button" data-doc-finalize="'+escapeHtml(doc.id)+'">Finalize '+escapeHtml(doc.documentId)+'</button>':'')+'</div>';
         }
-        return '<div class="doc-card"><div class="eyebrow">Controlled working document</div>'+body+'</div>';
+        return '<div class="doc-card" data-document-instance="'+escapeHtml(doc?doc.id:'')+'"><div class="eyebrow">Required controlled document</div><p class="section-copy">'+escapeHtml(entry.note||'Complete and finalize this document as evidence for the current stage.')+'</p>'+body+'</div>';
       }).join('');
     }
     function renderRegisters() {
@@ -322,7 +364,7 @@
       if(stage.evidenceRequired){
         html+='<div class="evidence-list">'+(state.evidence||[]).map(function(item){return '<div class="evidence-item"><strong>'+escapeHtml(item.actor)+'</strong> — '+escapeHtml(item.description)+(item.url?' (<a href="'+escapeHtml(item.url)+'">link</a>)':'')+'<br><span class="meta">'+escapeHtml(new Date(item.at).toLocaleString())+'</span></div>';}).join('')+'</div>';
         if(open.status==='active'||open.status==='awaiting_approval'){
-          html+='<label style="margin-top:14px">Evidence description<textarea id="evidenceDescription" maxlength="4000" placeholder="Describe what was completed and where its record is retained. HTTPS link optional below."></textarea></label><label>Evidence URL, optional<input id="evidenceUrl" type="url" maxlength="500" placeholder="https://..."></label><div class="actions"><button type="button" id="addEvidenceBtn">Record evidence</button></div>';
+          html+='<label style="margin-top:14px">'+escapeHtml(stage.evidenceLabel||'Evidence description')+'<span class="field-kind">Required</span><span class="hint">Describe the completed action, who performed it, the result, and where the supporting record is retained. Do not enter “done” without identifying the evidence.</span><textarea id="evidenceDescription" maxlength="4000" required placeholder="Action completed, result, responsible person, and record location or reference."></textarea></label><label>Evidence URL<span class="field-kind">Optional</span><span class="hint">Link only to an authorized HTTPS record location. The description remains required.</span><input id="evidenceUrl" type="url" maxlength="500" placeholder="https://..."></label><div class="actions"><button type="button" id="addEvidenceBtn">Record evidence</button></div>';
         }
       }
       if(stage.approvalRequired&&state.approval){
@@ -358,8 +400,9 @@
       var sources=(openWorkflow.source||[]).map(function(s){return s.id;}).join(' · ');
       var provenance='ADM-REF-002 · '+escapeHtml((open.workflow_source&&open.workflow_source.source_version)||'');
       var activeWorkDocuments=((open.workingDocuments)||[]).map(function(id){return escapeHtml(id);}).join(', ');
-      $('detail').innerHTML='<div class="panel"><div class="actions" style="float:right;margin:0"><button type="button" id="backToRecords" class="secondary">Back to records</button></div><div class="eyebrow">'+escapeHtml(open.id)+'</div><h2>'+escapeHtml(open.title)+'</h2><p class="section-copy">'+statusPill(open.status)+'<span class="pill muted">'+escapeHtml(open.workflowName)+'</span><span class="badge">v'+escapeHtml(open.workflowVersion)+'</span><br>Source: '+escapeHtml(sources)+' · Version '+escapeHtml(provenance)+'</p>'+(open.legacy?'<span class="badge purple">legacy definition</span>':'')+renderRegisters()+'<div class="stage-list">'+stages+'</div>'+(currentStage?'<div style="margin-top:26px"><div class="eyebrow">Current stage '+(open.currentStageIndex+1)+' of '+openWorkflow.lifecycle.length+'</div><h3>'+escapeHtml(currentStage.label)+'</h3>'+stageControls()+'</div>':'')+'<h3 style="margin-top:28px">Audit history</h3><ul class="audit">'+(open.audit||[]).map(function(item){return '<li>'+escapeHtml(new Date(item.at).toLocaleString())+' — '+escapeHtml(item.type.replace(/_/g,' '))+' — '+escapeHtml(item.actor)+'</li>';}).join('')+'</ul><div class="actions"><button type="button" id="exportJsonBtn" class="secondary">Export JSON</button><button type="button" id="exportCsvBtn" class="secondary">Export CSV</button><button type="button" id="exportHtmlBtn" class="secondary">Export HTML</button></div></div>';
+      $('detail').innerHTML='<div class="panel"><div class="actions" style="float:right;margin:0"><button type="button" id="backToRecords" class="secondary">Back to records</button></div><div class="eyebrow">'+escapeHtml(open.id)+'</div><h2>'+escapeHtml(open.title)+'</h2><p class="section-copy">'+statusPill(open.status)+'<span class="pill muted">'+escapeHtml(open.workflowName)+'</span><span class="badge">v'+escapeHtml(open.workflowVersion)+'</span><br>Source: '+escapeHtml(sources)+' · Version '+escapeHtml(provenance)+'</p>'+(open.legacy?'<span class="badge purple">adapted definition</span>':'')+'<details><summary>Workflow purpose, preparation, and outcome</summary><div class="inner workflow-guide">'+workflowGuide(openWorkflow)+'</div></details>'+renderRegisters()+'<div class="stage-list">'+stages+'</div>'+(currentStage?'<div style="margin-top:26px"><div class="eyebrow">Current stage '+(open.currentStageIndex+1)+' of '+openWorkflow.lifecycle.length+'</div><h3>'+escapeHtml(currentStage.label)+'</h3>'+stageControls()+'</div>':'')+'<h3 style="margin-top:28px">Audit history</h3><ul class="audit">'+(open.audit||[]).map(function(item){return '<li>'+escapeHtml(new Date(item.at).toLocaleString())+' — '+escapeHtml(item.type.replace(/_/g,' '))+' — '+escapeHtml(item.actor)+'</li>';}).join('')+'</ul><div class="actions"><button type="button" id="exportJsonBtn" class="secondary">Export JSON</button><button type="button" id="exportCsvBtn" class="secondary">Export CSV</button><button type="button" id="exportHtmlBtn" class="secondary">Export HTML</button></div></div>';
       $('detail').hidden=false;
+      bindConditionalFields($('detail'));
       bindDetailControls();
       $('detail').scrollIntoView({behavior:'smooth'});
     }
@@ -395,7 +438,7 @@
       var sectionId=event.target.dataset.saveSection;
       var details=document.querySelector('details[data-section="'+sectionId+'"]');
       var values={};
-      details.querySelectorAll('[data-field]').forEach(function(input){values[input.dataset.field]=input.value;});
+      details.querySelectorAll('[data-field]:not(:disabled)').forEach(function(input){values[input.dataset.field]=input.value;});
       try { var data=await api('compliance-save',{method:'POST',body:JSON.stringify({id:open.id,section_id:sectionId,values:values})}); refreshOpen(data); showMessage(sectionId+' section saved.',false); }
       catch(error){ showMessage(error.message,true); }
     }
@@ -432,8 +475,9 @@
     async function documentSave(event) {
       clearMessage();
       var docId=event.target.dataset.docSave;
-      var notesInput=document.querySelector('[data-doc-notes="'+docId+'"]');
-      try { var data=await api('compliance-doc-save',{method:'POST',body:JSON.stringify({id:open.id,document_instance_id:docId,values:{notes:notesInput?notesInput.value:''}})}); refreshOpen(data); showMessage('Document saved.',false); }
+      var card=event.target.closest('[data-document-instance]');var values={};
+      card.querySelectorAll('[data-field]:not(:disabled)').forEach(function(input){values[input.dataset.field]=input.value;});
+      try { var data=await api('compliance-doc-save',{method:'POST',body:JSON.stringify({id:open.id,document_instance_id:docId,values:values})}); refreshOpen(data); showMessage('Document saved.',false); }
       catch(error){ showMessage(error.message,true); }
     }
     async function documentSign(event) {
@@ -475,7 +519,7 @@
     $('createForm').addEventListener('submit',async function(event){
       event.preventDefault();clearMessage();
       var values={};
-      $('creationFields').querySelectorAll('[data-field]').forEach(function(input){values[input.dataset.field]=input.value;});
+      $('creationFields').querySelectorAll('[data-field]:not(:disabled)').forEach(function(input){values[input.dataset.field]=input.value;});
       var submit=$('startWorkflowBtn');submit.disabled=true;submit.textContent='Starting…';
       try {
         var workflowId=$('workflowId').value;

@@ -165,6 +165,10 @@ Do not implement the production compliance engine in Autobiography. Do not creat
 - **Idempotent Initialization:** Every creation request carries an idempotency key. A global KV creation lock serializes list updates, and replaying the same intentional start returns the original record instead of creating a duplicate.
 - **Historical Definition Integrity:** Each new record snapshots its complete workflow and template definitions. Reopening and executing that record uses its snapshot, so later catalog changes cannot rewrite historical requirements.
 - **Scalable Discovery:** The engine home shows operational record metrics and category landing cards. Individual definitions appear only after category selection, search, or recent-workflow selection; it never renders the whole workflow library by default.
+- **Self-Guided Definitions:** Every workflow exposes purpose, use/non-use guidance, prerequisites, preparation, outputs, exceptions, completion criteria, follow-up, retention, and source provenance. Every stage identifies instructions, purpose, responsible role, evidence, documents, approvals, and source.
+- **Purpose-Built Processes:** Shared renderers and field components are reusable, but workflow fields, conditions, decisions, stages, evidence, and gates remain specific to the action. Distinct actions must not be collapsed into a universal business form.
+- **Conditional Enforcement:** Conditional fields and stages are declared in the versioned definition, rendered only when applicable, and evaluated by the server. Non-applicable requirements do not block completion; applicable requirements cannot be bypassed by hiding browser fields.
+- **Unified Record Data:** New schema-version-2 records store workflow input once in `fieldValues`. Do not restore a parallel `creationValues` model or expose persistence structure as duplicate operator input areas. Schema-version-1 records retain read compatibility.
 
 Protected by `tests/compliance-engine.test.mjs`, `tests/compliance-ui.test.mjs`, and `tests/docs-auth.test.mjs`.
 
@@ -191,6 +195,13 @@ Changes touching Mission page markup, global CSS, scroll/overflow behavior, shar
 Authoritative organizational documents remain **Markdown source** (single source of truth in the Autobiography repo). The Document Library must render that Markdown as formatted, human-readable documents. Raw Markdown must never be the normal viewing experience, and source documents must never be rewritten to compensate for presentation-layer failures. Protected by `tests/markdown-render.test.mjs`.
 
 ## Incidents
+
+### 2026-09-07 — Generic workflow guidance and duplicated initiation data
+
+- **Reported:** Workflow definitions did not consistently explain purpose, preparation, exceptions, outputs, or completion; the schema could express only required/optional fields; and initiation values were persisted in both `creationValues` and `fieldValues`.
+- **Root cause:** The first ACE schema centered template sections and stage gates but lacked first-class self-guidance, field/stage applicability, and decision-rule metadata. The compatibility-era creation model copied the same input into two stores.
+- **Correction:** Extend definitions with self-guided procedural metadata; add server-enforced conditional fields, stage applicability, and blocking decisions; establish hiring, reimbursement, incident, grant, and volunteer workflows as materially different quality gates; keep new-record values only in `fieldValues`; and surface preparation, evidence, exception, outcome, and completion guidance in the unified execution view.
+- **Regression protection:** `tests/compliance-engine.test.mjs`, `tests/compliance-ui.test.mjs`, and `WORKFLOW_SPECIFICATION_AUDIT.md`.
 
 ### 2026-09-07 — Workflow initiation routed into record lookup
 

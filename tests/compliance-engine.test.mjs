@@ -19,6 +19,7 @@ import {
   approveStage,
   advanceStage,
   createDocumentInstance,
+  saveDocumentFieldValues,
   applySignature,
   finalizeDocument,
   cancelInstance,
@@ -29,7 +30,7 @@ import {
 } from '../lib/compliance-engine.js';
 
 const REFERENCE_WORKFLOW_COUNT = 6;
-const LEGACY_WORKFLOW_COUNT = 23;
+const LEGACY_WORKFLOW_COUNT = 24;
 
 function startWorkflow(workflowId, values) {
   const workflow = getWorkflow(workflowId);
@@ -50,6 +51,19 @@ function fillSection(instance, workflow, sectionId, actor = 'operator') {
     else values[field.name] = 'Test value';
   }
   return saveFieldValues(instance, workflow, sectionId, values, actor);
+}
+
+function fillDocument(instance, document, actor = 'operator') {
+  const definition = instance.templateDefinition.documents.find((item) => item.id === document.documentId);
+  const values = {};
+  for (const field of definition.fields || []) {
+    if (field.type === 'select') values[field.name] = field.options[0];
+    else if (field.type === 'number') values[field.name] = '1';
+    else if (field.type === 'date') values[field.name] = '2026-09-05';
+    else if (field.type === 'time') values[field.name] = '12:00';
+    else values[field.name] = 'Test value';
+  }
+  return saveDocumentFieldValues(instance, document.id, values, actor);
 }
 
 function completeWorkflow(workflowId, creationValues, options = {}) {
@@ -74,6 +88,7 @@ function completeWorkflow(workflowId, creationValues, options = {}) {
       }
       const document = findDocumentInstance(instance, required.documentId);
       if (document.status !== 'finalized') {
+        instance = fillDocument(instance, document);
         for (const signatureId of document.signatureIds) {
           const actor = `signer-${signatureId}`;
           instance = applySignature(instance, document.id, signatureId, actor, actor);
@@ -132,11 +147,11 @@ test('member, volunteer, and employee workflows share the onboarding master temp
   }
 });
 
-test('legacy workflows are adapted into ACE definitions, superseded ones excluded', () => {
+test('legacy workflows are adapted into ACE definitions while only true duplicates are excluded', () => {
   const legacy = WORKFLOWS.filter((workflow) => workflow.legacy);
   assert.equal(legacy.length, LEGACY_WORKFLOW_COUNT);
   assert.equal(getWorkflow('report-incident').legacy, true);
-  assert.equal(getWorkflow('hire-employee'), null);
+  assert.ok(getWorkflow('hire-employee'));
   assert.equal(getWorkflow('administer-grant').category, 'grants');
   const incident = legacy.find((workflow) => workflow.id === 'report-incident');
   assert.ok(incident.lifecycle[0].satisfiedByIntake);
@@ -155,6 +170,58 @@ test('workflow categories form the hierarchical catalog', () => {
   assert.equal(categories.assets.parent, 'Organizational Operations');
   const allIds = Object.values(categories).flatMap((category) => category.workflows.map((workflow) => workflow.id));
   assert.equal(new Set(allIds).size, WORKFLOWS.length);
+});
+
+test('every workflow exposes a self-guided, source-traceable operational specification', () => {
+  assert.ok(WORKFLOWS.length >= 29);
+  for (const workflow of WORKFLOWS) {
+    assert.ok(workflow.purpose, `${workflow.id}: purpose`);
+    for (const property of ['whenToUse', 'whenNotToUse', 'prerequisites', 'beforeYouBegin', 'outputs', 'exceptions', 'followUp', 'completionCriteria']) {
+      assert.ok(Array.isArray(workflow[property]) && workflow[property].length, `${workflow.id}: ${property}`);
+    }
+    assert.ok(workflow.retention, `${workflow.id}: retention`);
+    assert.ok(workflow.source.length, `${workflow.id}: canonical source`);
+    for (const stage of workflow.lifecycle) {
+      assert.ok(stage.label && stage.instructions && stage.purpose && stage.role, `${workflow.id}/${stage.id}: guided stage`);
+      assert.ok(stage.source?.id, `${workflow.id}/${stage.id}: source`);
+    }
+  }
+});
+
+test('the five reference-quality workflows have action-specific data and conditional requirements', () => {
+  const expectedFields = {
+    'hire-employee': ['candidate_contact', 'employment_classification', 'proposed_compensation', 'funding_confirmed'],
+    'request-reimbursement': ['expense_category', 'vendor', 'allocation_reference', 'grant_funded', 'restricted_fund_reference'],
+    'report-incident': ['medical_response_required', 'medical_response_details', 'law_enforcement_contacted', 'law_enforcement_details'],
+    'pursue-grant': ['eligible', 'match_required', 'match_requirement', 'award_status', 'award_restrictions'],
+    'onboard-volunteer': ['role_interests', 'screening_consent', 'driving_required', 'driver_license_reference'],
+  };
+  for (const [workflowId, names] of Object.entries(expectedFields)) {
+    const workflow = getWorkflow(workflowId);
+    assert.ok(workflow, `${workflowId} must be independently selectable`);
+    const template = getTemplate(workflow.templateId);
+    const actual = new Set(template.sections.flatMap((section) => section.fields.map((field) => field.name)));
+    names.forEach((name) => assert.ok(actual.has(name), `${workflowId}: ${name}`));
+  }
+});
+
+test('conditional fields are required only when their workflow-specific condition applies', () => {
+  const workflow = getWorkflow('request-reimbursement');
+  const template = getTemplate(workflow.templateId);
+  const base = legacyCreationValues(workflow);
+  base.grant_funded = 'No';
+  delete base.restricted_fund_reference;
+  assert.deepEqual(validateFieldValues(template, 'intake', base).errors, []);
+  base.grant_funded = 'Yes';
+  assert.match(validateFieldValues(template, 'intake', base).errors.join(' '), /Grant \/ restricted-fund reference is required/);
+});
+
+test('new records keep initiation data in one authoritative field-value store', () => {
+  const workflow = getWorkflow('performance-review');
+  const instance = createInstance(workflow, legacyCreationValues(workflow), 'operator', new Set());
+  assert.equal(instance.schemaVersion, 2);
+  assert.equal(Object.hasOwn(instance, 'creationValues'), false);
+  assert.ok(instance.fieldValues.intake.employee_name);
 });
 
 test('workflows retain ADM-REF-002 provenance versioned against the unchanged canonical source', async () => {
@@ -219,6 +286,7 @@ test('public templates expose controlled sections, fields, and signature definit
   assert.ok(sectionA.fields.some((field) => field.name === 'full_name'));
   const signatures = template.documents.flatMap((document) => document.signatureDefinitions);
   assert.ok(signatures.some((signature) => signature.documentId === 'VOL-FORM-001' && signature.id === 'applicant'));
+  assert.ok(template.documents.find((document) => document.id === 'VOL-FORM-001').fields.some((field) => field.name === 'applicant_name'));
 });
 
 test('intake validation rejects incomplete submissions and normalizes values', () => {
@@ -227,14 +295,18 @@ test('intake validation rejects incomplete submissions and normalizes values', (
   const section = template.sections.find((item) => item.id === 'intake');
   const empty = validateFieldValues(template, 'intake', {});
   assert.ok(empty.errors);
-  assert.equal(empty.errors.length, section.fields.filter((field) => field.required).length);
+  assert.equal(empty.errors.length, section.fields.filter((field) => field.required && !field.when).length);
   const fields = Object.fromEntries(section.fields.map((field) => [field.name, field.type]));
   const good = validateFieldValues(template, 'intake', {
     reimbursement_title: 'Staff meeting coffee',
     requester: 'Jane Doe',
     expense_date: '2026-09-05',
+    expense_category: 'Supplies',
+    vendor: 'Local vendor',
     amount: '42.50',
     business_purpose: 'Refreshments for the coordination meeting.',
+    allocation_reference: 'General operations',
+    grant_funded: 'No',
     receipt_available: 'Yes',
   });
   assert.equal(good.errors.length, 0);
@@ -279,6 +351,7 @@ test('approval gates require evidence, a canonical rule, and prohibit self-appro
   current = fillSection(current, workflow, 'budget');
   current = createDocumentInstance(current, workflow, 'GRT-FORM-002', 'operator');
   const document = findDocumentInstance(current, 'GRT-FORM-002');
+  current = fillDocument(current, document);
   current = applySignature(current, document.id, 'grant-officer', 'signer-A', 'Signer A');
   current = applySignature(current, document.id, 'finance-director', 'signer-B', 'Signer B');
   current = finalizeDocument(current, document.id, 'operator');
@@ -316,6 +389,8 @@ test('a stage requiring a signed document cannot advance until it is finalized',
   current = fillSection(current, workflow, 'risk');
   current = createDocumentInstance(current, workflow, 'EVT-AUTH-001', 'operator');
   const document = findDocumentInstance(current, 'EVT-AUTH-001');
+  assert.throws(() => finalizeDocument(current, document.id, 'operator'), /required fields are complete/);
+  current = fillDocument(current, document);
   assert.throws(() => finalizeDocument(current, document.id, 'operator'), /cannot be finalized until signed/);
   assert.throws(() => advanceStage(current, workflow, 'operator'), /EVT-AUTH-001/);
   current = applySignature(current, document.id, 'events-director', 'signer-ED', 'Events Director');
@@ -369,6 +444,20 @@ test('all reference and legacy workflows complete through the gated engine', () 
   }
 });
 
+test('grant decision branching skips award-only stages when no award exists', () => {
+  const completed = completeWorkflow('pursue-grant', {
+    grant_name: 'Decision branch test',
+    funder: 'Test funder',
+    date_identified: '2026-09-05',
+    application_deadline: '2026-12-01',
+  });
+  const workflow = getWorkflow('pursue-grant');
+  for (const id of ['award-setup', 'spend-track', 'reporting']) {
+    const index = workflow.lifecycle.findIndex((stage) => stage.id === id);
+    assert.equal(completed.stageStates[index].status, 'not_applicable', id);
+  }
+});
+
 function legacyCreationValues(workflow) {
   const template = getTemplate(workflow.templateId);
   const intake = template.sections.find((section) => section.id === 'intake');
@@ -396,6 +485,9 @@ test('an incident instance auto-registers the controlled row and closes it at cl
     what_happened: 'Rider fell on loose gravel.',
     witnesses: 'Two other riders',
     injuries_damage: 'Minor abrasions',
+    medical_response_required: 'No',
+    law_enforcement_contacted: 'No',
+    immediate_actions: 'First aid provided and supervisor notified.',
     reported_by: 'Trail lead',
   });
   assert.equal(instance.stageStates[0].status, 'complete');
@@ -403,6 +495,8 @@ test('an incident instance auto-registers the controlled row and closes it at cl
   assert.equal(instance.registers.length, 1);
   assert.equal(instance.registers[0].registerId, 'SAF-REG-001');
   assert.equal(instance.registers[0].columns['Incident #'], instance.id);
+  assert.equal(instance.registers[0].columns.Date, '2026-09-05');
+  assert.equal(instance.registers[0].columns['Event/Activity'], 'EVT-2026-012');
   assert.equal(instance.registers[0].columns['Status (Open/Closed)'], 'Open');
   const completed = completeWorkflow('report-incident', {
     incident_title: 'Summit mishap',
@@ -415,6 +509,9 @@ test('an incident instance auto-registers the controlled row and closes it at cl
     what_happened: 'Rider fell on loose gravel.',
     witnesses: 'Two other riders',
     injuries_damage: 'Minor abrasions',
+    medical_response_required: 'No',
+    law_enforcement_contacted: 'No',
+    immediate_actions: 'First aid provided and supervisor notified.',
     reported_by: 'Trail lead',
   });
   assert.equal(completed.status, 'completed');

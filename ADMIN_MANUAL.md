@@ -77,12 +77,13 @@ The Compliance Engine is separate from the Document Library. The Library answers
 2. Open `compliance.html`.
 3. Use workflow search or choose one of the category landing cards. The engine does not render every workflow on the home screen.
 4. Select a workflow, enter its required initialization fields, and press **Start workflow**. This creates one new compliance record; it does not require an existing record.
-5. The new record opens immediately with its record ID, workflow/version snapshot, status, current stage, progress, required information, controlled documents, evidence, approvals, and audit history.
-6. Save required sections and record a clear evidence description with an optional HTTPS record link.
-7. If the canonical stage is an authorization or approval stage, a different person must approve it. Approval actions require the administrator session.
-8. Advance only after the current gate reports complete. The server rejects skipped or incomplete stages.
-9. Return through **Requires action**, **In progress**, **Awaiting approval**, **Completed**, **Cancelled**, **Archived**, or **All records**. Record URLs retain `#record=<record-id>` so an ordinary refresh reopens the same record.
-10. Continue until closeout. Every evidence, approval, and transition action appears in the transaction audit history and the central audit log.
+5. Read the workflow’s **Purpose**, **When to use**, **Do not use when**, **Before you begin**, **Completion criteria**, **Successful completion produces**, and exception guidance. Fields are marked Required, Conditional, or Optional.
+6. The new record opens immediately with its record ID, workflow/version snapshot, status, current stage, progress, required information, controlled documents, evidence, approvals, and audit history. Conditional fields appear only when the controlling answer makes them applicable.
+7. Save the current procedural section and record evidence that identifies the completed action, result, responsible person, and retained record. An authorized HTTPS link is optional.
+8. If the canonical stage is an authorization or approval stage, a different person must approve it. Approval actions require the administrator session.
+9. Advance only after the current gate reports complete. The server lists the specific missing field, document, signature, evidence, decision, or approval instead of permitting an incomplete transition.
+10. Return through **Requires action**, **In progress**, **Awaiting approval**, **Completed**, **Cancelled**, **Archived**, or **All records**. Record URLs retain `#record=<record-id>` so an ordinary refresh reopens the same record.
+11. Continue until closeout. Every evidence, approval, non-applicable branch, and transition appears in the transaction audit history and the central audit log.
 
 The engine stores operational records under `llr:compliance-transactions`. It does not copy or alter canonical documents. Each record snapshots the exact workflow and template used at creation and retains canonical source provenance. Creation uses a one-time idempotency key and serialized KV update so double-clicks and request retries reopen the original record instead of creating duplicates.
 

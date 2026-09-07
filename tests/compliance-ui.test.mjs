@@ -67,12 +67,26 @@ test('Compliance Engine renders controlled template sections and works from a ma
   assert.match(page, /compliance-doc-sign/);
   assert.match(page, /compliance-doc-finalize/);
   assert.match(page, /compliance-export/);
-  assert.match(page, /Controlled working document/);
+  assert.match(page, /Required controlled document/);
+  assert.match(page, /definition\.fields/);
+  assert.doesNotMatch(page, /Notes \/ form data/);
   assert.match(page, /controlled template/);
   assert.match(page, /flattened legacy template/);
 });
 
 test('Compliance Engine lists legacy records as read-only migrations', () => {
   assert.match(page, /legacy \u00b7 read-only/);
-  assert.match(page, /legacy definition/);
+  assert.match(page, /adapted definition/);
+});
+
+test('workflow execution is self-guided, conditional, and procedurally unified', () => {
+  assert.match(page, /When to use/);
+  assert.match(page, /Before you begin/);
+  assert.match(page, /Completion criteria/);
+  assert.match(page, /Successful completion produces/);
+  assert.match(page, /If something is unavailable/);
+  assert.match(page, /data-when-field/);
+  assert.match(page, /applyConditionalFields/);
+  assert.match(page, /\[data-field\]:not\(:disabled\)/);
+  assert.match(page, /field-kind/);
 });
