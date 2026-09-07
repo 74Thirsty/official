@@ -28,11 +28,24 @@
     h2 { margin:0 0 8px; font-size:28px; text-transform:uppercase; letter-spacing:-.02em; }
     h3 { margin:0 0 8px; font-size:19px; }
     .section-copy { margin:0 0 22px; color:var(--muted); }
+    .dashboard-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin:0 0 22px; }
+    .metric { padding:18px; border:1px solid var(--line); border-radius:14px; background:var(--card); text-align:left; }
+    .metric strong { display:block; color:var(--white); font-size:30px; line-height:1; margin-bottom:7px; }
+    .metric span { color:var(--muted); font-size:11px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
+    .metric:hover { border-color:rgba(255,106,0,.55); }
+    .library-toolbar { display:grid; grid-template-columns:minmax(220px,1fr) auto; gap:12px; margin:18px 0; }
+    .library-toolbar input { margin:0; }
     .category-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; }
-    .category { padding:16px; border:1px solid var(--line); border-radius:14px; background:var(--card); }
+    .category { padding:20px; border:1px solid var(--line); border-radius:14px; background:var(--card); text-align:left; text-transform:none; letter-spacing:0; }
     .category h3 { margin:0 0 4px; }
     .category p { margin:0 0 12px; color:var(--muted); font-size:13px; }
-    .category .flows { display:grid; gap:8px; }
+    .category:hover { border-color:var(--orange); background:#1b1714; }
+    .category-count { color:var(--orange); font-size:12px; font-weight:900; }
+    .workflow-results { display:grid; gap:9px; }
+    .focused-header { display:flex; justify-content:space-between; gap:12px; align-items:center; margin:22px 0 14px; }
+    .recent { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+    .record-filters { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 18px; }
+    .record-filters button.active { background:var(--orange); border-color:var(--orange); }
     button,.button { border:0; border-radius:10px; padding:11px 16px; background:var(--orange); color:var(--white); font:inherit; font-size:12px; font-weight:900; letter-spacing:.05em; text-transform:uppercase; cursor:pointer; }
     button:hover,.button:hover { background:var(--orange-dark); color:var(--white); }
     button:disabled { opacity:.45; cursor:not-allowed; }
@@ -101,7 +114,7 @@
     .evidence-item { padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#0c0c0c; color:#cfcfcf; font-size:13px; margin-top:8px; line-height:1.5; }
     [hidden] { display:none!important; }
     footer { padding:30px 6vw; border-top:1px solid var(--line); color:#666; text-align:center; font-size:12px; }
-    @media(max-width:680px) { .wrap{width:min(92vw,1180px)} .nav{padding:10px 4vw}.brand span{display:none}.form-grid{grid-template-columns:1fr}.recorded{grid-template-columns:1fr}.transaction{grid-template-columns:1fr}.full{grid-column:auto} }
+    @media(max-width:680px) { .wrap{width:min(92vw,1180px)} .nav{padding:10px 4vw}.brand span{display:none}.form-grid,.library-toolbar{grid-template-columns:1fr}.recorded{grid-template-columns:1fr}.transaction{grid-template-columns:1fr}.full{grid-column:auto} }
   </style>
 </head>
 <body>
@@ -114,9 +127,10 @@
     <div id="message" hidden></div>
     <section id="authGate" hidden><div class="panel"><h2>Authentication required</h2><p class="section-copy">Compliance records contain internal operational information. Sign in through the Document Library, then return here.</p><a class="button" href="documentation.html#internal-gate">Sign in</a></div></section>
     <div id="engine" hidden>
-      <section id="catalogSection"><h2>Workflow catalog</h2><p class="section-copy">Definitions are predefined and deterministic — the engine never invents a workflow, section, or approval at runtime.</p><div class="category-grid" id="categoryGrid"></div></section>
-      <section id="starter" hidden><div class="panel"><h2 id="starterTitle">Start workflow</h2><p class="section-copy" id="starterSummary"></p><p class="section-copy" id="starterMeta"></p><form id="createForm"><input type="hidden" id="workflowId"><div class="form-grid" id="creationFields"></div><div class="actions"><button type="submit">Create controlled record</button><button type="button" class="secondary" id="cancelCreate">Cancel</button></div></form></div></section>
-      <section><h2>Compliance records</h2><p class="section-copy">Active, awaiting-approval, completed, cancelled, and legacy records.</p><div class="transactions" id="transactionList"></div></section>
+      <section id="dashboardSection"><h2>Operational dashboard</h2><p class="section-copy">Resume work that needs attention or start a controlled process.</p><div class="dashboard-grid" id="dashboardGrid"></div><button type="button" id="browseWorkflows">Start new compliance workflow</button></section>
+      <section id="recordsSection"><h2>Compliance records</h2><p class="section-copy">Workflow executions are separate from reusable workflow definitions.</p><div class="record-filters" id="recordFilters"></div><div class="transactions" id="transactionList"></div></section>
+      <section id="catalogSection"><h2>Workflow library</h2><p class="section-copy">Definitions are predefined and deterministic. Browse a category or search the managed definitions; the complete library is never rendered as one giant card wall.</p><div class="library-toolbar"><input type="search" id="workflowSearch" placeholder="Search employee, grant, expense, volunteer, board…" autocomplete="off"><button type="button" class="secondary" id="clearWorkflowSearch">Clear</button></div><div id="recentArea" hidden><div class="eyebrow">Recently used workflows</div><div class="recent" id="recentWorkflows"></div></div><div class="category-grid" id="categoryGrid"></div><div id="workflowPanel" hidden><div class="focused-header"><div><div class="eyebrow">Focused workflow view</div><h3 id="workflowPanelTitle"></h3></div><button type="button" class="secondary" id="backToCategories">All categories</button></div><div class="workflow-results" id="workflowResults"></div></div></section>
+      <section id="starter" hidden><div class="panel"><h2 id="starterTitle">Start workflow</h2><p class="section-copy" id="starterSummary"></p><p class="section-copy" id="starterMeta"></p><form id="createForm"><input type="hidden" id="workflowId"><div class="form-grid" id="creationFields"></div><div class="actions"><button type="submit" id="startWorkflowBtn">Start workflow</button><button type="button" class="secondary" id="cancelCreate">Cancel</button></div></form></div></section>
       <section id="detail" hidden></section>
     </div>
   </main>
@@ -129,13 +143,15 @@
     var open = null;
     var openWorkflow = null;
     var openTemplate = null;
+    var recordFilter = 'attention';
+    var currentStartKey = '';
 
     function $(id) { return document.getElementById(id); }
     function escapeHtml(value) { return String(value == null ? '' : value).replace(/[&<>"']/g,function(char){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char];}); }
     function apiHeaders() { return {'Content-Type':'application/json','Authorization':'Bearer '+session.token}; }
     function showMessage(text,error) { var el=$('message'); el.className=error?'error':'notice'; el.textContent=text; el.hidden=false; window.scrollTo({top:0,behavior:'smooth'}); }
     function clearMessage() { $('message').hidden=true; }
-    async function api(action,options) { var response=await fetch('/api/admin?action='+encodeURIComponent(action),Object.assign({headers:apiHeaders()},options||{})); var body=await response.json(); if(!response.ok) throw new Error(body.error||'Request failed.'); return body; }
+    async function api(action,options,query) { var params=new URLSearchParams({action:action});Object.keys(query||{}).forEach(function(key){params.set(key,query[key]);});var response=await fetch('/api/admin?'+params.toString(),Object.assign({headers:apiHeaders()},options||{}));var body=await response.json();if(!response.ok)throw new Error(body.error||'Request failed.');return body; }
     function documentLink(entry) { return entry.document_code ? '<a href="documentation-viewer.html?code='+encodeURIComponent(entry.document_code)+'">'+escapeHtml(entry.document_id)+'</a>' : '<span title="Unresolved canonical document" style="color:#f87171;">'+escapeHtml(entry.document_id)+'</span>'; }
     function statusPill(status) {
       var classes='pill';
@@ -143,7 +159,8 @@
       else if(status==='awaiting_approval') classes='pill';
       else if(status==='cancelled'||status==='archived') classes='pill red';
       else classes='pill muted';
-      return '<span class="'+classes+'">'+escapeHtml(String(status||'unknown').replace(/_/g,' '))+'</span>';
+      var label=status==='active'?'in progress':String(status||'unknown').replace(/_/g,' ');
+      return '<span class="'+classes+'">'+escapeHtml(label)+'</span>';
     }
     function fieldControl(field,value) {
       var required=field.required?' required':'';
@@ -159,18 +176,41 @@
       else{control='<input type="text" data-field="'+escapeHtml(field.name)+'" value="'+val+'"'+max+required+'>';}
       return '<label'+full+'>'+escapeHtml(field.label)+hint+control+'</label>';
     }
+    function workflowCard(workflow) {
+      return '<button class="flow" type="button" data-workflow="'+escapeHtml(workflow.id)+'"><span style="color:var(--orange);font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;">'+escapeHtml(workflow.categoryName||workflow.category||'workflow').toUpperCase()+'</span><br>'+escapeHtml(workflow.name)+'<small>'+escapeHtml(workflow.summary)+'</small><span class="stage-count">'+workflow.lifecycle.length+' predefined stages</span>'+(workflow.legacy?'<span class="badge purple">adapted definition</span>':'<span class="badge green">controlled definition</span>')+'</button>';
+    }
     function renderCatalog() {
-      $('categoryGrid').innerHTML=Object.keys(categories).map(function(key){
-        var category=categories[key];
-        return '<div class="category"><h3>'+escapeHtml(category.name)+'</h3><p>'+escapeHtml(category.description||'')+'</p><div class="flows">'+category.workflows.map(function(workflow){
-          return '<button class="flow" type="button" data-workflow="'+escapeHtml(workflow.id)+'"><span style="color:var(--orange);font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;">'+escapeHtml(workflow.category+'').toUpperCase()+'</span><br>'+escapeHtml(workflow.name)+'<small>'+escapeHtml(workflow.summary)+'</small><span class="stage-count">'+workflow.lifecycle.length+' predefined stages</span>'+(workflow.legacy?'<span class="badge purple">legacy definition</span>':'<span class="badge green">reference workflow</span>')+'</button>';
-        }).join('')+'</div></div>';
-      }).join('');
+      $('categoryGrid').innerHTML=Object.keys(categories).map(function(key){var category=categories[key];return '<button class="category" type="button" data-category="'+escapeHtml(key)+'"><h3>'+escapeHtml(category.name)+'</h3><p>'+escapeHtml(category.description||'')+'</p><span class="category-count">'+category.workflows.length+' workflows</span></button>';}).join('');
+      renderRecent();
+    }
+    function showWorkflowResults(items,title) {
+      $('workflowPanelTitle').textContent=title;
+      $('workflowResults').innerHTML=items.length?items.map(workflowCard).join(''):'<div class="notice">No workflows match this search. No definition was invented.</div>';
+      $('workflowPanel').hidden=false;
+      $('categoryGrid').hidden=true;
+    }
+    function showCategories() {
+      $('workflowSearch').value='';
+      $('workflowPanel').hidden=true;
+      $('categoryGrid').hidden=false;
+    }
+    function recentIds() {
+      try{return JSON.parse(localStorage.getItem('llr-compliance-recent')||'[]');}catch(error){return [];}
+    }
+    function rememberWorkflow(id) {
+      var ids=[id].concat(recentIds().filter(function(item){return item!==id;})).slice(0,5);
+      localStorage.setItem('llr-compliance-recent',JSON.stringify(ids));
+      renderRecent();
+    }
+    function renderRecent() {
+      var recent=recentIds().map(function(id){return workflows.find(function(workflow){return workflow.id===id;});}).filter(Boolean);
+      $('recentArea').hidden=!recent.length;
+      $('recentWorkflows').innerHTML=recent.map(function(workflow){return '<button type="button" class="secondary" data-workflow="'+escapeHtml(workflow.id)+'">'+escapeHtml(workflow.name)+'</button>';}).join('');
     }
     async function openStarter(workflowId) {
       clearMessage();
       try {
-        var data=await api('compliance-start?workflow_id='+encodeURIComponent(workflowId));
+        var data=await api('compliance-start',null,{workflow_id:workflowId});
         var workflow=data.workflow, template=data.template;
         var creationSection=template.sections.find(function(section){return section.id===workflow.creationSection;});
         $('workflowId').value=workflow.id;
@@ -178,6 +218,8 @@
         $('starterSummary').textContent=workflow.summary;
         $('starterMeta').innerHTML='Definition version <strong>'+escapeHtml(workflow.workflowVersion)+'</strong> · Source: <strong>'+escapeHtml(workflow.source_provenance.document_id)+'</strong> ('+escapeHtml(workflow.source_provenance.source_hash.slice(0,12))+'…) · Template: <strong>'+escapeHtml(template.name)+'</strong>'+(template.legacyGenerated?' <span class="badge purple">flattened legacy template</span>':' <span class="badge green">controlled template</span>');
         $('creationFields').innerHTML=creationSection.fields.map(function(field){return fieldControl(field,'');}).join('');
+        currentStartKey=(self.crypto&&self.crypto.randomUUID)?self.crypto.randomUUID():'start-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+        $('startWorkflowBtn').disabled=false;
         $('starter').hidden=false;
         var first=$('creationFields').querySelector('input,select,textarea'); if(first) first.focus();
         $('starter').scrollIntoView({behavior:'smooth'});
@@ -185,14 +227,31 @@
     }
     function renderTransactions() {
       var host=$('transactionList');
-      if(!transactions.length){host.innerHTML='<div class="notice">No compliance records yet. Choose a workflow from the catalog above to begin.</div>';return;}
-      host.innerHTML=transactions.map(function(transaction){
+      var visible=transactions.filter(function(transaction){
+        var status=transaction.legacyRecord?'migrated':transaction.status;
+        if(recordFilter==='all')return true;
+        if(recordFilter==='attention')return status==='active'||status==='awaiting_approval';
+        if(recordFilter==='draft')return status==='active'&&transaction.progress&&transaction.progress.completed===0;
+        return status===recordFilter;
+      });
+      if(!visible.length){host.innerHTML='<div class="notice">No records in this view.</div>';return;}
+      host.innerHTML=visible.map(function(transaction){
         var percent=Math.round((transaction.progress?transaction.progress.completed:0)/(transaction.progress&&transaction.progress.total?transaction.progress.total:1)*100);
         var title=transaction.legacyRecord?(transaction.incident_title||transaction.grant_title||transaction.title||'Legacy record'):transaction.title;
         var workflowName=transaction.legacyRecord?(transaction.workflow_id||'legacy'):(transaction.workflow?transaction.workflow.name:transaction.workflowName||transaction.workflowId);
         var openBtn=transaction.legacyRecord?'<span class="pill purple">legacy · read-only</span>':'<button type="button" data-transaction="'+escapeHtml(transaction.id)+'">Open</button>';
-        return '<article class="transaction"><div><h3>'+escapeHtml(title)+'</h3><div class="meta">'+statusPill(transaction.legacyRecord?'migrated':transaction.status)+'<span class="pill muted">'+escapeHtml(workflowName)+'</span>'+escapeHtml(transaction.id||'')+(transaction.created_by?' · Created by <strong>'+escapeHtml(transaction.created_by)+'</strong>':'')+(transaction.created_at?' · '+escapeHtml(new Date(transaction.created_at).toLocaleDateString()):'')+'</div>'+(transaction.progress?'<div class="progress" aria-label="'+percent+' percent"><span style="width:'+percent+'%"></span></div><div class="meta">'+transaction.progress.completed+' of '+transaction.progress.total+' stages complete</div>':'')+'</div>'+openBtn+'</article>';
+        var createdBy=transaction.createdBy||transaction.created_by||'';var createdAt=transaction.createdAt||transaction.created_at||'';
+        return '<article class="transaction"><div><h3>'+escapeHtml(title)+'</h3><div class="meta">'+statusPill(transaction.legacyRecord?'migrated':transaction.status)+'<span class="pill muted">'+escapeHtml(workflowName)+'</span>'+escapeHtml(transaction.id||'')+(createdBy?' · Created by <strong>'+escapeHtml(createdBy)+'</strong>':'')+(createdAt?' · '+escapeHtml(new Date(createdAt).toLocaleDateString()):'')+'</div>'+(transaction.progress?'<div class="progress" aria-label="'+percent+' percent"><span style="width:'+percent+'%"></span></div><div class="meta">'+transaction.progress.completed+' of '+transaction.progress.total+' stages complete</div>':'')+'</div>'+openBtn+'</article>';
       }).join('');
+    }
+    function countRecords(filter) { var previous=recordFilter;recordFilter=filter;var count=transactions.filter(function(transaction){var status=transaction.legacyRecord?'migrated':transaction.status;if(filter==='all')return true;if(filter==='attention')return status==='active'||status==='awaiting_approval';if(filter==='draft')return status==='active'&&transaction.progress&&transaction.progress.completed===0;return status===filter;}).length;recordFilter=previous;return count; }
+    function renderDashboard() {
+      var month=new Date().toISOString().slice(0,7);
+      var completedMonth=transactions.filter(function(item){return item.status==='completed'&&String(item.completedAt||'').slice(0,7)===month;}).length;
+      var metrics=[['active','In progress',countRecords('active')],['attention','Require action',countRecords('attention')],['awaiting_approval','Awaiting approval',countRecords('awaiting_approval')],['draft','Draft / incomplete',countRecords('draft')],['completed','Completed',countRecords('completed')]];
+      $('dashboardGrid').innerHTML=metrics.map(function(metric){return '<button type="button" class="metric" data-record-filter="'+metric[0]+'"><strong>'+metric[2]+'</strong><span>'+metric[1]+'</span></button>';}).join('')+'<div class="metric"><strong>'+completedMonth+'</strong><span>Completed this month</span></div>';
+      var filters=[['attention','Requires action'],['active','In progress'],['awaiting_approval','Awaiting approval'],['draft','Draft / incomplete'],['completed','Completed'],['cancelled','Cancelled'],['archived','Archived'],['all','All records']];
+      $('recordFilters').innerHTML=filters.map(function(filter){return '<button type="button" class="secondary'+(recordFilter===filter[0]?' active':'')+'" data-record-filter="'+filter[0]+'">'+filter[1]+' ('+countRecords(filter[0])+')</button>';}).join('');
     }
     function sectionSatisfied(sectionId) {
       var section=openTemplate.sections.find(function(section){return section.id===sectionId;});
@@ -299,7 +358,7 @@
       var sources=(openWorkflow.source||[]).map(function(s){return s.id;}).join(' · ');
       var provenance='ADM-REF-002 · '+escapeHtml((open.workflow_source&&open.workflow_source.source_version)||'');
       var activeWorkDocuments=((open.workingDocuments)||[]).map(function(id){return escapeHtml(id);}).join(', ');
-      $('detail').innerHTML='<div class="panel"><div class="eyebrow">'+escapeHtml(open.id)+'</div><h2>'+escapeHtml(open.title)+'</h2><p class="section-copy">'+statusPill(open.status)+'<span class="pill muted">'+escapeHtml(open.workflowName)+'</span><span class="badge">v'+escapeHtml(open.workflowVersion)+'</span><br>Source: '+escapeHtml(sources)+' · Version '+escapeHtml(provenance)+'</p>'+(open.legacy?'<span class="badge purple">legacy definition</span>':'')+renderRegisters()+'<div class="stage-list">'+stages+'</div>'+(currentStage?'<div style="margin-top:26px"><div class="eyebrow">Current stage '+(open.currentStageIndex+1)+' of '+openWorkflow.lifecycle.length+'</div><h3>'+escapeHtml(currentStage.label)+'</h3>'+stageControls()+'</div>':'')+'<h3 style="margin-top:28px">Audit history</h3><ul class="audit">'+(open.audit||[]).map(function(item){return '<li>'+escapeHtml(new Date(item.at).toLocaleString())+' — '+escapeHtml(item.type.replace(/_/g,' '))+' — '+escapeHtml(item.actor)+'</li>';}).join('')+'</ul><div class="actions"><button type="button" id="exportJsonBtn" class="secondary">Export JSON</button><button type="button" id="exportCsvBtn" class="secondary">Export CSV</button><button type="button" id="exportHtmlBtn" class="secondary">Export HTML</button></div></div>';
+      $('detail').innerHTML='<div class="panel"><div class="actions" style="float:right;margin:0"><button type="button" id="backToRecords" class="secondary">Back to records</button></div><div class="eyebrow">'+escapeHtml(open.id)+'</div><h2>'+escapeHtml(open.title)+'</h2><p class="section-copy">'+statusPill(open.status)+'<span class="pill muted">'+escapeHtml(open.workflowName)+'</span><span class="badge">v'+escapeHtml(open.workflowVersion)+'</span><br>Source: '+escapeHtml(sources)+' · Version '+escapeHtml(provenance)+'</p>'+(open.legacy?'<span class="badge purple">legacy definition</span>':'')+renderRegisters()+'<div class="stage-list">'+stages+'</div>'+(currentStage?'<div style="margin-top:26px"><div class="eyebrow">Current stage '+(open.currentStageIndex+1)+' of '+openWorkflow.lifecycle.length+'</div><h3>'+escapeHtml(currentStage.label)+'</h3>'+stageControls()+'</div>':'')+'<h3 style="margin-top:28px">Audit history</h3><ul class="audit">'+(open.audit||[]).map(function(item){return '<li>'+escapeHtml(new Date(item.at).toLocaleString())+' — '+escapeHtml(item.type.replace(/_/g,' '))+' — '+escapeHtml(item.actor)+'</li>';}).join('')+'</ul><div class="actions"><button type="button" id="exportJsonBtn" class="secondary">Export JSON</button><button type="button" id="exportCsvBtn" class="secondary">Export CSV</button><button type="button" id="exportHtmlBtn" class="secondary">Export HTML</button></div></div>';
       $('detail').hidden=false;
       bindDetailControls();
       $('detail').scrollIntoView({behavior:'smooth'});
@@ -322,12 +381,13 @@
       var exportJson=$('exportJsonBtn'); if(exportJson)exportJson.addEventListener('click',function(){exportRecord('json');});
       var exportCsv=$('exportCsvBtn'); if(exportCsv)exportCsv.addEventListener('click',function(){exportRecord('csv');});
       var exportHtml=$('exportHtmlBtn'); if(exportHtml)exportHtml.addEventListener('click',function(){exportRecord('html');});
+      var back=$('backToRecords');if(back)back.addEventListener('click',function(){open=null;$('detail').hidden=true;history.replaceState(null,'',location.pathname);$('recordsSection').scrollIntoView({behavior:'smooth'});});
     }
-    async function refreshList() { var data=await api('compliance-list'); transactions=data.transactions||[]; renderTransactions(); }
+    async function refreshList() { var data=await api('compliance-list'); transactions=data.transactions||[]; renderDashboard();renderTransactions(); }
     function refreshOpen(raw) { open=raw.transaction; openWorkflow=open.workflow; openTemplate=open.template; renderDetail(); }
     async function openTransaction(id) {
       clearMessage();
-      try { var data=await api('compliance-detail?id='+encodeURIComponent(id)); refreshOpen(data); }
+      try { var data=await api('compliance-detail',null,{id:id});refreshOpen(data);history.replaceState(null,'','#record='+encodeURIComponent(id)); }
       catch(error) { showMessage(error.message,true); }
     }
     async function saveSection(event) {
@@ -400,18 +460,30 @@
       }).catch(function(error){showMessage(error.message,true);});
     }
 
-    $('categoryGrid').addEventListener('click',function(event){var button=event.target.closest('[data-workflow]');if(button)openStarter(button.dataset.workflow);});
+    $('categoryGrid').addEventListener('click',function(event){var button=event.target.closest('[data-category]');if(!button)return;var category=categories[button.dataset.category];if(category)showWorkflowResults(category.workflows,category.name);});
+    $('workflowPanel').addEventListener('click',function(event){var button=event.target.closest('[data-workflow]');if(button)openStarter(button.dataset.workflow);});
+    $('recentWorkflows').addEventListener('click',function(event){var button=event.target.closest('[data-workflow]');if(button)openStarter(button.dataset.workflow);});
+    $('workflowSearch').addEventListener('input',function(){var query=this.value.trim().toLowerCase();if(!query){showCategories();return;}var matches=workflows.filter(function(workflow){return JSON.stringify(workflow).toLowerCase().includes(query);});showWorkflowResults(matches,'Search results for “'+this.value.trim()+'”');});
+    $('clearWorkflowSearch').addEventListener('click',showCategories);
+    $('backToCategories').addEventListener('click',showCategories);
+    $('browseWorkflows').addEventListener('click',function(){$('catalogSection').scrollIntoView({behavior:'smooth'});$('workflowSearch').focus();});
+    function applyRecordFilter(event){var button=event.target.closest('[data-record-filter]');if(!button)return;recordFilter=button.dataset.recordFilter;renderDashboard();renderTransactions();$('recordsSection').scrollIntoView({behavior:'smooth'});}
+    $('dashboardGrid').addEventListener('click',applyRecordFilter);
+    $('recordFilters').addEventListener('click',applyRecordFilter);
     $('transactionList').addEventListener('click',function(event){var button=event.target.closest('[data-transaction]');if(button)openTransaction(button.dataset.transaction);});
     $('cancelCreate').addEventListener('click',function(){$('starter').hidden=true;});
     $('createForm').addEventListener('submit',async function(event){
       event.preventDefault();clearMessage();
       var values={};
       $('creationFields').querySelectorAll('[data-field]').forEach(function(input){values[input.dataset.field]=input.value;});
+      var submit=$('startWorkflowBtn');submit.disabled=true;submit.textContent='Starting…';
       try {
-        var data=await api('compliance-create',{method:'POST',body:JSON.stringify({workflow_id:$('workflowId').value,values:values})});
+        var workflowId=$('workflowId').value;
+        var data=await api('compliance-create',{method:'POST',body:JSON.stringify({workflow_id:workflowId,values:values,idempotency_key:currentStartKey})});
+        rememberWorkflow(workflowId);
         event.target.reset();$('starter').hidden=true;
-        await refreshList();openTransaction(data.transaction.id);showMessage('Controlled record created.',false);
-      }catch(error){showMessage(error.message,true);}
+        await refreshList();await openTransaction(data.transaction.id);showMessage(data.idempotent_replay?'Existing record reopened; duplicate start prevented.':'Controlled record created.',false);
+      }catch(error){showMessage(error.message,true);submit.disabled=false;submit.textContent='Start workflow';}
     });
     $('logoutBtn').addEventListener('click',function(){sessionStorage.removeItem('llr-docs-session');location.reload();});
 
@@ -426,8 +498,9 @@
         workflows=data.workflows||[];
         Object.values(categories).forEach(function(category){category.workflows.forEach(function(workflow){workflow.category=category.id;});});
         transactions=result[1].transactions||[];
-        renderCatalog();renderTransactions();
+        renderCatalog();renderDashboard();renderTransactions();
         $('engine').hidden=false;
+        var recordMatch=location.hash.match(/^#record=(.+)$/);if(recordMatch)await openTransaction(decodeURIComponent(recordMatch[1]));
       }catch(error){sessionStorage.removeItem('llr-docs-session');$('authGate').hidden=false;showMessage(error.message,true);}
     });
   </script>

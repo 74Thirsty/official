@@ -1,4 +1,4 @@
-import { getList, setList, getDate, setDate, KEYS, LIMITS } from '../lib/storage.js';
+import { getList, setList, getDate, setDate, acquireLock, releaseLock, KEYS, LIMITS } from '../lib/storage.js';
 import { sendJson, sendEmpty, readBody, isAdmin, clean, getParam } from '../lib/http.js';
 import { buildNewsletter, getUpcomingEvents, getUpcomingStreams, buildWelcomeEmail, buildUnsubscribeUrl, signedCopyAvailable } from '../lib/newsletter.js';
 import { sendEmail } from '../lib/email.js';
@@ -548,8 +548,8 @@ async function handleCompliance(req, res, action) {
         if (!isAceInstance(transaction)) {
           return { ...transaction, legacyRecord: true, workflow: null, currentStage: null };
         }
-        const workflow = getWorkflow(transaction.workflowId);
-        const template = getTemplate(transaction.templateId);
+        const workflow = transaction.workflowDefinition || getWorkflow(transaction.workflowId);
+        const template = transaction.templateDefinition || getTemplate(transaction.templateId);
         return workflow ? summarizeInstance(transaction, workflow, template) : { ...transaction, workflow: null };
       }),
     });
@@ -568,19 +568,47 @@ async function handleCompliance(req, res, action) {
     const payload = await readBody(req);
     const workflow = getWorkflow(clean(String(payload.workflow_id || ''), 100));
     if (!workflow) return sendJson(res, { error: 'Controlled workflow not found.' }, 404);
-    const instance = createInstance(workflow, payload.values || {}, session.name, new Set(transactions.map((item) => item.id)));
-    transactions.unshift(instance);
-    await setList(KEYS.complianceTransactions, transactions.slice(0, LIMITS.complianceTransactions));
-    await addAudit('compliance_instance_created', session.name, { instanceId: instance.id, workflowId: workflow.id });
-    return sendJson(res, { transaction: summarizeInstance(instance, workflow, getTemplate(workflow.templateId)) }, 201);
+    const idempotencyKey = clean(String(payload.idempotency_key || ''), 100);
+    if (!/^[A-Za-z0-9_-]{16,100}$/.test(idempotencyKey)) return sendJson(res, { error: 'A valid workflow-start idempotency key is required.' }, 422);
+    const existing = transactions.find((item) => item.idempotencyKey === idempotencyKey && item.createdBy === session.name);
+    if (existing) {
+      const existingWorkflow = existing.workflowDefinition || getWorkflow(existing.workflowId);
+      const existingTemplate = existing.templateDefinition || getTemplate(existing.templateId);
+      return sendJson(res, { transaction: summarizeInstance(existing, existingWorkflow, existingTemplate), idempotent_replay: true });
+    }
+    const lockToken = randomBytes(18).toString('base64url');
+    const lockKey = 'llr:lock:compliance-create';
+    if (!await acquireLock(lockKey, lockToken)) return sendJson(res, { error: 'Another workflow start is being saved. Retry this request.' }, 409);
+    try {
+      const current = await getList(KEYS.complianceTransactions);
+      const replay = current.find((item) => item.idempotencyKey === idempotencyKey && item.createdBy === session.name);
+      if (replay) {
+        const replayWorkflow = replay.workflowDefinition || getWorkflow(replay.workflowId);
+        const replayTemplate = replay.templateDefinition || getTemplate(replay.templateId);
+        return sendJson(res, { transaction: summarizeInstance(replay, replayWorkflow, replayTemplate), idempotent_replay: true });
+      }
+      let instance;
+      try {
+        instance = createInstance(workflow, payload.values || {}, session.name, new Set(current.map((item) => item.id)));
+      } catch (error) {
+        return sendJson(res, { error: error.message }, 422);
+      }
+      instance.idempotencyKey = idempotencyKey;
+      current.unshift(instance);
+      await setList(KEYS.complianceTransactions, current.slice(0, LIMITS.complianceTransactions));
+      await addAudit('compliance_instance_created', session.name, { instanceId: instance.id, workflowId: workflow.id });
+      return sendJson(res, { transaction: summarizeInstance(instance, instance.workflowDefinition, instance.templateDefinition) }, 201);
+    } finally {
+      await releaseLock(lockKey, lockToken);
+    }
   }
 
   if (action === 'compliance-export' && req.method === 'GET') {
     const id = clean(String(getParam(req, 'id') || ''), 80);
     const format = clean(String(getParam(req, 'format') || 'html'), 20);
     const transaction = transactions.find((item) => item.id === id);
-    const workflow = transaction && getWorkflow(transaction.workflowId);
-    const template = workflow && getTemplate(workflow.templateId);
+    const workflow = transaction && (transaction.workflowDefinition || getWorkflow(transaction.workflowId));
+    const template = transaction && (transaction.templateDefinition || getTemplate(transaction.templateId));
     if (!transaction || !workflow || !template) return sendJson(res, { error: 'Compliance record not found.' }, 404);
     try {
       const result = buildInstanceExport(transaction, workflow, template, format);
@@ -596,8 +624,8 @@ async function handleCompliance(req, res, action) {
   if (index < 0) return sendJson(res, { error: 'Compliance record not found.' }, 404);
   const transaction = transactions[index];
   if (!isAceInstance(transaction)) return sendJson(res, { error: 'Legacy records are read-only under the new compliance engine.' }, 409);
-  const workflow = getWorkflow(transaction.workflowId);
-  const template = getTemplate(transaction.templateId);
+  const workflow = transaction.workflowDefinition || getWorkflow(transaction.workflowId);
+  const template = transaction.templateDefinition || getTemplate(transaction.templateId);
   if (!workflow || !template) return sendJson(res, { error: 'Controlled workflow or template is unavailable.' }, 409);
 
   if (action === 'compliance-detail' && req.method === 'GET') {

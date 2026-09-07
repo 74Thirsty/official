@@ -54,7 +54,12 @@ function fillSection(instance, workflow, sectionId, actor = 'operator') {
 
 function completeWorkflow(workflowId, creationValues, options = {}) {
   const workflow = getWorkflow(workflowId);
-  let instance = createInstance(workflow, creationValues, 'operator', new Set());
+  let instance;
+  try {
+    instance = createInstance(workflow, creationValues, 'operator', new Set());
+  } catch (error) {
+    throw new Error(`${workflowId}: ${error.message}`);
+  }
   let guard = 0;
   while (instance.status !== 'completed' && guard < 200) {
     guard += 1;
@@ -76,7 +81,7 @@ function completeWorkflow(workflowId, creationValues, options = {}) {
         instance = finalizeDocument(instance, document.id, 'operator');
       }
     }
-    if (stage.evidenceRequired && !instance.stageStates[index].evidence.length) {
+    if ((stage.evidenceRequired || stage.approvalRequired) && !instance.stageStates[index].evidence.length) {
       instance = addEvidence(instance, workflow, 'operator', `Evidence for ${stage.label}`, '');
     }
     if (stage.approvalRequired && !instance.stageStates[index].approval) {
@@ -144,6 +149,10 @@ test('workflow categories form the hierarchical catalog', () => {
   assert.deepEqual(Object.keys(categories).sort(), ['assets', 'events', 'finance', 'grants', 'onboarding', 'people', 'safety']);
   assert.ok(categories.grants.workflows.some((workflow) => workflow.id === 'pursue-grant'));
   assert.ok(categories.onboarding.workflows.some((workflow) => workflow.id === 'onboard-volunteer'));
+  assert.equal(categories.people.parent, 'People Operations');
+  assert.equal(categories.finance.parent, 'Financial Stewardship');
+  assert.equal(categories.events.parent, 'Programs & Service');
+  assert.equal(categories.assets.parent, 'Organizational Operations');
   const allIds = Object.values(categories).flatMap((category) => category.workflows.map((workflow) => workflow.id));
   assert.equal(new Set(allIds).size, WORKFLOWS.length);
 });
@@ -163,6 +172,33 @@ test('workflows retain ADM-REF-002 provenance versioned against the unchanged ca
   assert.equal(instance.workflow_source.source_path, COMPLIANCE_WORKFLOW_MANIFEST.source_path);
   assert.equal(instance.workflow_source.source_hash, COMPLIANCE_WORKFLOW_MANIFEST.source_hash);
   assert.ok(instance.workflow_source.sources.length >= 1);
+  assert.equal(instance.category, getWorkflow('pursue-grant').category);
+  assert.equal(instance.workflowDefinition.workflowVersion, instance.workflowVersion);
+  assert.equal(instance.templateDefinition.id, instance.templateId);
+});
+
+test('new records atomically initialize identity, status, workflow snapshot, first stage, and audit metadata', () => {
+  const { workflow, instance } = startWorkflow('performance-review', legacyCreationValues(getWorkflow('performance-review')));
+  assert.match(instance.id, new RegExp(`^${workflow.idPrefix}-\\d{4}-[A-F0-9]{6}$`));
+  assert.equal(instance.workflowId, workflow.id);
+  assert.equal(instance.workflowVersion, workflow.workflowVersion);
+  assert.equal(instance.status, 'active');
+  assert.equal(instance.currentStageIndex, 0);
+  assert.equal(instance.stageStates.length, workflow.lifecycle.length);
+  assert.equal(instance.stageStates[0].stageId, workflow.lifecycle[0].id);
+  assert.equal(instance.audit[0].type, 'instance_created');
+  assert.deepEqual(instance.workflowDefinition, workflow);
+  assert.ok(instance.templateDefinition.sections.length);
+});
+
+test('historical workflow snapshots do not change when the live definition changes', () => {
+  const { workflow, instance } = startWorkflow('performance-review', legacyCreationValues(getWorkflow('performance-review')));
+  const changed = JSON.parse(JSON.stringify(workflow));
+  changed.workflowVersion = '99.0';
+  changed.lifecycle[0].label = 'Changed later';
+  assert.notEqual(instance.workflowDefinition.workflowVersion, changed.workflowVersion);
+  assert.notEqual(instance.workflowDefinition.lifecycle[0].label, changed.lifecycle[0].label);
+  assert.equal(instance.workflowDefinition.lifecycle[0].label, workflow.lifecycle[0].label);
 });
 
 test('workflow and document references resolve through the shared document registry', () => {
@@ -215,6 +251,7 @@ test('server engine blocks progression until evidence satisfies the current gate
     approved_by: 'Executive Director',
   });
   assert.equal(instance.stageStates[0].status, 'incomplete');
+  assert.throws(() => addEvidence(instance, workflow, 'operator', ''), /Evidence description is required/);
   assert.throws(() => advanceStage(instance, workflow, 'operator'), /Evidence is required for this stage/);
   addEvidence(instance, workflow, 'operator', 'Payment list and W-9 classifications compiled.');
   assert.equal(instance.stageStates[0].evidence.length, 1);
@@ -389,7 +426,8 @@ test('an incident instance auto-registers the controlled row and closes it at cl
 test('completed and cancelled instances reject further mutation', () => {
   const completed = completeWorkflow('request-reimbursement', legacyCreationValues(getWorkflow('request-reimbursement')));
   assert.equal(completed.status, 'completed');
-  assert.throws(() => addEvidence(completed, getWorkflow('request-reimbursement'), 'operator', 'late'), /Cannot/);
+  assert.throws(() => addEvidence(completed, getWorkflow('request-reimbursement'), 'operator', 'late'), /cannot/i);
+  assert.throws(() => saveFieldValues(completed, getWorkflow('request-reimbursement'), 'intake', {}, 'operator'), /cannot be changed/i);
   const { workflow, instance } = startWorkflow('request-reimbursement', legacyCreationValues(getWorkflow('request-reimbursement')));
   cancelInstance(instance, workflow, 'operator', 'Duplicate submission.');
   assert.equal(instance.status, 'cancelled');
@@ -405,5 +443,5 @@ test('document instances cannot be edited, signed, or finalized after completion
   });
   const document = findDocumentInstance(completed, 'GRT-FORM-002');
   assert.equal(document.status, 'completed');
-  assert.throws(() => applySignature(completed, document.id, 'grant-officer', 'late', 'Late'), /signature/g);
+  assert.throws(() => applySignature(completed, document.id, 'grant-officer', 'late', 'Late'), /cannot be changed/i);
 });

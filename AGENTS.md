@@ -161,6 +161,10 @@ Do not implement the production compliance engine in Autobiography. Do not creat
 - **Server Enforcement:** The server rejects progression until the current requirement is complete. Approval-designated stages require evidence and a separate administrator approval; an evidence submitter cannot approve the same requirement.
 - **Shared Resolution:** Controlled Document IDs in workflows resolve through `lib/document-registry.js`, the same canonical abstraction used by the Document Library.
 - **Immutable Source:** Compliance operations never write to or rewrite canonical Markdown.
+- **Definition / Record Boundary:** `compliance-start` previews a workflow definition and never looks up or creates a record. `compliance-create` atomically creates and persists a new record. `compliance-detail` alone opens an existing record and may return “Compliance record not found.”
+- **Idempotent Initialization:** Every creation request carries an idempotency key. A global KV creation lock serializes list updates, and replaying the same intentional start returns the original record instead of creating a duplicate.
+- **Historical Definition Integrity:** Each new record snapshots its complete workflow and template definitions. Reopening and executing that record uses its snapshot, so later catalog changes cannot rewrite historical requirements.
+- **Scalable Discovery:** The engine home shows operational record metrics and category landing cards. Individual definitions appear only after category selection, search, or recent-workflow selection; it never renders the whole workflow library by default.
 
 Protected by `tests/compliance-engine.test.mjs`, `tests/compliance-ui.test.mjs`, and `tests/docs-auth.test.mjs`.
 
@@ -187,6 +191,13 @@ Changes touching Mission page markup, global CSS, scroll/overflow behavior, shar
 Authoritative organizational documents remain **Markdown source** (single source of truth in the Autobiography repo). The Document Library must render that Markdown as formatted, human-readable documents. Raw Markdown must never be the normal viewing experience, and source documents must never be rewritten to compensate for presentation-layer failures. Protected by `tests/markdown-render.test.mjs`.
 
 ## Incidents
+
+### 2026-09-07 — Workflow initiation routed into record lookup
+
+- **Reported:** Selecting a workflow returned “Compliance record not found,” and the landing page rendered the full workflow catalog as a large card wall.
+- **Root cause:** The browser passed `compliance-start?workflow_id=…` as the action string to a helper that URL-encoded the entire value. The server therefore received an invalid action, bypassed the definition-preview branch, and reached the existing-record lookup with no record ID. Creation also had no idempotency key or serialized KV update, and stored only a workflow version label while later execution reloaded the live definition.
+- **Correction:** Build query parameters separately from the action; keep definition preview, atomic creation, and existing-record retrieval as distinct operations; serialize creation with a KV lock and idempotency replay; snapshot workflow/template definitions into new records; reopen records from a hash-addressable record state; replace the full card wall with dashboard, category, search, recent, and filtered-record views.
+- **Regression protection:** `tests/compliance-ui.test.mjs`, `tests/compliance-engine.test.mjs`, and production persistent-lifecycle verification.
 
 ### 2026-09-04 — Document Library corpus, session, and feature-boundary failures
 

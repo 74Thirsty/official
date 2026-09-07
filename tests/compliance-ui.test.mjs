@@ -6,12 +6,42 @@ const page = await readFile(new URL('../compliance.html', import.meta.url), 'utf
 const library = await readFile(new URL('../documentation.html', import.meta.url), 'utf8');
 
 test('Compliance Engine is a separate catalog-driven route', () => {
-  assert.match(page, /Workflow catalog/);
+  assert.match(page, /Workflow library/);
   assert.match(page, /compliance-workflows/);
   assert.match(page, /compliance-start/);
   assert.match(page, /compliance-create/);
   assert.match(page, /predefined and deterministic/);
   assert.match(library, /href="compliance\.html"/);
+});
+
+test('workflow discovery is focused and scalable instead of rendering the entire library', () => {
+  assert.match(page, /Operational dashboard/);
+  assert.match(page, /Search employee, grant, expense, volunteer, board/);
+  assert.match(page, /data-category/);
+  assert.match(page, /showWorkflowResults/);
+  assert.match(page, /Recently used workflows/);
+  assert.match(page, /Requires action/);
+  assert.match(page, /Awaiting approval/);
+  assert.match(page, /Archived/);
+});
+
+test('definition preview, record creation, and record retrieval use distinct requests', () => {
+  assert.match(page, /api\('compliance-start',null,\{workflow_id:workflowId\}\)/);
+  assert.match(page, /api\('compliance-create'/);
+  assert.match(page, /api\('compliance-detail',null,\{id:id\}\)/);
+  assert.doesNotMatch(page, /compliance-start\?workflow_id/);
+});
+
+test('workflow starts are idempotent and disable duplicate submissions', () => {
+  assert.match(page, /idempotency_key:currentStartKey/);
+  assert.match(page, /randomUUID/);
+  assert.match(page, /submit\.disabled=true/);
+  assert.match(page, /duplicate start prevented/);
+});
+
+test('record route state survives browser refresh', () => {
+  assert.match(page, /#record=/);
+  assert.match(page, /location\.hash\.match/);
 });
 
 test('Compliance Engine reuses the Document Library bearer session without URL secrets', () => {
