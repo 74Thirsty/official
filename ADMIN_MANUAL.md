@@ -333,6 +333,8 @@ Errors follow `{ "error": "..." }` with proper HTTP codes (403 admin, 422 valida
 
 Compliance records may track onboarding status and an opaque restricted HR/payroll file reference. Never enter an SSN, birth date, bank information, W-4/I-9 contents, government ID number, or identity-document image into a Compliance Engine field, evidence description, URL, or working document. Those records belong in the separate encrypted, need-to-know HR/payroll system required by REC-SOP-001. The current application does not provide that restricted-record upload or value-collection capability.
 
+Volunteer Onboarding is separate from employment. Select the canonical program/area and Fort Dodge location, define the assignment under VOL-FORM-006, name its supervisor, answer the assignment-risk questions, and complete the resulting screening, driving, data-access, acknowledgment, training, and approval gates. Never enter screening details, emergency-contact details, driver-license numbers, or other protected records into evidence text; retain them in the restricted volunteer file and use its opaque reference.
+
 JSON arrays under `llr:*` — access goes through `lib/storage.js` only.
 
 | Key | Cap | Contents |

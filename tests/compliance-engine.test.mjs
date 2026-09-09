@@ -239,7 +239,7 @@ test('the five reference-quality workflows have action-specific data and conditi
     'request-reimbursement': ['expense_category', 'vendor', 'allocation_reference', 'grant_funded', 'restricted_fund_reference'],
     'report-incident': ['medical_response_required', 'medical_response_details', 'law_enforcement_contacted', 'law_enforcement_details'],
     'pursue-grant': ['eligible', 'match_required', 'match_requirement', 'award_status', 'award_restrictions'],
-    'onboard-volunteer': ['role_interests', 'screening_consent', 'driving_required', 'driver_license_reference'],
+    'onboard-volunteer': ['assignment_title', 'authorized_duties', 'screening_status', 'participant_transport', 'volunteer_agreement_status', 'role_training_status'],
   };
   for (const [workflowId, names] of Object.entries(expectedFields)) {
     const workflow = getWorkflow(workflowId);
@@ -331,7 +331,7 @@ test('public templates expose controlled sections, fields, and signature definit
   assert.ok(sectionA.fields.some((field) => field.name === 'full_name'));
   const signatures = template.documents.flatMap((document) => document.signatureDefinitions);
   assert.ok(signatures.some((signature) => signature.documentId === 'VOL-FORM-001' && signature.id === 'applicant'));
-  assert.ok(template.documents.find((document) => document.id === 'VOL-FORM-001').fields.some((field) => field.name === 'applicant_name'));
+  assert.ok(template.documents.find((document) => document.id === 'VOL-FORM-001').fields.some((field) => field.name === 'restricted_application_reference'));
 });
 
 test('intake validation rejects incomplete submissions and normalizes values', () => {
@@ -452,16 +452,23 @@ test('the volunteer onboarding workflow completes only through predefined gated 
     full_name: 'Ava Rider',
     email: 'ava@example.com',
     phone: '555-0001',
+    address: 'Restricted volunteer address',
+    emergency_contact_reference: 'VOL-EMERGENCY-001',
+    minor_status: 'No',
     relationship_type: 'Volunteer',
     program_area: 'Ride Forward',
     start_date: '2026-09-05',
   });
   assert.equal(instance.currentStageIndex, 0);
+  assert.equal(instance.fieldValues.B.relationship_type, 'Volunteer');
   assert.throws(() => advanceStage(instance, workflow, 'operator'), /Finalize VOL-FORM-001/);
   const completed = completeWorkflow('onboard-volunteer', {
     full_name: 'Ava Rider',
     email: 'ava@example.com',
     phone: '555-0001',
+    address: 'Restricted volunteer address',
+    emergency_contact_reference: 'VOL-EMERGENCY-001',
+    minor_status: 'No',
     relationship_type: 'Volunteer',
     program_area: 'Ride Forward',
     start_date: '2026-09-05',
@@ -472,11 +479,51 @@ test('the volunteer onboarding workflow completes only through predefined gated 
   assert.equal(completed.stageStates.every((stage) => stage.status === 'complete'), true);
 });
 
+test('volunteer onboarding is data-minimized and enforces assignment-specific screening', () => {
+  const workflow = getWorkflow('onboard-volunteer');
+  const template = getTemplate(workflow.templateId);
+  const names = new Set(template.sections.flatMap((section) => section.fields.map((field) => field.name)));
+  for (const employeeOnly of ['ssn_status', 'w4_status', 'i9_status', 'payroll_information_status', 'proposed_compensation', 'position_id', 'hiring_authority']) assert.equal(names.has(employeeOnly), false, employeeOnly);
+  const relationship = template.sections.find((section) => section.id === 'B');
+  assert.equal(relationship.fields.find((field) => field.name === 'relationship_type').derivedValue, 'Volunteer');
+  assert.equal(relationship.fields.find((field) => field.name === 'program_area').options.length, 10);
+  assert.equal(relationship.fields.find((field) => field.name === 'chapter_location').options.length, 1);
+  const instance = createInstance(workflow, { full_name: 'Volunteer', email: 'v@example.org', phone: '555', address: 'Restricted', emergency_contact_reference: 'EC-1', minor_status: 'No' }, 'operator', new Set());
+  fillSection(instance, workflow, 'D');
+  saveFieldValues(instance, workflow, 'D', { ...instance.fieldValues.D, vulnerable_person_access: 'Yes', screening_status: 'Not Required' }, 'operator');
+  const screening = stageSatisfied(instance, workflow, workflow.lifecycle.findIndex((stage) => stage.id === 'screening'));
+  assert.equal(screening.ok, false);
+  assert.ok(screening.errors.some((error) => /Vulnerable-person assignments require/.test(error)));
+});
+
+test('every unconditional volunteer onboarding field is server-required', () => {
+  const workflow = getWorkflow('onboard-volunteer');
+  const template = getTemplate(workflow.templateId);
+  for (const section of template.sections) {
+    const payload = {};
+    for (const field of section.fields) {
+      if (field.type === 'derived' || field.type === 'derived-reference' || field.when) continue;
+      if (field.type === 'select') {
+        const option = field.options.find((item) => (typeof item === 'object' ? item.value : item) === 'Verified') || field.options[0];
+        payload[field.name] = typeof option === 'object' ? option.value : option;
+      } else if (field.type === 'number') payload[field.name] = '1';
+      else if (field.type === 'date') payload[field.name] = '2026-09-08';
+      else payload[field.name] = 'Test value';
+    }
+    for (const field of section.fields.filter((item) => item.required && !item.when && item.type !== 'derived' && item.type !== 'derived-reference')) {
+      const missing = { ...payload };
+      delete missing[field.name];
+      const result = validateFieldValues(template, section.id, missing);
+      assert.ok(result.errors.some((error) => error.includes(`${field.label} is required`)), `${section.id}/${field.name}`);
+    }
+  }
+});
+
 test('all reference and legacy workflows complete through the gated engine', () => {
   const creationValues = {
     'pursue-grant': { grant_name: 'G', funder: 'F', date_identified: '2026-09-05', application_deadline: '2026-12-01' },
     'onboard-member': { full_name: 'M', email: 'm@x.com' },
-    'onboard-volunteer': { full_name: 'V', email: 'v@x.com', phone: '555', relationship_type: 'Volunteer', program_area: 'Ride Forward', start_date: '2026-09-05' },
+    'onboard-volunteer': { full_name: 'V', email: 'v@x.com', phone: '555', address: 'Restricted', emergency_contact_reference: 'EC-1', minor_status: 'No' },
     'onboard-employee': { full_name: 'E', email: 'e@x.com' },
     'host-event': { event_name: 'Eve', event_type: 'Ride', date_of_request: '2026-09-05', dates: '2026-10-10', venue: 'V', purpose_mission_fit: 'p' },
     'safety-training': { participant_name: 'S', role: 'Road Guard', program: 'Ride Forward', training_date: '2026-09-05', trainer: 'Tr' },

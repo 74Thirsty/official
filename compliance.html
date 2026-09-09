@@ -177,7 +177,7 @@
       if(String(field.classification||'').indexOf('restricted')===0)kind+=(field.required?' · Restricted record':' · Restricted');
       var max=field.maxlen?' maxlength="'+field.maxlen+'"':'';
       var classes=field.type==='textarea'?'full':'';
-      var condition=field.when?' data-when-field="'+escapeHtml(field.when.field)+'" data-when-values="'+escapeHtml(JSON.stringify(field.when.in||[field.when.equals]))+'"':'';
+      var condition=field.when?' data-when-field="'+escapeHtml(field.when.field)+'" data-when-section="'+escapeHtml(field.when.sectionId||'')+'" data-when-values="'+escapeHtml(JSON.stringify(field.when.in||[field.when.equals]))+'"':'';
       var val=value==null?'':escapeHtml(value);
       var control='';
       if(field.type==='textarea'){control='<textarea data-field="'+escapeHtml(field.name)+'"'+max+required+'>'+val+'</textarea>';}
@@ -202,9 +202,10 @@
     }
     function applyConditionalFields(scope) {
       (scope||document).querySelectorAll('[data-when-field]').forEach(function(wrapper){
-        var source=(wrapper.closest('.form-grid')||scope||document).querySelector('[data-field="'+CSS.escape(wrapper.dataset.whenField)+'"]');
+        var source=(scope||document).querySelector('[data-field="'+CSS.escape(wrapper.dataset.whenField)+'"]');
         var allowed=JSON.parse(wrapper.dataset.whenValues||'[]');
-        var applies=!!source&&allowed.includes(source.value);
+        var storedValue=wrapper.dataset.whenSection&&open&&open.fieldValues[wrapper.dataset.whenSection]?open.fieldValues[wrapper.dataset.whenSection][wrapper.dataset.whenField]:null;
+        var applies=allowed.includes(source?source.value:storedValue);
         wrapper.hidden=!applies;
         wrapper.querySelectorAll('input,select,textarea').forEach(function(input){input.disabled=!applies;if(input.dataset.baseRequired==='true')input.required=applies;});
       });
@@ -322,7 +323,8 @@
       (stage.signaturesRequired||[]).forEach(function(signature){var doc=open.documents.find(function(d){return d.documentId===signature.documentId;});var ok=!!doc&&doc.signatures.some(function(s){return s.signatureId===signature.signatureId;});items.push({ok:ok,message:'Signature '+signature.signatureId+' on '+signature.documentId});});
       if(stage.evidenceRequired)items.push({ok:(state.evidence||[]).length>0,message:'Evidence recorded'});
       if(stage.approvalRequired)items.push({ok:!!state.approval,message:'Approval recorded'});
-      (stage.blockingRules||[]).forEach(function(rule){var condition=rule.when||{};var actual=((open.fieldValues[condition.sectionId]||{})[condition.field]);var ok=condition.in?condition.in.includes(actual):Object.prototype.hasOwnProperty.call(condition,'equals')?actual===condition.equals:Object.prototype.hasOwnProperty.call(condition,'notEquals')?actual!==condition.notEquals:true;items.push({ok:ok,message:ok?rule.message.replace(/must be|must /i,'confirmed: '):rule.message});});
+      function conditionOk(condition){if(!condition)return true;if(Array.isArray(condition.all))return condition.all.every(conditionOk);if(Array.isArray(condition.any))return condition.any.some(conditionOk);var actual=((open.fieldValues[condition.sectionId]||{})[condition.field]);return condition.in?condition.in.includes(actual):Object.prototype.hasOwnProperty.call(condition,'equals')?actual===condition.equals:Object.prototype.hasOwnProperty.call(condition,'notEquals')?actual!==condition.notEquals:true;}
+      (stage.blockingRules||[]).forEach(function(rule){var ok=conditionOk(rule.when);items.push({ok:ok,message:ok?rule.message.replace(/must be|must /i,'confirmed: '):rule.message});});
       return items;
     }
     function renderGate() {

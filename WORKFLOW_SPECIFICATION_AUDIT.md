@@ -32,7 +32,7 @@ Five materially different definitions establish the schema quality gate:
 - `request-reimbursement`: recipient, vendor, expense category, business purpose, allocation, grant/restricted-fund branch, receipt exception, mileage branch, approval, payment, and reconciliation.
 - `report-incident`: incident facts, people and witnesses, injury/damage, medical-response branch, law-enforcement branch, immediate response, controlled report, register, review, escalation, corrective action, and closure.
 - `pursue-grant`: opportunity, eligibility decision, application, budget and matching-funds branch, approval, submission, award decision, award-only administration stages, reporting, and closeout.
-- `onboard-volunteer`: identity, role interests, availability, screening, driving branch, approval, register, orientation, and assignment handoff.
+- `onboard-volunteer`: confidential identity/contact references, canonical program/area, controlled location, specifically defined assignment and authority boundaries, named supervisor, minor/guardian branch, risk-triggered screening, participant-driving controls, least-privilege data access, volunteer agreement, acknowledgments, assignment-specific training, approval, register activation, and an Active outcome.
 
 ## Data-model determination
 
@@ -66,5 +66,7 @@ The Organization Handbook Privacy Policy and REC-SOP-001 jointly govern onboardi
 | W-4, I-9, identity, work-authorization, DOB/SSN capture, and payroll completion states | Employee | Status-only operational controls; no underlying restricted content |
 | Restricted record reference | Employee | Opaque reference only; must not encode PII |
 | Signatures and screening evidence | Applicable workflow | Restricted record references/evidence; underlying records remain in the authorized restricted system |
+
+Volunteer Onboarding derives `Volunteer` immutably and contains no employee position, compensation, SSN, W-4, I-9, payroll, or banking fields. Its ten program/area choices are generated from the six canonical program manuals plus the non-duplicative capacities expressly listed in VOL-FORM-004. Canonical policy does not publish a fixed assignment-title taxonomy, so each assignment is defined under VOL-FORM-006 with purpose, duties, boundaries, schedule, reporting, and a named supervisor. Enhanced screening is enforced from assignment risk under VOL-APP-001; it cannot be marked Not Required for vulnerable-person, participant-transport, financial-access, or special-required assignments.
 
 The application currently has no encrypted, role-separated restricted-record provider. Consequently it does not collect or upload underlying SSNs, DOB values, tax forms, I-9 contents, identity documents, or bank information. Employee onboarding orchestrates and gates their completion through status fields and an opaque external record reference without misrepresenting ordinary Vercel KV as compliant restricted storage.

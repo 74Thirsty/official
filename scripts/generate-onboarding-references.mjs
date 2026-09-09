@@ -7,6 +7,8 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const SOURCE = path.join(ROOT, 'documentation-source');
 const EMPLOYEES = path.join(SOURCE, 'employees');
 const OUTPUT = path.join(ROOT, 'lib', 'onboarding-references.generated.js');
+const PROGRAMS = path.join(SOURCE, 'lost_limb_riders_handbooks', '03-Program-Manuals');
+const VOLUNTEER_APPROVAL = path.join(SOURCE, 'lost_limb_riders_handbooks', 'transactional_operations', '08-VOLUNTEERS', 'VOL-FORM-004-Volunteer-Approval-Record.md');
 
 function section(text, heading) {
   const match = text.match(new RegExp(`^## ${heading}\\s*$([\\s\\S]*?)(?=^## |\\Z)`, 'm'));
@@ -43,6 +45,20 @@ const locations = [{
   authority_note: 'Current primary Lost Limb Riders operating location; no additional active chapter/location register is published.',
 }];
 
+const programFiles = (await readdir(PROGRAMS)).filter((name) => /^\d{2}-.+-Program\.md$/.test(name)).sort();
+const volunteerAreas = [];
+for (const filename of programFiles) {
+  const name = filename.replace(/^\d{2}-/, '').replace(/\.md$/, '').replaceAll('-', ' ');
+  volunteerAreas.push({ value: name, label: name, source_path: `lost_limb_riders_handbooks/03-Program-Manuals/${filename}` });
+}
+const approvalText = await readFile(VOLUNTEER_APPROVAL, 'utf8');
+const capacityLine = approvalText.split(/\r?\n/).find((line) => line.startsWith('**Approved volunteer capacity / program:**')) || '';
+for (const raw of capacityLine.split('☐').slice(1)) {
+  const name = raw.trim().replace(/\s+$/, '').replace(/Other:.*/, '').trim();
+  if (name && !volunteerAreas.some((item) => item.value === name || item.value === `${name} Program`)) volunteerAreas.push({ value: name, label: name, source_path: 'lost_limb_riders_handbooks/transactional_operations/08-VOLUNTEERS/VOL-FORM-004-Volunteer-Approval-Record.md' });
+}
+if (!volunteerAreas.length) throw new Error('No canonical volunteer programs/areas were found.');
+
 const banner = '// Generated from canonical Autobiography documents. Do not edit by hand.\n';
-await writeFile(OUTPUT, `${banner}export const CANONICAL_POSITIONS = Object.freeze(${JSON.stringify(positions, null, 2)});\n\nexport const AUTHORIZED_LOCATIONS = Object.freeze(${JSON.stringify(locations, null, 2)});\n`);
-console.log(`Generated ${positions.length} positions and ${locations.length} authorized location.`);
+await writeFile(OUTPUT, `${banner}export const CANONICAL_POSITIONS = Object.freeze(${JSON.stringify(positions, null, 2)});\n\nexport const AUTHORIZED_LOCATIONS = Object.freeze(${JSON.stringify(locations, null, 2)});\n\nexport const CANONICAL_VOLUNTEER_AREAS = Object.freeze(${JSON.stringify(volunteerAreas, null, 2)});\n`);
+console.log(`Generated ${positions.length} positions, ${locations.length} authorized location, and ${volunteerAreas.length} volunteer areas.`);
