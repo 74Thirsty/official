@@ -43,17 +43,21 @@
 
     a { color: inherit; }
     img { max-width: 100%; display: block; }
+    h1, h2, h3, p { margin-top: 0; }
+    .orange { color: var(--orange); }
 
+    /* ── NAV ── */
     .nav {
       position: sticky;
       top: 0;
-      z-index: 20;
+      z-index: 100;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 20px;
-      padding: 14px 7vw;
-      background: rgba(5,5,5,.88);
+      padding: 0 7vw;
+      height: 72px;
+      background: rgba(5,5,5,.92);
       border-bottom: 1px solid var(--line);
       backdrop-filter: blur(16px);
     }
@@ -67,143 +71,245 @@
       font-weight: 900;
       letter-spacing: .08em;
       text-transform: uppercase;
+      flex-shrink: 0;
     }
 
     .brand img {
-      width: 54px;
-      height: 54px;
+      width: 48px;
+      height: 48px;
       object-fit: contain;
     }
 
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 18px;
+      gap: 4px;
       color: #dedede;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 800;
       text-transform: uppercase;
+      letter-spacing: .04em;
     }
 
-    .nav-links a { text-decoration: none; }
-    .nav-links a:hover { color: var(--orange); }
-
-    .hero {
-      min-height: calc(100vh - 83px);
-      display: grid;
-      grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr);
-      gap: 42px;
-      align-items: center;
-      padding: 72px 7vw;
-      background:
-        linear-gradient(90deg, rgba(5,5,5,.98), rgba(5,5,5,.75), rgba(5,5,5,.95)),
-        url("assets/LLR COVER POSTER.png") right center / contain no-repeat;
+    /* ── DROPDOWNS ── */
+    .nav-group {
+      position: relative;
     }
 
-    .eyebrow {
+    .nav-group-btn {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      width: fit-content;
-      border: 1px solid rgba(255,106,0,.75);
-      border-radius: 999px;
-      padding: 10px 15px;
-      color: var(--orange);
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing: .22em;
-      text-transform: uppercase;
-      background: rgba(255,106,0,.08);
-    }
-
-    h1, h2, h3, p { margin-top: 0; }
-    h1 {
-      margin: 24px 0 22px;
-      font-size: clamp(58px, 10vw, 126px);
-      line-height: .82;
-      letter-spacing: -.06em;
-      text-transform: uppercase;
-    }
-
-    .orange { color: var(--orange); }
-    .lead {
-      max-width: 760px;
-      color: #e0e0e0;
-      font-size: clamp(18px, 2.1vw, 25px);
-      line-height: 1.45;
-    }
-
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      margin-top: 30px;
-    }
-
-    .btn, button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 52px;
-      padding: 15px 22px;
-      border: 0;
-      border-radius: 14px;
-      text-decoration: none;
-      font-weight: 900;
+      gap: 6px;
+      padding: 8px 12px;
+      border: none;
+      background: none;
+      color: #dedede;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 800;
       letter-spacing: .04em;
       text-transform: uppercase;
       cursor: pointer;
+      white-space: nowrap;
     }
 
-    .btn-primary, button {
-      background: var(--orange);
-      color: #111;
-      box-shadow: 0 18px 36px rgba(255,106,0,.2);
+    .nav-group-btn:hover,
+    .nav-group-btn[aria-expanded="true"] { color: var(--orange); }
+
+    .nav-group-btn .caret {
+      display: inline-block;
+      width: 0; height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 5px solid currentColor;
+      transition: transform .2s;
     }
 
-    .btn-primary:hover, button:hover { background: #ff7b1f; }
-    .btn-secondary {
-      border: 1px solid rgba(255,255,255,.28);
-      color: var(--white);
-      background: rgba(255,255,255,.07);
-    }
+    .nav-group-btn[aria-expanded="true"] .caret { transform: rotate(180deg); }
 
-    .hero-card, .panel, .card {
+    .dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 220px;
+      padding: 8px 0;
       border: 1px solid var(--line);
-      border-radius: 28px;
-      background: linear-gradient(145deg, rgba(28,28,28,.92), rgba(9,9,9,.92));
-      box-shadow: var(--shadow);
+      border-radius: 14px;
+      background: rgba(15,15,15,.97);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 50px rgba(0,0,0,.6);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(6px);
+      transition: opacity .18s, visibility .18s, transform .18s;
+      z-index: 200;
     }
 
-    .hero-card {
-      padding: 30px;
-      backdrop-filter: blur(12px);
+    .nav-group.open .dropdown {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
     }
 
-    .hero-card img {
-      width: 150px;
-      margin: 0 auto 20px;
-      filter: drop-shadow(0 20px 30px rgba(0,0,0,.45));
+    .dropdown a {
+      display: block;
+      padding: 10px 20px;
+      color: #ccc;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background .15s, color .15s;
     }
 
-    .hero-card h2 {
-      margin-bottom: 18px;
-      font-size: clamp(32px, 4vw, 48px);
-      line-height: .95;
+    .dropdown a:hover,
+    .dropdown a:focus-visible {
+      background: rgba(255,106,0,.1);
+      color: var(--orange);
+    }
+
+    .nav-link-direct {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      color: #dedede;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 800;
       text-transform: uppercase;
+      letter-spacing: .04em;
+      white-space: nowrap;
     }
 
-    .check {
+    .nav-link-direct:hover { color: var(--orange); }
+
+    /* ── MOBILE HAMBURGER ── */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 40px;
+      height: 40px;
+      padding: 8px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      z-index: 110;
+    }
+
+    .hamburger span {
+      display: block;
+      width: 100%;
+      height: 2px;
+      background: var(--white);
+      border-radius: 2px;
+      transition: transform .25s, opacity .25s;
+    }
+
+    .hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* ── HERO CAROUSEL ── */
+    .hero-carousel {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      background: #0a0a0a;
+      aspect-ratio: 1961 / 802;
+      max-height: 70vh;
+    }
+
+    .carousel-track {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .carousel-slide {
+      position: absolute;
+      inset: 0;
       display: flex;
-      gap: 12px;
-      margin: 16px 0;
-      color: #dddddd;
-      font-size: 17px;
-      line-height: 1.45;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity .6s ease;
+      pointer-events: none;
+      text-decoration: none;
+      color: inherit;
     }
 
-    .check b { color: var(--orange); }
-    section { padding: 84px 7vw; }
+    .carousel-slide.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .carousel-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #0a0a0a;
+      pointer-events: none;
+    }
+
+    .carousel-slide.active { cursor: pointer; }
+
+    .carousel-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      width: 48px;
+      height: 48px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(0,0,0,.55);
+      color: var(--white);
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(8px);
+      transition: background .2s;
+    }
+
+    .carousel-btn:hover { background: rgba(255,106,0,.7); }
+
+    .carousel-btn-prev { left: 16px; }
+    .carousel-btn-next { right: 16px; }
+
+    .carousel-indicators {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .carousel-dot {
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgba(255,255,255,.6);
+      border-radius: 50%;
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+      transition: background .2s, border-color .2s;
+    }
+
+    .carousel-dot.active {
+      background: var(--orange);
+      border-color: var(--orange);
+    }
+
+    .carousel-dot:hover { border-color: var(--orange); }
+
+    /* ── SECTIONS ── */
+    section { padding: 72px 7vw; }
     .wrap { max-width: 1180px; margin: 0 auto; }
 
     .section-heading {
@@ -219,23 +325,66 @@
       margin-bottom: 16px;
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 22px;
+    .lead {
+      max-width: 760px;
+      color: #e0e0e0;
+      font-size: clamp(18px, 2.1vw, 25px);
+      line-height: 1.45;
     }
 
-    .card, .panel { padding: 28px; }
+    /* ── BUTTONS ── */
+    .btn, button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 52px;
+      padding: 15px 22px;
+      border: 0;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 900;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--orange);
+      color: #111;
+      box-shadow: 0 18px 36px rgba(255,106,0,.2);
+    }
+
+    .btn-primary:hover { background: #ff7b1f; }
+
+    .btn-secondary {
+      border: 1px solid rgba(255,255,255,.28);
+      color: var(--white);
+      background: rgba(255,255,255,.07);
+    }
+
+    .btn-secondary:hover { background: rgba(255,255,255,.13); }
+
+    button:disabled { opacity: .6; cursor: not-allowed; }
+
+    /* ── CARDS ── */
+    .card, .panel {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: linear-gradient(145deg, rgba(28,28,28,.92), rgba(9,9,9,.92));
+      box-shadow: var(--shadow);
+    }
+
+    .card { padding: 28px; }
     .card h3 {
       color: var(--orange);
-      font-size: 25px;
+      font-size: 22px;
       margin-bottom: 12px;
     }
 
-    .card p, .panel p {
+    .card p {
       color: var(--muted);
       line-height: 1.65;
-      font-size: 17px;
+      font-size: 16px;
     }
 
     .card-link {
@@ -245,34 +394,29 @@
       text-decoration: none;
       border-radius: 28px;
     }
+
     .card-link .card {
       height: 100%;
       transition: border-color .2s ease, transform .2s ease;
     }
+
     .card-link:hover .card {
       border-color: rgba(255,106,0,.55);
       transform: translateY(-3px);
     }
+
     .card-link:focus-visible {
       outline: 2px solid var(--orange);
       outline-offset: 4px;
     }
 
-    .statement {
-      text-align: center;
-      background: linear-gradient(135deg, rgba(255,106,0,.16), rgba(255,255,255,.03));
-      border-top: 1px solid var(--line);
-      border-bottom: 1px solid var(--line);
+    .dest-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 22px;
     }
 
-    .statement h2 {
-      margin: 0;
-      font-size: clamp(42px, 7vw, 90px);
-      line-height: .9;
-      letter-spacing: -.05em;
-      text-transform: uppercase;
-    }
-
+    /* ── SPLIT LAYOUT ── */
     .split {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -280,47 +424,7 @@
       align-items: stretch;
     }
 
-    .book-card {
-      display: grid;
-      grid-template-columns: 190px minmax(0,1fr);
-      gap: 22px;
-      align-items: center;
-    }
-
-    .book-cover {
-      border-radius: 18px;
-      box-shadow: 0 20px 50px rgba(0,0,0,.55);
-    }
-
-    .two-column {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px;
-      margin: 20px 0;
-    }
-
-    .speaker-list {
-      margin: 0;
-      padding-left: 20px;
-      color: #d6d6d6;
-      line-height: 1.8;
-    }
-
-    .quote-box {
-      margin: 24px 0;
-      padding: 24px;
-      border-left: 6px solid var(--orange);
-      border-radius: 18px;
-      background: rgba(255,106,0,.08);
-    }
-
-    .quote-box h3 {
-      margin: 0 0 8px;
-      color: var(--white);
-      font-size: clamp(30px, 4vw, 48px);
-      text-transform: uppercase;
-    }
-
+    /* ── GUESTBOOK ── */
     .form {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -356,60 +460,7 @@
       color: var(--orange);
       font-weight: 800;
     }
-
     .status.error { color: #ff5b5b; }
-
-    .contact-form {
-      max-width: 640px;
-      margin-top: 26px;
-    }
-
-    .contact-form .form { margin-top: 0; }
-
-    button:disabled { opacity: .6; cursor: not-allowed; }
-
-    .file-field {
-      grid-column: 1 / -1;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 16px;
-      border: 1px dashed rgba(255,255,255,.22);
-      border-radius: 14px;
-      background: #090909;
-      cursor: pointer;
-    }
-
-    .file-field input[type="file"] {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      overflow: hidden;
-    }
-
-    .file-label {
-      color: var(--orange);
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    .file-name {
-      color: var(--muted);
-      font-size: 14px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .hp {
-      position: absolute;
-      left: -9999px;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      overflow: hidden;
-    }
 
     .guestbook-list {
       display: grid;
@@ -431,12 +482,82 @@
     .guest-entry small { color: #8f8f8f; display: block; margin-top: 4px; }
     .guest-entry p { margin: 10px 0 0; color: #d7d7d7; }
 
+    /* ── EVENT SPOTLIGHT ── */
+    .event-spotlight {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      padding: 28px;
+    }
+
+    .event-icon {
+      flex: none;
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: rgba(255,106,0,.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    .event-details { flex: 1; }
+    .event-details h3 {
+      color: var(--white);
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+
+    .event-meta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .event-meta span {
+      color: var(--orange);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .event-details p {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .event-empty {
+      padding: 32px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    /* ── BOOK ── */
+    .book-card {
+      display: grid;
+      grid-template-columns: 190px minmax(0,1fr);
+      gap: 22px;
+      align-items: center;
+    }
+
+    .book-cover {
+      border-radius: 18px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.55);
+    }
+
+    /* ── NEWSLETTER ── */
     .newsletter-row {
       display: grid;
       grid-template-columns: 1fr 1fr auto;
       gap: 12px;
       align-items: start;
     }
+
     .newsletter-status {
       grid-column: 1 / -1;
       min-height: 20px;
@@ -444,155 +565,156 @@
       font-weight: 800;
     }
 
-    .offer-eyebrow {
-      display: inline-block;
-      padding: 6px 14px;
-      border: 1px solid rgba(255, 106, 0, .45);
-      border-radius: 999px;
-      color: var(--orange);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: .14em;
-      text-transform: uppercase;
-      margin-bottom: 20px;
-    }
-
-    .offer-grid {
-      display: grid;
-      grid-template-columns: 1.1fr .9fr;
-      gap: 44px;
-      align-items: center;
-      text-align: left;
+    /* ── CONTACT ── */
+    .contact-form {
+      max-width: 640px;
       margin-top: 26px;
     }
 
-    .offer-values {
-      display: grid;
-      gap: 14px;
-      margin: 26px 0 30px;
-      text-align: left;
+    .contact-form .form { margin-top: 0; }
+
+    .hp {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      overflow: hidden;
     }
 
-    .offer-value {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .offer-value .num {
-      flex: none;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: rgba(255, 106, 0, .15);
-      color: var(--orange);
-      font-weight: 800;
+    .file-field {
+      grid-column: 1 / -1;
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      margin-top: 2px;
+      gap: 12px;
+      padding: 16px;
+      border: 1px dashed rgba(255,255,255,.22);
+      border-radius: 14px;
+      background: #090909;
+      cursor: pointer;
     }
 
-    .offer-value b { display: block; color: var(--white); font-size: 16px; }
-    .offer-value span { color: #b7b7b7; font-size: 14px; line-height: 1.55; }
-
-    .offer-cta {
-      width: 100%;
-      font-size: 18px;
-      padding: 18px 24px;
-      letter-spacing: .02em;
-      text-transform: uppercase;
+    .file-field input[type="file"] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      overflow: hidden;
     }
 
-    .offer-note { margin: 14px 0 0; color: #8f8f8f; font-size: 12.5px; }
+    .file-label { color: var(--orange); font-weight: 800; white-space: nowrap; }
+    .file-name { color: var(--muted); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .offer-book {
-      position: relative;
-      border-radius: 16px;
-      background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
-      border: 1px solid rgba(255, 255, 255, .1);
-      padding: 40px 26px 28px;
-      text-align: center;
-      box-shadow: 0 30px 60px rgba(0, 0, 0, .5);
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 30px;
     }
 
-    .offer-book .book-title {
-      font-size: clamp(30px, 4vw, 44px);
-      font-weight: 900;
-      line-height: 1.02;
-      letter-spacing: -.02em;
-      color: #fff;
-      text-transform: uppercase;
-    }
+    /* ── FOOTER ── */
+    footer { border-top: 1px solid var(--line); padding: 0; position: relative; z-index: 1; }
+    .footer-inner { max-width: 1180px; margin: 0 auto; padding: 48px 7vw; }
+    .footer-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 40px; flex-wrap: wrap; }
+    .footer-brand { display: flex; align-items: center; gap: 14px; }
+    .footer-brand img { width: 48px; height: 48px; border-radius: 10px; }
+    .footer-brand .brand-text { font-weight: 900; font-size: 15px; text-transform: uppercase; letter-spacing: .06em; }
+    .footer-brand .brand-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .footer-nav { display: flex; gap: 20px; flex-wrap: wrap; }
+    .footer-nav a { color: #999; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; transition: color .2s; }
+    .footer-nav a:hover { color: var(--orange); }
+    .footer-contact { text-align: right; }
+    .footer-contact a { color: var(--muted); font-size: 13px; display: block; transition: color .2s; }
+    .footer-contact a:hover { color: var(--orange); }
+    .footer-bottom { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .footer-bottom .copyright { font-size: 12px; color: #666; }
+    .footer-bottom .fine-print { font-size: 11px; color: #555; text-align: right; max-width: 500px; line-height: 1.5; }
 
-    .offer-book .book-sub {
-      color: var(--orange);
-      font-weight: 800;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      font-size: 13px;
-      margin-top: 12px;
-    }
-
-    .offer-book .book-auth { color: #b7b7b7; font-weight: 700; margin-top: 18px; font-size: 15px; }
-
-    .offer-book .book-badge {
-      display: inline-block;
-      margin-top: 20px;
-      padding: 9px 16px;
-      border-radius: 8px;
-      background: var(--orange);
-      color: #fff;
-      font-weight: 800;
-      font-size: 13px;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-    }
-
-    .offer-book .book-desc { color: #8f8f8f; font-size: 13px; line-height: 1.55; margin-top: 18px; }
-
-    footer { border-top:1px solid var(--line); padding:0; position:relative; z-index:1; }
-    .footer-inner { max-width:1180px; margin:0 auto; padding:48px 7vw; }
-    .footer-top { display:flex; align-items:flex-start; justify-content:space-between; gap:40px; flex-wrap:wrap; }
-    .footer-brand { display:flex; align-items:center; gap:14px; }
-    .footer-brand img { width:48px; height:48px; border-radius:10px; }
-    .footer-brand .brand-text { font-weight:900; font-size:15px; text-transform:uppercase; letter-spacing:.06em; }
-    .footer-brand .brand-sub { font-size:12px; color:var(--muted); margin-top:2px; }
-    .footer-nav { display:flex; gap:20px; flex-wrap:wrap; }
-    .footer-nav a { color:#999; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; transition:color .2s; }
-    .footer-nav a:hover { color:var(--orange); }
-    .footer-contact { text-align:right; }
-    .footer-contact a { color:var(--muted); font-size:13px; display:block; transition:color .2s; }
-    .footer-contact a:hover { color:var(--orange); }
-    .footer-bottom { margin-top:32px; padding-top:24px; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-    .footer-bottom .copyright { font-size:12px; color:#666; }
-    .footer-bottom .fine-print { font-size:11px; color:#555; text-align:right; max-width:500px; line-height:1.5; }
-
+    /* ── MOBILE ── */
     @media (max-width: 940px) {
-      .nav { position: static; align-items: flex-start; flex-direction: column; }
-      .nav-links { flex-wrap: wrap; }
-      .hero, .grid, .split, .form, .two-column, .newsletter-row, .offer-grid { grid-template-columns: 1fr; }
-      .offer-book { order: -1; }
-      .hero { min-height: auto; background-position: center bottom; }
+      .hamburger { display: flex; }
+
+      .nav-links {
+        position: fixed;
+        inset: 0;
+        top: 72px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 16px 24px 32px;
+        background: rgba(5,5,5,.97);
+        backdrop-filter: blur(20px);
+        overflow-y: auto;
+        transform: translateX(100%);
+        transition: transform .3s ease;
+        z-index: 100;
+      }
+
+      .nav-links.open { transform: translateX(0); }
+
+      .nav-link-direct,
+      .nav-group-btn {
+        width: 100%;
+        text-align: left;
+        padding: 14px 0;
+        font-size: 15px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .dropdown {
+        position: static;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        border: none;
+        border-radius: 0;
+        background: none;
+        backdrop-filter: none;
+        box-shadow: none;
+        padding: 0 0 0 16px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height .3s ease;
+      }
+
+      .nav-group.open .dropdown { max-height: 600px; }
+
+      .dropdown a {
+        padding: 10px 0;
+        font-size: 14px;
+        border-bottom: 1px solid rgba(255,255,255,.06);
+      }
+
+      .hero-carousel { aspect-ratio: 16 / 9; max-height: 50vh; }
+      .dest-grid { grid-template-columns: 1fr 1fr; }
+      .split, .form, .newsletter-row { grid-template-columns: 1fr; }
       .book-card { grid-template-columns: 150px 1fr; }
+      .event-spotlight { flex-direction: column; align-items: stretch; text-align: center; }
+      .event-icon { margin: 0 auto; }
+      .event-meta { justify-content: center; }
     }
 
     @media (max-width: 560px) {
       .brand { min-width: 0; }
-      .brand img { width: 44px; height: 44px; }
-      .nav-links { gap: 12px; font-size: 12px; }
-      section, .hero { padding-left: 22px; padding-right: 22px; }
+      .brand img { width: 40px; height: 40px; }
+      .brand span { font-size: 14px; }
+      section { padding: 52px 22px; }
+      .dest-grid { grid-template-columns: 1fr; }
       .book-card { grid-template-columns: 1fr; }
+      .book-card img { max-width: 160px; margin: 0 auto; }
       h1 { letter-spacing: -.045em; }
+      .carousel-btn { width: 40px; height: 40px; font-size: 18px; }
+      .carousel-btn-prev { left: 8px; }
+      .carousel-btn-next { right: 8px; }
+      .footer-top { flex-direction: column; align-items: center; text-align: center; }
+      .footer-contact { text-align: center; }
+      .footer-bottom { flex-direction: column; align-items: center; text-align: center; }
+      .footer-inner { padding: 32px 22px; }
     }
-    @media(max-width:940px) {
-      .footer-top { flex-direction:column; align-items:center; text-align:center; }
-      .footer-contact { text-align:center; }
-      .footer-bottom { flex-direction:column; align-items:center; text-align:center; }
-    }
-    @media(max-width:560px) {
-      .footer-inner { padding:32px 22px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .carousel-slide { transition: none; }
+      html { scroll-behavior: auto; }
     }
   </style>
 </head>
@@ -603,132 +725,90 @@
       <span>Lost Limb Riders</span>
     </a>
 
+    <button class="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+
     <div class="nav-links">
-      <a href="events.html">Events</a>
-      <a href="media.html">Media</a>
-      <a href="community.html">Community</a>
-      <a href="mission.html">Mission</a>
-      <a href="sponsors.html">Sponsors</a>
-      <a href="documentation.html">Docs</a>
-      <a href="#keynote">Book John</a>
-      <a href="#book">Book</a>
-      <a href="#guestbook">Guest Book</a>
-      <a href="#contact">Contact</a>
+      <a class="nav-link-direct" href="#top">Home</a>
+
+      <div class="nav-group">
+        <button class="nav-group-btn" aria-expanded="false">About <span class="caret"></span></button>
+        <div class="dropdown" role="menu">
+          <a href="mission.html#story" role="menuitem">Our Story</a>
+          <a href="mission.html#mission-statement" role="menuitem">Our Mission</a>
+          <a href="mission.html#vision" role="menuitem">Our Vision</a>
+          <a href="mission.html#org-info" role="menuitem">Organization Info</a>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-btn" aria-expanded="false">Programs <span class="caret"></span></button>
+        <div class="dropdown" role="menu">
+          <a href="mission.html#funds" role="menuitem">Peer Connection</a>
+          <a href="mission.html#funds" role="menuitem">Family Support Initiative</a>
+          <a href="mission.html#funds" role="menuitem">Hospital &amp; Prosthetic Outreach</a>
+          <a href="mission.html#funds" role="menuitem">View All Programs</a>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-btn" aria-expanded="false">Get Involved <span class="caret"></span></button>
+        <div class="dropdown" role="menu">
+          <a href="sponsors.html" role="menuitem">Become a Member</a>
+          <a href="mission.html#involved" role="menuitem">Volunteer</a>
+          <a href="sponsors.html" role="menuitem">Become a Sponsor</a>
+          <a href="mission.html#involved" role="menuitem">Donate</a>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-btn" aria-expanded="false">Community <span class="caret"></span></button>
+        <div class="dropdown" role="menu">
+          <a href="events.html" role="menuitem">Events</a>
+          <a href="media.html" role="menuitem">Media</a>
+          <a href="community.html" role="menuitem">Gallery</a>
+          <a href="community.html" role="menuitem">Testimonials</a>
+          <a href="documentation.html" role="menuitem">Resources</a>
+        </div>
+      </div>
+
+      <a class="nav-link-direct" href="tel:5158905765">Contact</a>
     </div>
   </nav>
 
-  <header class="hero" id="top">
-    <div>
-      <div class="eyebrow">Amputees • Riders • Purpose</div>
-      <h1>Lost Limb <span class="orange">Riders</span></h1>
-      <p class="lead">A nonprofit motorcycle community built by amputees for amputees, families, riders, veterans, and supporters who believe the road does not end after limb loss.</p>
-
-      <div class="actions">
-        <a class="btn btn-primary" href="tel:+15158905765">Call 515-890-5765</a>
-        <a class="btn btn-secondary" href="#guestbook">Sign the Guest Book</a>
-      </div>
+  <header class="hero-carousel" id="top" aria-label="Lost Limb Riders promotional carousel">
+    <div class="carousel-track">
+      <a class="carousel-slide active" href="mission.html#funds" role="group" aria-roledescription="slide" aria-label="Slide 1 of 5: Family Support Initiative — Learn More">
+        <img src="assets/INITIATIVE.png" alt="Lost Limb Riders Family Support Initiative" width="1961" height="802" loading="eager" fetchpriority="high">
+      </a>
+      <a class="carousel-slide" href="mission.html#funds" role="group" aria-roledescription="slide" aria-label="Slide 2 of 5: Hospital &amp; Prosthetic Outreach — Learn More">
+        <img src="assets/OUTREACH.png" alt="Lost Limb Riders Hospital and Prosthetic Outreach" width="1961" height="802" loading="lazy">
+      </a>
+      <a class="carousel-slide" href="sponsors.html" role="group" aria-roledescription="slide" aria-label="Slide 3 of 5: Become a Member — Join Now">
+        <img src="assets/MEMBER.png" alt="Lost Limb Riders Become a Member" width="1961" height="802" loading="lazy">
+      </a>
+      <a class="carousel-slide" href="mission.html#involved" role="group" aria-roledescription="slide" aria-label="Slide 4 of 5: Volunteer — Get Involved">
+        <img src="assets/VOLUNTEER.png" alt="Lost Limb Riders Volunteer" width="1961" height="802" loading="lazy">
+      </a>
+      <a class="carousel-slide" href="sponsors.html" role="group" aria-roledescription="slide" aria-label="Slide 5 of 5: Become a Sponsor — Partner With Us">
+        <img src="assets/SPONSOR.png" alt="Lost Limb Riders Become a Sponsor" width="1961" height="802" loading="lazy">
+      </a>
     </div>
 
-    <aside class="hero-card" aria-labelledby="freedom-title">
-      <img src="assets/logo-nobg.png" alt="Lost Limb Riders motorcycle logo">
-      <h2 id="freedom-title">Lost Limbs.<br><span class="orange">Found Freedom.</span></h2>
-      <div class="check"><b>✓</b><span>Support amputees rebuilding independence and confidence.</span></div>
-      <div class="check"><b>✓</b><span>Build brotherhood and sisterhood through motorcycle culture.</span></div>
-      <div class="check"><b>✓</b><span>Ride with purpose so nobody has to ride alone.</span></div>
-      <div class="check"><b>✓</b><span>Never give up. Never back down.</span></div>
-    </aside>
+    <button class="carousel-btn carousel-btn-prev" aria-label="Previous slide">&#10094;</button>
+    <button class="carousel-btn carousel-btn-next" aria-label="Next slide">&#10095;</button>
+
+    <div class="carousel-indicators" role="tablist" aria-label="Slide navigation">
+      <button class="carousel-dot active" role="tab" aria-selected="true" aria-label="Go to slide 1" data-index="0"></button>
+      <button class="carousel-dot" role="tab" aria-selected="false" aria-label="Go to slide 2" data-index="1"></button>
+      <button class="carousel-dot" role="tab" aria-selected="false" aria-label="Go to slide 3" data-index="2"></button>
+      <button class="carousel-dot" role="tab" aria-selected="false" aria-label="Go to slide 4" data-index="3"></button>
+      <button class="carousel-dot" role="tab" aria-selected="false" aria-label="Go to slide 5" data-index="4"></button>
+    </div>
   </header>
 
   <main>
-    <section id="mission">
-      <div class="wrap">
-        <div class="section-heading">
-          <h2 class="section-title">Ride With <span class="orange">Purpose</span></h2>
-          <p class="lead">Lost Limb Riders brings people together around encouragement, awareness, practical support, and the grit it takes to keep moving forward.</p>
-        </div>
-
-        <div class="grid">
-          <a class="card-link" href="mission.html#story">
-            <article class="card">
-              <h3>Brotherhood & Sisterhood</h3>
-              <p>Real connection for amputees, families, riders, veterans, supporters, and anyone who believes healing is stronger when people show up for each other.</p>
-            </article>
-          </a>
-
-          <a class="card-link" href="mission.html#involved">
-            <article class="card">
-              <h3>Community Support</h3>
-              <p>Every ride, event, conversation, and fundraiser exists to raise awareness and support people adapting to life after limb loss.</p>
-            </article>
-          </a>
-
-          <a class="card-link" href="mission.html#mission-statement">
-            <article class="card">
-              <h3>Forward Motion</h3>
-              <p>The mission is simple: help amputees find confidence, dignity, friendship, and the courage to keep shifting gears.</p>
-            </article>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <section class="statement" aria-label="Lost Limb Riders motto">
-      <div class="wrap">
-        <h2>Amputees Don’t Quit.<br><span class="orange">They Just Shift Gears.</span></h2>
-      </div>
-    </section>
-
-    <section id="keynote">
-      <div class="wrap split">
-        <article class="panel">
-          <h2 class="section-title">Book John <span class="orange">Thompson</span></h2>
-          <p>John’s keynote, <strong>I Can. I Will.</strong>, is a raw, funny, powerful message about limb loss, survival, faith, family, recovery, phantom pain, prosthetics, and finding purpose after life changes forever.</p>
-          <p>John does not deliver empty motivational clichés. He delivers a message earned through experience that challenges people to stop focusing only on what they lost and start discovering what is still possible.</p>
-
-          <div class="quote-box">
-            <h3>“I Can. I Will.”</h3>
-            <p>Because the only word that does not belong in your vocabulary is <strong>can’t</strong>.</p>
-          </div>
-
-          <a class="btn btn-primary" href="tel:15158905765">Book John • Call 515-890-5765</a>
-        </article>
-
-        <article class="card">
-          <h3>Perfect For</h3>
-          <div class="two-column">
-            <ul class="speaker-list">
-              <li>Hospitals & rehabilitation centers</li>
-              <li>Healthcare conferences</li>
-              <li>Nonprofit organizations</li>
-              <li>Schools & universities</li>
-              <li>Veterans organizations</li>
-              <li>Corporate leadership events</li>
-            </ul>
-            <ul class="speaker-list">
-              <li>Recovery & addiction programs</li>
-              <li>Churches & faith-based events</li>
-              <li>Motorcycle rallies & charity events</li>
-              <li>Disability advocacy organizations</li>
-              <li>First responders</li>
-              <li>Community organizations</li>
-            </ul>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section id="book">
-      <div class="wrap panel book-card">
-        <img class="book-cover" src="assets/icaniwill.png" alt="I Can I Will book cover by John Thompson">
-        <div>
-          <h2 class="section-title">Buy John’s <span class="orange">Book</span></h2>
-          <p><strong>I Can. I Will.</strong> is John Thompson’s autobiography about surviving limb loss, fighting through pain and doubt, leaning on faith and family, and turning a life-changing setback into the Lost Limb Riders mission.</p>
-          <p>The story is gritty, honest, road-tested, and built around a promise that amputees can keep moving forward with purpose.</p>
-        <a class="btn btn-primary" href="https://www.barnesandnoble.com/w/i-can-i-will-john-thompson/1150743583" target="_blank" rel="noopener">Buy on Barnes & Noble</a>
-        </div>
-      </div>
-    </section>
-
     <section id="guestbook">
       <div class="wrap split">
         <article class="panel">
@@ -754,53 +834,100 @@
       </div>
     </section>
 
+    <section id="destinations">
+      <div class="wrap">
+        <div class="section-heading">
+          <h2 class="section-title">Where to <span class="orange">Go Next</span></h2>
+          <p class="lead">Explore programs, get involved, and connect with the Lost Limb Riders community.</p>
+        </div>
+
+        <div class="dest-grid">
+          <a class="card-link" href="mission.html#funds">
+            <article class="card">
+              <h3>Our Programs</h3>
+              <p>Peer connection, prosthetic outreach, family support, and educational programs serving amputees and families.</p>
+            </article>
+          </a>
+
+          <a class="card-link" href="sponsors.html">
+            <article class="card">
+              <h3>Become a Member</h3>
+              <p>Join the ride. Connect with amputees, families, and supporters who believe life does not end after limb loss.</p>
+            </article>
+          </a>
+
+          <a class="card-link" href="mission.html#involved">
+            <article class="card">
+              <h3>Volunteer</h3>
+              <p>Peer visits, event planning, outreach, and administration. You do not have to be an amputee to make a difference.</p>
+            </article>
+          </a>
+
+          <a class="card-link" href="sponsors.html">
+            <article class="card">
+              <h3>Become a Sponsor</h3>
+              <p>Support rides, events, and programs. Sponsorship provides visibility in a growing, community-driven organization.</p>
+            </article>
+          </a>
+
+          <a class="card-link" href="events.html">
+            <article class="card">
+              <h3>Events</h3>
+              <p>Rides, rallies, fundraisers, and community gatherings. Find an event and show up.</p>
+            </article>
+          </a>
+
+          <a class="card-link" href="community.html">
+            <article class="card">
+              <h3>Community</h3>
+              <p>Gallery, testimonials, and stories from the ride. See the people behind the mission.</p>
+            </article>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="event-spotlight">
+      <div class="wrap">
+        <div class="section-heading">
+          <h2 class="section-title">Next <span class="orange">Event</span></h2>
+        </div>
+        <div class="card panel" id="eventSpotlight">
+          <div class="event-empty">Loading upcoming events...</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="book">
+      <div class="wrap panel book-card">
+        <img class="book-cover" src="assets/icaniwill.png" alt="I Can I Will book cover by John Thompson">
+        <div>
+          <h2 class="section-title">Buy John's <span class="orange">Book</span></h2>
+          <p><strong>I Can. I Will.</strong> is John Thompson's autobiography about surviving limb loss, fighting through pain and doubt, leaning on faith and family, and turning a life-changing setback into the Lost Limb Riders mission.</p>
+          <p>The story is gritty, honest, road-tested, and built around a promise that amputees can keep moving forward with purpose.</p>
+        <a class="btn btn-primary" href="https://www.barnesandnoble.com/w/i-can-i-will-john-thompson/1150743583" target="_blank" rel="noopener">Buy on Barnes & Noble</a>
+        </div>
+      </div>
+    </section>
+
     <section id="newsletter">
-      <div class="wrap panel newsletter-offer">
-        <span class="offer-eyebrow">Free Signed E-Book Offer</span>
+      <div class="wrap panel">
+        <span style="display:inline-block; padding:6px 14px; border:1px solid rgba(255,106,0,.45); border-radius:999px; color:var(--orange); font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; margin-bottom:20px;">Free Signed E-Book Offer</span>
         <h2 class="section-title">Get the Book.<br><span class="orange">Stay in the Ride.</span></h2>
         <p class="lead" style="max-width:680px; margin:0 auto;">
           Sign up for the Lost Limb Riders biweekly newsletter and get a
-          <strong>free, personally autographed digital copy of <em>I Can. I Will.</em></strong> —
-          John Thompson's story of losing a leg and refusing to lose his life.
+          <strong>free, personally autographed digital copy of <em>I Can. I Will.</em></strong>
         </p>
 
-        <div class="offer-grid">
-          <div>
-            <p style="color:#fff; font-weight:800; font-size:18px; margin:0 0 4px;">Every two weeks, you stay connected:</p>
-            <div class="offer-values">
-              <div class="offer-value">
-                <span class="num">1</span>
-                <div><b>The Event Calendar</b><span>Every ride, rally, outreach, and community gathering — dates, places, and how to show up.</span></div>
-              </div>
-              <div class="offer-value">
-                <span class="num">2</span>
-                <div><b>Scheduled Live Streams</b><span>Know when we go live. Weekly rides, Coffee Talk recordings, and rally coverage — before the cameras roll.</span></div>
-              </div>
-              <div class="offer-value">
-                <span class="num">3</span>
-                <div><b>The Mission &amp; The Movement</b><span>Advocacy news, community activities, and real ways to get involved. One ride. One mission. One community.</span></div>
-              </div>
-            </div>
-
-            <form id="newsletterForm" style="max-width:480px; margin-top:24px;">
-              <div style="display:flex; flex-direction:column; gap:12px;">
-                <input id="nlName" autocomplete="name" placeholder="Full name" required style="padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:#090909; color:var(--white); font-size:15px; font-family:inherit; width:100%;">
-                <input id="nlEmail" type="email" autocomplete="email" placeholder="Email address" required style="padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:#090909; color:var(--white); font-size:15px; font-family:inherit; width:100%;">
-                <button type="submit" class="offer-cta">Get My Free Autographed E-Book &amp; Join the Ride</button>
-              </div>
-              <div id="nlStatus" class="newsletter-status" role="status" aria-live="polite"></div>
-            </form>
-            <p class="offer-note">Biweekly. No spam. Unsubscribe anytime. Your signed copy of <em>I Can. I Will.</em> arrives in your welcome email.</p>
+        <form id="newsletterForm" style="max-width:480px; margin:24px auto 0;">
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <input id="nlName" autocomplete="name" placeholder="Full name" required style="padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:#090909; color:var(--white); font-size:15px; font-family:inherit; width:100%;">
+            <input id="nlEmail" type="email" autocomplete="email" placeholder="Email address" required style="padding:14px 16px; border:1px solid var(--line); border-radius:12px; background:#090909; color:var(--white); font-size:15px; font-family:inherit; width:100%;">
+            <button type="submit" style="width:100%; font-size:16px; padding:16px 24px; letter-spacing:.02em; text-transform:uppercase;">Get My Free Autographed E-Book</button>
           </div>
-
-          <aside class="offer-book" aria-label="I Can. I Will. by John Thompson">
-            <div class="book-title">I Can.<br>I Will.</div>
-            <div class="book-sub">Born From Lived Experience</div>
-            <div class="book-auth">by John Thompson</div>
-            <div class="book-badge">Personally Autographed</div>
-            <p class="book-desc">A book written for anyone facing limb loss — something real to hold onto when the world tells you the road is over. It isn't. Read it. Ride with us. Prove it.</p>
-          </aside>
-        </div>
+          <div id="nlStatus" class="newsletter-status" role="status" aria-live="polite"></div>
+        </form>
+        <p style="text-align:center; margin:14px 0 0; color:#8f8f8f; font-size:12.5px;">Biweekly. No spam. Unsubscribe anytime.</p>
       </div>
     </section>
 
@@ -864,228 +991,402 @@
   </footer>
 
   <script>
-    const guestbookApi = '/api/guestbook';
-    const form = document.getElementById('guestbookForm');
-    const list = document.getElementById('guestbookList');
-    const status = document.getElementById('guestStatus');
+    (function () {
+      /* ── CAROUSEL ── */
+      var slides = document.querySelectorAll('.carousel-slide');
+      var dots = document.querySelectorAll('.carousel-dot');
+      var prevBtn = document.querySelector('.carousel-btn-prev');
+      var nextBtn = document.querySelector('.carousel-btn-next');
+      var current = 0;
+      var autoplayInterval = 5000;
+      var timer = null;
+      var paused = false;
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    const fallbackEntries = [
-      {
+      function goTo(index) {
+        slides[current].classList.remove('active');
+        dots[current].classList.remove('active');
+        dots[current].setAttribute('aria-selected', 'false');
+        current = (index + slides.length) % slides.length;
+        slides[current].classList.add('active');
+        dots[current].classList.add('active');
+        dots[current].setAttribute('aria-selected', 'true');
+      }
+
+      function next() { goTo(current + 1); }
+      function prev() { goTo(current - 1); }
+
+      function startAutoplay() {
+        stopAutoplay();
+        if (!prefersReducedMotion && !paused) {
+          timer = setInterval(next, autoplayInterval);
+        }
+      }
+
+      function stopAutoplay() {
+        if (timer) { clearInterval(timer); timer = null; }
+      }
+
+      function resetAutoplay() {
+        stopAutoplay();
+        startAutoplay();
+      }
+
+      nextBtn.addEventListener('click', function () { next(); resetAutoplay(); });
+      prevBtn.addEventListener('click', function () { prev(); resetAutoplay(); });
+
+      dots.forEach(function (dot) {
+        dot.addEventListener('click', function () {
+          goTo(parseInt(this.dataset.index, 10));
+          resetAutoplay();
+        });
+      });
+
+      /* Keyboard on carousel */
+      document.querySelector('.hero-carousel').addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowLeft') { prev(); resetAutoplay(); }
+        else if (e.key === 'ArrowRight') { next(); resetAutoplay(); }
+      });
+
+      /* Touch/swipe */
+      var touchStartX = 0;
+      var carouselEl = document.querySelector('.hero-carousel');
+      carouselEl.addEventListener('touchstart', function (e) {
+        touchStartX = e.touches[0].clientX;
+      }, { passive: true });
+
+      carouselEl.addEventListener('touchend', function (e) {
+        var diff = touchStartX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50) {
+          if (diff > 0) next(); else prev();
+          resetAutoplay();
+        }
+      }, { passive: true });
+
+      /* Pause when tab not visible */
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) { paused = true; stopAutoplay(); }
+        else { paused = false; startAutoplay(); }
+      });
+
+      /* Pause on hover (desktop) */
+      carouselEl.addEventListener('mouseenter', function () { stopAutoplay(); });
+      carouselEl.addEventListener('mouseleave', function () { startAutoplay(); });
+
+      startAutoplay();
+
+      /* ── NAV DROPDOWNS ── */
+      var navGroups = document.querySelectorAll('.nav-group');
+
+      navGroups.forEach(function (group) {
+        var btn = group.querySelector('.nav-group-btn');
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var isOpen = group.classList.contains('open');
+          /* Close all others */
+          navGroups.forEach(function (g) {
+            if (g !== group) {
+              g.classList.remove('open');
+              g.querySelector('.nav-group-btn').setAttribute('aria-expanded', 'false');
+            }
+          });
+          group.classList.toggle('open', !isOpen);
+          btn.setAttribute('aria-expanded', String(!isOpen));
+        });
+      });
+
+      /* Close dropdowns on Escape */
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          navGroups.forEach(function (g) {
+            g.classList.remove('open');
+            g.querySelector('.nav-group-btn').setAttribute('aria-expanded', 'false');
+          });
+          /* Close mobile menu */
+          var hamburger = document.querySelector('.hamburger');
+          var navLinks = document.querySelector('.nav-links');
+          if (navLinks.classList.contains('open')) {
+            navLinks.classList.remove('open');
+            hamburger.setAttribute('aria-expanded', 'false');
+          }
+        }
+      });
+
+      /* Close dropdowns on outside click */
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('.nav-group')) {
+          navGroups.forEach(function (g) {
+            g.classList.remove('open');
+            g.querySelector('.nav-group-btn').setAttribute('aria-expanded', 'false');
+          });
+        }
+      });
+
+      /* ── MOBILE HAMBURGER ── */
+      var hamburger = document.querySelector('.hamburger');
+      var navLinks = document.querySelector('.nav-links');
+
+      hamburger.addEventListener('click', function () {
+        var isOpen = navLinks.classList.contains('open');
+        navLinks.classList.toggle('open', !isOpen);
+        hamburger.setAttribute('aria-expanded', String(!isOpen));
+      });
+
+      /* ── GUESTBOOK ── */
+      var guestbookApi = '/api/guestbook';
+      var gbForm = document.getElementById('guestbookForm');
+      var gbList = document.getElementById('guestbookList');
+      var gbStatus = document.getElementById('guestStatus');
+
+      var fallbackEntries = [{
         name: 'Lost Limb Riders',
         location: 'Community',
         message: 'Welcome to the guest book. Drop a note of support and keep the mission moving.',
         date: 'Pinned message'
-      }
-    ];
+      }];
 
-    function formatGuestbookDate(iso) {
-      if (!iso) return '';
-      try {
-        return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-      } catch (error) {
-        return '';
-      }
-    }
-
-    async function loadEntries() {
-      try {
-        const res = await fetch(guestbookApi + '?action=list');
-        if (!res.ok) throw new Error('bad response');
-        const data = await res.json();
-        const entries = Array.isArray(data.entries) ? data.entries : [];
-        if (!entries.length) { renderEntries(fallbackEntries); return; }
-        renderEntries(entries.map(entry => ({
-          name: entry.name,
-          location: entry.location,
-          message: entry.message,
-          date: formatGuestbookDate(entry.savedAt)
-        })));
-      } catch (error) {
-        renderEntries(fallbackEntries);
-      }
-    }
-
-    function escapeHtml(value) {
-      return value.replace(/[&<>'"]/g, character => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        "'": '&#39;',
-        '"': '&quot;'
-      }[character]));
-    }
-
-    function renderEntries(entries) {
-      list.innerHTML = entries.map(entry => `
-        <article class="guest-entry">
-          <strong>${escapeHtml(entry.name)}</strong>
-          <small>${escapeHtml([entry.location, entry.date].filter(Boolean).join(' • '))}</small>
-          <p>${escapeHtml(entry.message)}</p>
-        </article>
-      `).join('');
-    }
-
-    form.addEventListener('submit', async event => {
-      event.preventDefault();
-
-      const name = document.getElementById('guestName').value.trim();
-      const location = document.getElementById('guestLocation').value.trim();
-      const message = document.getElementById('guestMessage').value.trim();
-
-      if (!name || !message) {
-        status.textContent = 'Please add your name and message.';
-        return;
+      function formatGuestbookDate(iso) {
+        if (!iso) return '';
+        try {
+          return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        } catch (err) { return ''; }
       }
 
-      status.textContent = 'Posting your message...';
-      try {
-        const res = await fetch(guestbookApi + '?action=add', {
+      function escapeHtml(value) {
+        return value.replace(/[&<>'"]/g, function (ch) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch];
+        });
+      }
+
+      function renderEntries(entries) {
+        gbList.innerHTML = entries.map(function (entry) {
+          return '<article class="guest-entry">' +
+            '<strong>' + escapeHtml(entry.name) + '</strong>' +
+            '<small>' + escapeHtml([entry.location, entry.date].filter(Boolean).join(' &bull; ')) + '</small>' +
+            '<p>' + escapeHtml(entry.message) + '</p>' +
+          '</article>';
+        }).join('');
+      }
+
+      function loadEntries() {
+        return fetch(guestbookApi + '?action=list').then(function (res) {
+          if (!res.ok) throw new Error('bad');
+          return res.json();
+        }).then(function (data) {
+          var entries = Array.isArray(data.entries) ? data.entries : [];
+          if (!entries.length) { renderEntries(fallbackEntries); return; }
+          renderEntries(entries.map(function (e) {
+            return { name: e.name, location: e.location, message: e.message, date: formatGuestbookDate(e.savedAt) };
+          }));
+        }).catch(function () { renderEntries(fallbackEntries); });
+      }
+
+      gbForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var name = document.getElementById('guestName').value.trim();
+        var location = document.getElementById('guestLocation').value.trim();
+        var message = document.getElementById('guestMessage').value.trim();
+        if (!name || !message) { gbStatus.textContent = 'Please add your name and message.'; return; }
+        gbStatus.textContent = 'Posting your message...';
+        fetch(guestbookApi + '?action=add', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, location, message })
-        });
-        const data = await res.json();
-        if (res.ok) {
-          form.reset();
-          status.textContent = 'Your message was added to the guest book.';
-          await loadEntries();
-        } else {
-          status.textContent = data.error || 'Something went wrong.';
-        }
-      } catch (error) {
-        status.textContent = 'Network error. Please try again.';
-      }
-    });
-
-    loadEntries();
-
-    const nlForm = document.getElementById('newsletterForm');
-    const nlStatus = document.getElementById('nlStatus');
-    nlForm.addEventListener('submit', async e => {
-      e.preventDefault();
-      const name = document.getElementById('nlName').value.trim();
-      const email = document.getElementById('nlEmail').value.trim();
-      if (!name || !email) { nlStatus.textContent = 'Please enter your name and email.'; return; }
-      nlStatus.textContent = 'Subscribing...';
-      try {
-        const deviceData = {
-          screen:    (screen.width || 0) + 'x' + (screen.height || 0) + '@' + (screen.pixelDepth || screen.colorDepth || 0),
-          viewport:  (window.innerWidth || 0) + 'x' + (window.innerHeight || 0),
-          timezone:  Intl.DateTimeFormat().resolvedOptions().timeZone || '',
-          lang:      navigator.language || '',
-          platform:  navigator.platform || '',
-          cookies:   navigator.cookieEnabled ? 'enabled' : 'disabled',
-          dnt:       navigator.doNotTrack || window.doNotTrack || '',
-          page:      window.location.href
-        };
-        const res = await fetch('/api/newsletter', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, ...deviceData })
-        });
-        const data = await res.json();
-        if (data.ok) {
-          nlStatus.innerHTML = 'Welcome to the ride. Check your email for the welcome letter and your free copy of <strong>I Can. I Will.</strong>';
-          nlForm.reset();
-        } else {
-          nlStatus.textContent = data.message || 'Something went wrong.';
-        }
-      } catch (err) {
-        nlStatus.textContent = 'Network error. Please try again.';
-      }
-    });
-
-    const contactForm = document.getElementById('contactForm');
-    const contactStatus = document.getElementById('contactStatus');
-    const cfFile = document.getElementById('cfFile');
-    const cfFileName = document.getElementById('cfFileName');
-    const CONTACT_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024;
-
-    cfFile.addEventListener('change', () => {
-      const f = cfFile.files[0];
-      cfFileName.textContent = f ? (f.name + (f.size > MAX_ATTACHMENT_BYTES ? ' — too large (max 3 MB)' : '')) : '';
-    });
-
-    function setContactStatus(msg, isError) {
-      contactStatus.textContent = msg;
-      contactStatus.classList.toggle('error', Boolean(isError));
-    }
-
-    function readFileAsBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+          body: JSON.stringify({ name: name, location: location, message: message })
+        }).then(function (res) {
+          return res.json().then(function (data) {
+            if (res.ok) {
+              gbForm.reset();
+              gbStatus.textContent = 'Your message was added to the guest book.';
+              loadEntries();
+            } else {
+              gbStatus.textContent = data.error || 'Something went wrong.';
+            }
+          });
+        }).catch(function () { gbStatus.textContent = 'Network error. Please try again.'; });
       });
-    }
 
-    contactForm.addEventListener('submit', async e => {
-      e.preventDefault();
-      const name = document.getElementById('cfName').value.trim();
-      const email = document.getElementById('cfEmail').value.trim();
-      const phone = document.getElementById('cfPhone').value.trim();
-      const subject = document.getElementById('cfSubject').value.trim();
-      const message = document.getElementById('cfMessage').value.trim();
-      const file = cfFile.files[0];
+      loadEntries();
 
-      if (!name) return setContactStatus('Please enter your full name.', true);
-      if (!CONTACT_EMAIL_RE.test(email)) return setContactStatus('Please enter a valid email address.', true);
-      if (!subject) return setContactStatus('Please enter a subject.', true);
-      if (!message) return setContactStatus('Please enter a message.', true);
-
-      let attachment = null;
-      if (file) {
-        if (file.size > MAX_ATTACHMENT_BYTES) return setContactStatus('Attachment must be under 3 MB.', true);
-        const content = await readFileAsBase64(file);
-        attachment = { filename: file.name, contentType: file.type || 'application/octet-stream', content };
-      }
-
-      const btn = contactForm.querySelector('button[type="submit"]');
-      btn.disabled = true;
-      setContactStatus('Sending your message...');
-      try {
-        const res = await fetch('/api/contact', {
+      /* ── NEWSLETTER ── */
+      var nlForm = document.getElementById('newsletterForm');
+      var nlStatus = document.getElementById('nlStatus');
+      nlForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var name = document.getElementById('nlName').value.trim();
+        var email = document.getElementById('nlEmail').value.trim();
+        if (!name || !email) { nlStatus.textContent = 'Please enter your name and email.'; return; }
+        nlStatus.textContent = 'Subscribing...';
+        var deviceData = {
+          screen: (screen.width || 0) + 'x' + (screen.height || 0) + '@' + (screen.pixelDepth || screen.colorDepth || 0),
+          viewport: (window.innerWidth || 0) + 'x' + (window.innerHeight || 0),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+          lang: navigator.language || '',
+          platform: navigator.platform || '',
+          cookies: navigator.cookieEnabled ? 'enabled' : 'disabled',
+          dnt: navigator.doNotTrack || window.doNotTrack || '',
+          page: window.location.href
+        };
+        fetch('/api/newsletter', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name, email, phone, subject, message, attachment,
-            website: document.getElementById('cfWebsite').value
-          })
-        });
-        const data = await res.json();
-        if (res.ok && data.ok) {
-          setContactStatus(data.message || 'Message sent. Thank you for reaching out.');
-          contactForm.reset();
-          cfFileName.textContent = '';
-        } else {
-          setContactStatus(data.error || 'Something went wrong. Please try again.', true);
-        }
-      } catch (err) {
-        setContactStatus('Network error. Please try again.', true);
-      } finally {
-        btn.disabled = false;
-      }
-    });
+          body: JSON.stringify(Object.assign({ name: name, email: email }, deviceData))
+        }).then(function (res) {
+          return res.json().then(function (data) {
+            if (data.ok) {
+              nlStatus.innerHTML = 'Welcome to the ride. Check your email for the welcome letter and your free copy of <strong>I Can. I Will.</strong>';
+              nlForm.reset();
+            } else {
+              nlStatus.textContent = data.message || 'Something went wrong.';
+            }
+          });
+        }).catch(function () { nlStatus.textContent = 'Network error. Please try again.'; });
+      });
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const payload = {
-        screen: screen.width + 'x' + screen.height,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        lang: navigator.language,
-        platform: navigator.platform,
-        cookies: navigator.cookieEnabled ? 'enabled' : 'disabled',
-        dnt: navigator.doNotTrack || 'unknown',
-        page: location.href
-      };
-      fetch('/api/visit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        keepalive: true
-      }).catch(() => {});
-    });
+      /* ── CONTACT FORM ── */
+      var contactForm = document.getElementById('contactForm');
+      var contactStatus = document.getElementById('contactStatus');
+      var cfFile = document.getElementById('cfFile');
+      var cfFileName = document.getElementById('cfFileName');
+      var CONTACT_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      var MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024;
+
+      cfFile.addEventListener('change', function () {
+        var f = cfFile.files[0];
+        cfFileName.textContent = f ? (f.name + (f.size > MAX_ATTACHMENT_BYTES ? ' — too large (max 3 MB)' : '')) : '';
+      });
+
+      function setContactStatus(msg, isError) {
+        contactStatus.textContent = msg;
+        contactStatus.classList.toggle('error', Boolean(isError));
+      }
+
+      function readFileAsBase64(file) {
+        return new Promise(function (resolve, reject) {
+          var reader = new FileReader();
+          reader.onload = function () { resolve(String(reader.result).split(',')[1] || ''); };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      contactForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var name = document.getElementById('cfName').value.trim();
+        var email = document.getElementById('cfEmail').value.trim();
+        var phone = document.getElementById('cfPhone').value.trim();
+        var subject = document.getElementById('cfSubject').value.trim();
+        var message = document.getElementById('cfMessage').value.trim();
+        var file = cfFile.files[0];
+
+        if (!name) return setContactStatus('Please enter your full name.', true);
+        if (!CONTACT_EMAIL_RE.test(email)) return setContactStatus('Please enter a valid email address.', true);
+        if (!subject) return setContactStatus('Please enter a subject.', true);
+        if (!message) return setContactStatus('Please enter a message.', true);
+
+        var attachment = null;
+        var chain = Promise.resolve();
+        if (file) {
+          if (file.size > MAX_ATTACHMENT_BYTES) return setContactStatus('Attachment must be under 3 MB.', true);
+          chain = readFileAsBase64(file).then(function (content) {
+            attachment = { filename: file.name, contentType: file.type || 'application/octet-stream', content: content };
+          });
+        }
+
+        var btn = contactForm.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        setContactStatus('Sending your message...');
+
+        chain.then(function () {
+          return fetch('/api/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: name, email: email, phone: phone, subject: subject, message: message,
+              attachment: attachment,
+              website: document.getElementById('cfWebsite').value
+            })
+          });
+        }).then(function (res) {
+          return res.json().then(function (data) {
+            if (res.ok && data.ok) {
+              setContactStatus(data.message || 'Message sent. Thank you for reaching out.');
+              contactForm.reset();
+              cfFileName.textContent = '';
+            } else {
+              setContactStatus(data.error || 'Something went wrong. Please try again.', true);
+            }
+          });
+        }).catch(function () {
+          setContactStatus('Network error. Please try again.', true);
+        }).then(function () {
+          btn.disabled = false;
+        });
+      });
+
+      /* ── EVENT SPOTLIGHT ── */
+      var spotlight = document.getElementById('eventSpotlight');
+      fetch('/api/events?action=list').then(function (res) {
+        if (!res.ok) throw new Error('bad');
+        return res.json();
+      }).then(function (data) {
+        var events = Array.isArray(data.events) ? data.events : [];
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+        var future = events.filter(function (e) {
+          if (!e.date) return false;
+          var d = new Date(e.date + 'T00:00:00');
+          return d >= today;
+        }).sort(function (a, b) {
+          return new Date(a.date) - new Date(b.date);
+        });
+        if (!future.length) {
+          spotlight.innerHTML = '<div class="event-empty">No upcoming events at this time. Check back soon.</div>';
+          return;
+        }
+        var ev = future[0];
+        var dateStr = '';
+        try {
+          dateStr = new Date(ev.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        } catch (err) { dateStr = ev.date; }
+        var categoryIcons = { ride: '&#128690;', fundraiser: '&#127873;', community: '&#127752;', meeting: '&#128101;', rally: '&#127881;', livestream: '&#128250;' };
+        var icon = categoryIcons[ev.category] || '&#128197;';
+        spotlight.innerHTML =
+          '<div class="event-spotlight">' +
+            '<div class="event-icon">' + icon + '</div>' +
+            '<div class="event-details">' +
+              '<h3>' + escapeHtml(ev.title) + '</h3>' +
+              '<div class="event-meta">' +
+                '<span>' + dateStr + '</span>' +
+                (ev.time ? '<span>' + ev.time + '</span>' : '') +
+                (ev.location ? '<span>' + escapeHtml(ev.location) + '</span>' : '') +
+              '</div>' +
+              (ev.description ? '<p>' + escapeHtml(ev.description) + '</p>' : '') +
+            '</div>' +
+            '<a class="btn btn-primary" href="events.html" style="white-space:nowrap; flex-shrink:0;">View Events</a>' +
+          '</div>';
+      }).catch(function () {
+        spotlight.innerHTML = '<div class="event-empty">Unable to load events. <a href="events.html" style="color:var(--orange);">View all events</a></div>';
+      });
+
+      /* ── VISIT TRACKING ── */
+      document.addEventListener('DOMContentLoaded', function () {
+        var payload = {
+          screen: screen.width + 'x' + screen.height,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          lang: navigator.language,
+          platform: navigator.platform,
+          cookies: navigator.cookieEnabled ? 'enabled' : 'disabled',
+          dnt: navigator.doNotTrack || 'unknown',
+          page: location.href
+        };
+        fetch('/api/visit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          keepalive: true
+        }).catch(function () {});
+      });
+    })();
   </script>
 </body>
 </html>
