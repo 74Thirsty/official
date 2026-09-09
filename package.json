@@ -9,6 +9,7 @@
   "scripts": {
     "generate:compliance": "node scripts/generate-compliance-manifest.mjs",
     "generate:documents": "node scripts/generate-document-manifest.mjs",
+    "generate:onboarding-references": "node scripts/generate-onboarding-references.mjs",
     "dev": "vercel dev",
     "deploy": "vercel --prod"
   },

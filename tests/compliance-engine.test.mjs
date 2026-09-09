@@ -44,7 +44,11 @@ function fillSection(instance, workflow, sectionId, actor = 'operator') {
   const section = template.sections.find((item) => item.id === sectionId);
   const values = {};
   for (const field of section.fields || []) {
-    if (field.type === 'select') values[field.name] = field.options[0];
+    if (field.type === 'select') {
+      const verified = field.options.find((option) => (typeof option === 'object' ? option.value : option) === 'Verified');
+      const option = verified || field.options[0];
+      values[field.name] = typeof option === 'object' ? option.value : option;
+    }
     else if (field.type === 'number') values[field.name] = '1';
     else if (field.type === 'date') values[field.name] = '2026-09-05';
     else if (field.type === 'time') values[field.name] = '12:00';
@@ -133,17 +137,54 @@ test('the six reference workflows are implemented to prove the engine', () => {
   for (const workflow of found) assert.equal(workflow.legacy, false);
 });
 
-test('member, volunteer, and employee workflows share the onboarding master template with predefined applicability', () => {
+test('member, volunteer, and employee workflows use distinct relationship-specific schemas', () => {
   const shared = ['onboard-member', 'onboard-volunteer', 'onboard-employee']
     .map((id) => getWorkflow(id).templateId);
-  assert.deepEqual(shared, ['ONBOARDING_MASTER_TEMPLATE', 'ONBOARDING_MASTER_TEMPLATE', 'ONBOARDING_MASTER_TEMPLATE']);
-  const template = getTemplate('ONBOARDING_MASTER_TEMPLATE');
-  assert.equal(template.sections.length, 9);
+  assert.deepEqual(shared, ['MEMBER_ONBOARDING_TEMPLATE', 'VOLUNTEER_ONBOARDING_TEMPLATE', 'EMPLOYEE_ONBOARDING_TEMPLATE']);
   assert.deepEqual(getWorkflow('onboard-member').activeSections, ['A', 'B', 'C', 'F', 'I']);
   assert.deepEqual(getWorkflow('onboard-volunteer').activeSections, ['A', 'B', 'D', 'F', 'G', 'I']);
   assert.deepEqual(getWorkflow('onboard-employee').activeSections, ['A', 'B', 'E', 'F', 'G', 'H', 'I']);
   for (const workflow of ['onboard-member', 'onboard-volunteer', 'onboard-employee'].map((id) => getWorkflow(id))) {
+    const template = getTemplate(workflow.templateId);
     assert.ok(workflow.lifecycle.every((stage) => (stage.sectionsRequired || []).every((sectionId) => template.sections.some((section) => section.id === sectionId))));
+  }
+});
+
+test('employee onboarding derives immutable relationship and canonical position metadata without restricted PII fields', () => {
+  const workflow = getWorkflow('onboard-employee');
+  const template = getTemplate(workflow.templateId);
+  const relationship = template.sections.find((section) => section.id === 'B');
+  const employee = template.sections.find((section) => section.id === 'E');
+  const restricted = template.sections.find((section) => section.id === 'H');
+  assert.equal(relationship.fields.find((field) => field.name === 'relationship_type').derivedValue, 'Employee');
+  assert.equal(relationship.fields.some((field) => field.name === 'program_area' || field.name === 'supervisor'), false);
+  assert.equal(relationship.fields.find((field) => field.name === 'chapter_location').options.length, 1);
+  assert.equal(employee.fields.find((field) => field.name === 'position_id').options.length, 42);
+  assert.equal(employee.fields.some((field) => field.name === 'position_title'), false);
+  assert.ok(restricted.fields.some((field) => field.name === 'w4_status'));
+  assert.ok(restricted.fields.some((field) => field.name === 'i9_document_path'));
+  assert.equal(restricted.fields.some((field) => /^(ssn|date_of_birth|w4|i9_contents)$/i.test(field.name)), false);
+  const instance = createInstance(workflow, { full_name: 'Employee Test', email: 'employee@example.org', relationship_type: 'Volunteer' }, 'operator', new Set());
+  assert.equal(instance.fieldValues.B.relationship_type, 'Employee');
+  saveFieldValues(instance, workflow, 'E', { position_id: '07-Executive-Director', proposed_compensation: '50000', hiring_authority: 'Board' }, 'operator');
+  assert.equal(instance.fieldValues.E.position_title, 'Executive Director');
+  assert.match(instance.fieldValues.E.position_source_path, /^employees\/07-Executive-Director\.md$/);
+  assert.match(instance.fieldValues.E.position_source_hash, /^[a-f0-9]{64}$/);
+  saveFieldValues(instance, workflow, 'B', { relationship_type: 'Volunteer', chapter_location: 'fort-dodge-iowa', start_date: '2026-09-08' }, 'operator');
+  assert.equal(instance.fieldValues.B.relationship_type, 'Employee');
+  saveFieldValues(instance, workflow, 'H', { date_of_birth: '2000-01-01', ssn: '123-45-6789', date_of_birth_status: 'Verified', ssn_status: 'Verified', w4_status: 'Verified', i9_status: 'Verified', i9_document_path: 'List A', i9_identity_document_status: 'Verified', i9_employment_authorization_status: 'Verified', payroll_information_status: 'Verified', restricted_record_reference: 'HR-CASE-TEST' }, 'operator');
+  assert.equal(JSON.stringify(instance).includes('123-45-6789'), false);
+  assert.equal(JSON.stringify(instance).includes('2000-01-01'), false);
+  assert.equal(Object.hasOwn(instance.fieldValues.H, 'ssn'), false);
+  assert.equal(Object.hasOwn(instance.fieldValues.H, 'date_of_birth'), false);
+});
+
+test('member and volunteer onboarding retain program assignment and exclude employee-only sections', () => {
+  for (const id of ['onboard-member', 'onboard-volunteer']) {
+    const template = getTemplate(getWorkflow(id).templateId);
+    const relationship = template.sections.find((section) => section.id === 'B');
+    assert.ok(relationship.fields.some((field) => field.name === 'program_area' && field.type === 'select'));
+    assert.equal(template.sections.some((section) => section.id === 'E' || section.id === 'H'), false);
   }
 });
 
@@ -280,7 +321,7 @@ test('workflow and document references resolve through the shared document regis
 });
 
 test('public templates expose controlled sections, fields, and signature definitions', () => {
-  const template = publicTemplate(getTemplate('ONBOARDING_MASTER_TEMPLATE'));
+  const template = publicTemplate(getTemplate('VOLUNTEER_ONBOARDING_TEMPLATE'));
   assert.equal(template.controlled, true);
   const sectionA = template.sections.find((section) => section.id === 'A');
   assert.ok(sectionA.fields.some((field) => field.name === 'full_name'));

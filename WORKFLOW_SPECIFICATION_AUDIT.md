@@ -49,3 +49,22 @@ The former duplication was caused by storing initiation input in both `creationV
 ## Legal and governance boundary
 
 This audit does not add or characterize a statutory obligation. Requirements shown by the engine are organizational controls derived from the Document IDs cited by each workflow. Any future legal or regulatory rule must first be established or incorporated by the authoritative documentation process, then versioned into the executable definition.
+
+## Onboarding field and records classification
+
+The Organization Handbook Privacy Policy and REC-SOP-001 jointly govern onboarding data. The three onboarding definitions are separate schemas even where they reuse renderer components.
+
+| Data | Workflows | Classification / handling |
+|---|---|---|
+| Relationship type | Employee, volunteer, member | Workflow-derived, immutable internal state |
+| Legal/full name, address, phone, email | Applicable relationship workflow | Restricted personnel/member/volunteer data; authenticated operational record only; data minimization applies |
+| Program / area | Volunteer, member | Controlled program assignment; employee workflow does not collect it |
+| Position, description, provenance | Employee | Internal canonical reference derived from HR-REF-001 and the 42 generated position manuals |
+| Chapter / location | Employee | Controlled internal reference; currently only Fort Dodge, Iowa is authorized pending a canonical location register |
+| Compensation and hiring authority | Employee | Restricted personnel information / internal approval information; authenticated workflow only |
+| DOB, SSN, W-4 contents, I-9 contents, government ID data/images, bank data | Employee | Restricted records. Values and files are prohibited from generic `fieldValues`, APIs, exports, titles, search, audit details, URLs, and browser persistence. They belong only in the separate encrypted, need-to-know HR/payroll records system required by REC-SOP-001. |
+| W-4, I-9, identity, work-authorization, DOB/SSN capture, and payroll completion states | Employee | Status-only operational controls; no underlying restricted content |
+| Restricted record reference | Employee | Opaque reference only; must not encode PII |
+| Signatures and screening evidence | Applicable workflow | Restricted record references/evidence; underlying records remain in the authorized restricted system |
+
+The application currently has no encrypted, role-separated restricted-record provider. Consequently it does not collect or upload underlying SSNs, DOB values, tax forms, I-9 contents, identity documents, or bank information. Employee onboarding orchestrates and gates their completion through status fields and an opaque external record reference without misrepresenting ordinary Vercel KV as compliant restricted storage.

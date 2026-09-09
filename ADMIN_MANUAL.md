@@ -329,6 +329,10 @@ Errors follow `{ "error": "..." }` with proper HTTP codes (403 admin, 422 valida
 
 ## Storage (Vercel KV)
 
+### Onboarding restricted-data boundary
+
+Compliance records may track onboarding status and an opaque restricted HR/payroll file reference. Never enter an SSN, birth date, bank information, W-4/I-9 contents, government ID number, or identity-document image into a Compliance Engine field, evidence description, URL, or working document. Those records belong in the separate encrypted, need-to-know HR/payroll system required by REC-SOP-001. The current application does not provide that restricted-record upload or value-collection capability.
+
 JSON arrays under `llr:*` — access goes through `lib/storage.js` only.
 
 | Key | Cap | Contents |

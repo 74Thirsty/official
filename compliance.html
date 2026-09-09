@@ -180,7 +180,9 @@
       var val=value==null?'':escapeHtml(value);
       var control='';
       if(field.type==='textarea'){control='<textarea data-field="'+escapeHtml(field.name)+'"'+max+required+'>'+val+'</textarea>';}
-      else if(field.type==='select'){control='<select data-field="'+escapeHtml(field.name)+'"'+required+'><option value="">Select…</option>'+field.options.map(function(option){return '<option value="'+escapeHtml(option)+'"'+(String(value)===String(option)?' selected':'')+'>'+escapeHtml(option)+'</option>';}).join('')+'</select>';}
+      else if(field.type==='select'){control='<select data-field="'+escapeHtml(field.name)+'"'+required+'><option value="">Select…</option>'+field.options.map(function(option){var optionValue=typeof option==='object'?option.value:option;var optionLabel=typeof option==='object'?option.label:option;return '<option value="'+escapeHtml(optionValue)+'"'+(String(value)===String(optionValue)?' selected':'')+'>'+escapeHtml(optionLabel)+'</option>';}).join('')+'</select>';}
+      else if(field.type==='derived'){control='<input type="text" data-field="'+escapeHtml(field.name)+'" value="'+escapeHtml(value||field.derivedValue||'')+'" readonly aria-readonly="true">';kind='Workflow-derived';}
+      else if(field.type==='derived-reference'){control='<textarea class="derived-reference" data-field="'+escapeHtml(field.name)+'" data-derived-from="'+escapeHtml(field.deriveFrom)+'" data-references="'+escapeHtml(JSON.stringify(field.references||[]))+'" readonly aria-readonly="true">'+val+'</textarea>';kind='Canonical reference';classes='full';}
       else if(field.type==='number'){control='<input type="number" step="any" data-field="'+escapeHtml(field.name)+'" value="'+val+'"'+required+'>';}
       else if(field.type==='date'||field.type==='time'){control='<input type="'+field.type+'" data-field="'+escapeHtml(field.name)+'" value="'+val+'"'+required+'>';}
       else{control='<input type="text" data-field="'+escapeHtml(field.name)+'" value="'+val+'"'+max+required+'>';}
@@ -208,7 +210,16 @@
     }
     function bindConditionalFields(scope) {
       (scope||document).querySelectorAll('[data-field]').forEach(function(input){input.dataset.baseRequired=input.required?'true':'false';input.addEventListener('change',function(){applyConditionalFields(scope);});});
+      bindDerivedReferences(scope);
       applyConditionalFields(scope);
+    }
+    function bindDerivedReferences(scope) {
+      (scope||document).querySelectorAll('[data-derived-from]').forEach(function(output){
+        var source=(output.closest('.form-grid')||scope||document).querySelector('[data-field="'+CSS.escape(output.dataset.derivedFrom)+'"]');
+        var references=JSON.parse(output.dataset.references||'[]');
+        function update(){var reference=references.find(function(item){return source&&item.value===source.value;});output.value=reference?reference.description+'\n\nSource: '+reference.sourcePath+'\nVersion hash: '+reference.sourceHash:'';}
+        if(source)source.addEventListener('change',update);update();
+      });
     }
     function workflowCard(workflow) {
       return '<button class="flow" type="button" data-workflow="'+escapeHtml(workflow.id)+'"><span style="color:var(--orange);font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;">'+escapeHtml(workflow.categoryName||workflow.category||'workflow').toUpperCase()+'</span><br>'+escapeHtml(workflow.name)+'<small>'+escapeHtml(workflow.summary)+'</small><span class="stage-count">'+workflow.lifecycle.length+' predefined stages</span>'+(workflow.legacy?'<span class="badge purple">adapted definition</span>':'<span class="badge green">controlled definition</span>')+'</button>';
