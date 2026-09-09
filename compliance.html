@@ -174,6 +174,7 @@
       var hint=field.help?'<span class="hint">'+escapeHtml(field.help)+'</span>':'';
       var example=field.example?'<span class="example">Example: “'+escapeHtml(field.example)+'”</span>':'';
       var kind=field.when?'Conditional':field.required?'Required':'Optional';
+      if(String(field.classification||'').indexOf('restricted')===0)kind+=(field.required?' · Restricted record':' · Restricted');
       var max=field.maxlen?' maxlength="'+field.maxlen+'"':'';
       var classes=field.type==='textarea'?'full':'';
       var condition=field.when?' data-when-field="'+escapeHtml(field.when.field)+'" data-when-values="'+escapeHtml(JSON.stringify(field.when.in||[field.when.equals]))+'"':'';
@@ -321,6 +322,7 @@
       (stage.signaturesRequired||[]).forEach(function(signature){var doc=open.documents.find(function(d){return d.documentId===signature.documentId;});var ok=!!doc&&doc.signatures.some(function(s){return s.signatureId===signature.signatureId;});items.push({ok:ok,message:'Signature '+signature.signatureId+' on '+signature.documentId});});
       if(stage.evidenceRequired)items.push({ok:(state.evidence||[]).length>0,message:'Evidence recorded'});
       if(stage.approvalRequired)items.push({ok:!!state.approval,message:'Approval recorded'});
+      (stage.blockingRules||[]).forEach(function(rule){var condition=rule.when||{};var actual=((open.fieldValues[condition.sectionId]||{})[condition.field]);var ok=condition.in?condition.in.includes(actual):Object.prototype.hasOwnProperty.call(condition,'equals')?actual===condition.equals:Object.prototype.hasOwnProperty.call(condition,'notEquals')?actual!==condition.notEquals:true;items.push({ok:ok,message:ok?rule.message.replace(/must be|must /i,'confirmed: '):rule.message});});
       return items;
     }
     function renderGate() {

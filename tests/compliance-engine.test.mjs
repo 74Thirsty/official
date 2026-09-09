@@ -172,11 +172,15 @@ test('employee onboarding derives immutable relationship and canonical position 
   assert.match(instance.fieldValues.E.position_source_hash, /^[a-f0-9]{64}$/);
   saveFieldValues(instance, workflow, 'B', { relationship_type: 'Volunteer', chapter_location: 'fort-dodge-iowa', start_date: '2026-09-08' }, 'operator');
   assert.equal(instance.fieldValues.B.relationship_type, 'Employee');
-  saveFieldValues(instance, workflow, 'H', { date_of_birth: '2000-01-01', ssn: '123-45-6789', date_of_birth_status: 'Verified', ssn_status: 'Verified', w4_status: 'Verified', i9_status: 'Verified', i9_document_path: 'List A', i9_identity_document_status: 'Verified', i9_employment_authorization_status: 'Verified', payroll_information_status: 'Verified', restricted_record_reference: 'HR-CASE-TEST' }, 'operator');
+  assert.throws(() => saveFieldValues(instance, workflow, 'H', { date_of_birth: '2000-01-01', ssn: '123-45-6789' }, 'operator'), /restricted information/);
   assert.equal(JSON.stringify(instance).includes('123-45-6789'), false);
   assert.equal(JSON.stringify(instance).includes('2000-01-01'), false);
-  assert.equal(Object.hasOwn(instance.fieldValues.H, 'ssn'), false);
-  assert.equal(Object.hasOwn(instance.fieldValues.H, 'date_of_birth'), false);
+  assert.equal(Object.hasOwn(instance.fieldValues.H || {}, 'ssn'), false);
+  assert.equal(Object.hasOwn(instance.fieldValues.H || {}, 'date_of_birth'), false);
+  saveFieldValues(instance, workflow, 'H', { date_of_birth_status: 'Pending', ssn_status: 'Pending', w4_status: 'Pending', i9_status: 'Pending', i9_document_path: 'List A', i9_identity_document_status: 'Pending', i9_employment_authorization_status: 'Pending', payroll_information_status: 'Pending', restricted_record_reference: 'HR-CASE-TEST' }, 'operator');
+  const pending = stageSatisfied(instance, workflow, workflow.lifecycle.findIndex((stage) => stage.id === 'onboarding-payroll'));
+  assert.equal(pending.ok, false);
+  assert.ok(pending.errors.some((error) => /SSN must be recorded/.test(error)));
 });
 
 test('member and volunteer onboarding retain program assignment and exclude employee-only sections', () => {

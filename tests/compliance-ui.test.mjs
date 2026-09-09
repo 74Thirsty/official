@@ -89,4 +89,6 @@ test('workflow execution is self-guided, conditional, and procedurally unified',
   assert.match(page, /applyConditionalFields/);
   assert.match(page, /\[data-field\]:not\(:disabled\)/);
   assert.match(page, /field-kind/);
+  assert.match(page, /Restricted record/);
+  assert.match(page, /stage\.blockingRules/);
 });
