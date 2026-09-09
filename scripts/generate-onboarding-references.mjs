@@ -9,6 +9,7 @@ const EMPLOYEES = path.join(SOURCE, 'employees');
 const OUTPUT = path.join(ROOT, 'lib', 'onboarding-references.generated.js');
 const PROGRAMS = path.join(SOURCE, 'lost_limb_riders_handbooks', '03-Program-Manuals');
 const VOLUNTEER_APPROVAL = path.join(SOURCE, 'lost_limb_riders_handbooks', 'transactional_operations', '08-VOLUNTEERS', 'VOL-FORM-004-Volunteer-Approval-Record.md');
+const PROGRAM_ENROLLMENT = path.join(SOURCE, 'lost_limb_riders_handbooks', '04-Forms-and-Templates', '03-Program-Enrollment-Form.md');
 
 function section(text, heading) {
   const match = text.match(new RegExp(`^## ${heading}\\s*$([\\s\\S]*?)(?=^## |\\Z)`, 'm'));
@@ -59,6 +60,17 @@ for (const raw of capacityLine.split('☐').slice(1)) {
 }
 if (!volunteerAreas.length) throw new Error('No canonical volunteer programs/areas were found.');
 
+const enrollmentText = await readFile(PROGRAM_ENROLLMENT, 'utf8');
+const memberPrograms = section(enrollmentText, 'PROGRAM INTEREST').split(/\r?\n/)
+  .map((line) => line.match(/^☐ (.+?) \(/)?.[1])
+  .filter(Boolean)
+  .map((name) => ({
+    value: name,
+    label: name,
+    source_path: 'lost_limb_riders_handbooks/04-Forms-and-Templates/03-Program-Enrollment-Form.md',
+  }));
+if (memberPrograms.length !== 6) throw new Error(`Expected 6 canonical member-applicable programs; found ${memberPrograms.length}.`);
+
 const banner = '// Generated from canonical Autobiography documents. Do not edit by hand.\n';
-await writeFile(OUTPUT, `${banner}export const CANONICAL_POSITIONS = Object.freeze(${JSON.stringify(positions, null, 2)});\n\nexport const AUTHORIZED_LOCATIONS = Object.freeze(${JSON.stringify(locations, null, 2)});\n\nexport const CANONICAL_VOLUNTEER_AREAS = Object.freeze(${JSON.stringify(volunteerAreas, null, 2)});\n`);
-console.log(`Generated ${positions.length} positions, ${locations.length} authorized location, and ${volunteerAreas.length} volunteer areas.`);
+await writeFile(OUTPUT, `${banner}export const CANONICAL_POSITIONS = Object.freeze(${JSON.stringify(positions, null, 2)});\n\nexport const AUTHORIZED_LOCATIONS = Object.freeze(${JSON.stringify(locations, null, 2)});\n\nexport const CANONICAL_VOLUNTEER_AREAS = Object.freeze(${JSON.stringify(volunteerAreas, null, 2)});\n\nexport const CANONICAL_MEMBER_PROGRAMS = Object.freeze(${JSON.stringify(memberPrograms, null, 2)});\n`);
+console.log(`Generated ${positions.length} positions, ${locations.length} authorized location, ${volunteerAreas.length} volunteer areas, and ${memberPrograms.length} member programs.`);

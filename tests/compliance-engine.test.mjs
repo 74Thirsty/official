@@ -186,9 +186,77 @@ test('employee onboarding derives immutable relationship and canonical position 
 test('member and volunteer onboarding retain program assignment and exclude employee-only sections', () => {
   for (const id of ['onboard-member', 'onboard-volunteer']) {
     const template = getTemplate(getWorkflow(id).templateId);
-    const relationship = template.sections.find((section) => section.id === 'B');
-    assert.ok(relationship.fields.some((field) => field.name === 'program_area' && field.type === 'select'));
+    assert.ok(template.sections.some((section) => section.fields.some((field) => field.name === 'program_area' && field.type === 'select')));
     assert.equal(template.sections.some((section) => section.id === 'E' || section.id === 'H'), false);
+  }
+});
+
+test('member onboarding is independently defined, canonically constrained, and data-minimized', () => {
+  const workflow = getWorkflow('onboard-member');
+  const template = getTemplate(workflow.templateId);
+  const fields = template.sections.flatMap((section) => section.fields);
+  const names = new Set(fields.map((field) => field.name));
+  const relationship = template.sections.find((section) => section.id === 'B');
+  const enrollment = template.sections.find((section) => section.id === 'C');
+  assert.equal(relationship.fields.find((field) => field.name === 'relationship_type').derivedValue, 'Member');
+  assert.equal(relationship.fields.find((field) => field.name === 'chapter_location').options.length, 1);
+  assert.equal(enrollment.fields.find((field) => field.name === 'program_area').options.length, 6);
+  for (const excluded of ['position_id', 'position_description', 'proposed_compensation', 'hiring_authority', 'ssn_status', 'w4_status', 'i9_status', 'payroll_information_status', 'assignment_title', 'responsible_supervisor', 'screening_status', 'volunteer_approval_status']) {
+    assert.equal(names.has(excluded), false, excluded);
+  }
+  for (const unnecessary of ['date_of_birth', 'diagnosis', 'medical_history', 'medications', 'government_id', 'driver_license']) assert.equal(names.has(unnecessary), false, unnecessary);
+  assert.notDeepEqual(template.sections.map((section) => section.fields.map((field) => field.name)), getTemplate(getWorkflow('onboard-volunteer').templateId).sections.map((section) => section.fields.map((field) => field.name)));
+  const instance = createInstance(workflow, {
+    full_name: 'Member Test', email: 'member@example.org', phone: '555', preferred_contact_method: 'Email',
+    program_enrollment_record_reference: 'MEMBER-FILE-1', date_of_birth_record_status: 'Verified', minor_status: 'No', relationship_type: 'Employee',
+  }, 'operator', new Set());
+  assert.equal(instance.fieldValues.B.relationship_type, 'Member');
+  saveFieldValues(instance, workflow, 'B', { relationship_type: 'Volunteer', chapter_location: 'fort-dodge-iowa', start_date: '2026-09-08' }, 'operator');
+  assert.equal(instance.fieldValues.B.relationship_type, 'Member');
+  assert.throws(() => saveFieldValues(instance, workflow, 'B', { chapter_location: 'invented-chapter', start_date: '2026-09-08' }, 'operator'), /invalid option/);
+});
+
+test('member onboarding enforces guardian, program-specific, and activation gates', () => {
+  const workflow = getWorkflow('onboard-member');
+  const instance = createInstance(workflow, {
+    full_name: 'Minor Member', email: 'minor@example.org', phone: '555', preferred_contact_method: 'Email',
+    program_enrollment_record_reference: 'MEMBER-FILE-2', date_of_birth_record_status: 'Verified', minor_status: 'Yes', guardian_name_reference: 'GUARDIAN-2', guardian_consent_status: 'Pending',
+  }, 'operator', new Set());
+  let check = stageSatisfied(instance, workflow, 0);
+  assert.equal(check.ok, false);
+  assert.ok(check.errors.some((error) => /guardian consent/.test(error)));
+  saveFieldValues(instance, workflow, 'A', { ...instance.fieldValues.A, guardian_consent_status: 'Verified' }, 'operator');
+  saveFieldValues(instance, workflow, 'B', { chapter_location: 'fort-dodge-iowa', start_date: '2026-09-08' }, 'operator');
+  saveFieldValues(instance, workflow, 'C', {
+    participant_population: 'Amputee or limb-different individual', eligibility_review_status: 'Verified', program_area: 'Ride Forward Program',
+    program_enrollment_status: 'Approved', accessibility_request_status: 'None requested', emergency_contact_status: 'Verified', participant_safety_record_status: 'Verified', ride_forward_safety_status: 'Pending',
+  }, 'operator');
+  check = stageSatisfied(instance, workflow, 1);
+  assert.equal(check.ok, false);
+  assert.ok(check.errors.some((error) => /Ride Forward/.test(error)));
+  saveFieldValues(instance, workflow, 'I', { membership_review_status: 'Declined', reviewed_by: 'Membership Coordinator', approval_reference: 'APP-2', approved_date: '2026-09-08', member_id: 'MBR-2026-002' }, 'operator');
+  check = stageSatisfied(instance, workflow, 3);
+  assert.equal(check.ok, false);
+  assert.ok(check.errors.some((error) => /approved before activation/.test(error)));
+});
+
+test('every unconditional member onboarding field is server-required', () => {
+  const workflow = getWorkflow('onboard-member');
+  const template = getTemplate(workflow.templateId);
+  for (const section of template.sections) {
+    const payload = {};
+    for (const field of section.fields) {
+      if (field.type === 'derived' || field.type === 'derived-reference' || field.when) continue;
+      if (field.type === 'select') payload[field.name] = typeof field.options[0] === 'object' ? field.options[0].value : field.options[0];
+      else if (field.type === 'date') payload[field.name] = '2026-09-08';
+      else payload[field.name] = 'Test value';
+    }
+    for (const field of section.fields.filter((item) => item.required && !item.when && item.type !== 'derived' && item.type !== 'derived-reference')) {
+      const missing = { ...payload };
+      delete missing[field.name];
+      const result = validateFieldValues(template, section.id, missing);
+      assert.ok(result.errors.some((error) => error.includes(`${field.label} is required`)), `${section.id}/${field.name}`);
+    }
   }
 });
 
@@ -522,7 +590,7 @@ test('every unconditional volunteer onboarding field is server-required', () => 
 test('all reference and legacy workflows complete through the gated engine', () => {
   const creationValues = {
     'pursue-grant': { grant_name: 'G', funder: 'F', date_identified: '2026-09-05', application_deadline: '2026-12-01' },
-    'onboard-member': { full_name: 'M', email: 'm@x.com' },
+    'onboard-member': { full_name: 'M', email: 'm@x.com', phone: '555', preferred_contact_method: 'Email', program_enrollment_record_reference: 'MEMBER-1', date_of_birth_record_status: 'Verified', minor_status: 'No' },
     'onboard-volunteer': { full_name: 'V', email: 'v@x.com', phone: '555', address: 'Restricted', emergency_contact_reference: 'EC-1', minor_status: 'No' },
     'onboard-employee': { full_name: 'E', email: 'e@x.com' },
     'host-event': { event_name: 'Eve', event_type: 'Ride', date_of_request: '2026-09-05', dates: '2026-10-10', venue: 'V', purpose_mission_fit: 'p' },
