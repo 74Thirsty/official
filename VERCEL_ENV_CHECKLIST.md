@@ -42,6 +42,18 @@ The Vercel dashboard path is: **Project → Settings → Environment Variables**
 
 ## OPTIONAL — Newsletter Defaults
 
+## OPTIONAL — PayPal Donations
+
+| Variable | Required | Value | Notes |
+|---|---|---|---|
+| `PAYPAL_CLIENT_ID` | For online donations | PayPal REST app client ID | Public identifier used by PayPal's browser SDK. |
+| `PAYPAL_CLIENT_SECRET` | For online donations | PayPal REST app secret | Server-side only; never exposed to browsers. |
+| `PAYPAL_ENVIRONMENT` | Optional | `sandbox` or `live` | Defaults to `live`; use `sandbox` for end-to-end testing. |
+| `PAYPAL_MONTHLY_PLAN_ID` | For monthly donations | Approved PayPal subscription plan ID | Monthly giving remains unavailable when omitted. |
+| `PAYPAL_WEBHOOK_ID` | Recommended | PayPal webhook ID | Verifies webhook signatures at `/api/support?action=paypal-webhook`. |
+
+---
+
 | Variable | Required | Value | Notes |
 |---|---|---|---|
 | `NEWSLETTER_MESSAGE` | Optional | Any text | `api/cron-newsletter.js:37`. Default intro for cron newsletter. Falls back to built-in message. |

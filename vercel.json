@@ -1,4 +1,7 @@
 {
+  "rewrites": [
+    { "source": "/api/contact", "destination": "/api/support?action=contact" }
+  ],
   "crons": [
     {
       "path": "/api/cron-newsletter",

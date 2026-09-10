@@ -1,2 +1,4 @@
 # Parked documentation work — do not deploy while on back burner
 api/docs-auth.js
+# Contact is served by the consolidated public support function.
+api/contact.js
