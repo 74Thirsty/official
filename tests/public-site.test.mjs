@@ -65,13 +65,17 @@ test('known placeholder and stale public links are absent', () => {
   assert.doesNotMatch(combined, /https:\/\/(?:open\.spotify\.com\/show|podcasts\.apple\.com\/us\/podcast)\/["']/i);
 });
 
-test('PayPal Donate SDK uses only a hosted button identifier and cannot duplicate initialization', () => {
+test('PayPal JavaScript SDK v6 uses server-created and server-captured donation orders', () => {
   const page = readFileSync(resolve(root, 'donate.html'), 'utf8');
   const api = readFileSync(resolve(root, 'api/support.js'), 'utf8');
-  assert.match(page, /paypalobjects\.com\/donate\/sdk\/donate-sdk\.js/);
-  assert.match(page, /PayPal\.Donation\.Button/);
-  assert.match(page, /container\.dataset\.rendered/);
-  assert.match(api, /process\.env\.PAYPAL_DONATE_HOSTED_BUTTON_ID/);
-  assert.doesNotMatch(`${page}\n${api}`, /PAYPAL_CLIENT_SECRET|clientSecret|paypal-create-order|paypal-capture-order|verify-webhook-signature/);
+  assert.match(page, /web-sdk\/v6\/core/);
+  assert.match(page, /<paypal-button[^>]+class="paypal-gold"/);
+  assert.match(page, /createPayPalOneTimePaymentSession/);
+  assert.match(page, /paypal-create-order/);
+  assert.match(page, /paypal-capture-order/);
+  assert.match(api, /process\.env\.PAYPAL_CLIENT_SECRET/);
+  assert.match(api, /order\.status !== 'COMPLETED'/);
+  assert.match(api, /capture\?\.status !== 'COMPLETED'/);
+  assert.doesNotMatch(page, /PAYPAL_CLIENT_SECRET|clientSecret/);
   assert.doesNotMatch(page, /success\.html|\/success/);
 });
