@@ -53,7 +53,7 @@ test('Where to Go Next tiles are full-card links to verified routes', () => {
   const end = html.indexOf('</section>', start);
   const section = html.slice(start, end);
   const destinations = [...section.matchAll(/<a class="card-link" href="([^"]+)">/g)].map((match) => match[1]);
-  assert.deepEqual(destinations, ['peer-support.html', 'healthcare-partnerships.html', 'join.html', 'volunteer-employment.html', 'donate.html', 'events.html']);
+  assert.deepEqual(destinations, ['peer-support.html', 'healthcare-partnerships.html', 'join.html', 'volunteer-employment.html', 'donate.html', 'sponsors.html', 'events.html', 'community.html']);
   assert.equal((section.match(/<article class="card">/g) || []).length, destinations.length);
 });
 
