@@ -16,48 +16,31 @@ function response() {
   };
 }
 
-test('PayPal config exposes public identifiers but never the client secret', async () => {
-  const previous = { id: process.env.PAYPAL_CLIENT_ID, secret: process.env.PAYPAL_CLIENT_SECRET, plan: process.env.PAYPAL_MONTHLY_PLAN_ID };
-  process.env.PAYPAL_CLIENT_ID = 'public-client-id';
-  process.env.PAYPAL_CLIENT_SECRET = 'server-secret';
-  process.env.PAYPAL_MONTHLY_PLAN_ID = 'P-MONTHLY';
+test('PayPal config exposes only the public hosted button identifier and environment', async () => {
+  const previous = { id: process.env.PAYPAL_DONATE_HOSTED_BUTTON_ID, environment: process.env.PAYPAL_DONATE_ENVIRONMENT };
+  process.env.PAYPAL_DONATE_HOSTED_BUTTON_ID = 'PUBLIC-HOSTED-ID';
+  process.env.PAYPAL_DONATE_ENVIRONMENT = 'sandbox';
   try {
     const res = response();
     await handler(request('GET', 'paypal-config'), res);
     assert.equal(res.statusCode, 200);
-    assert.equal(res.payload.clientId, 'public-client-id');
-    assert.equal(res.payload.monthlyPlanId, 'P-MONTHLY');
-    assert.equal(JSON.stringify(res.payload).includes('server-secret'), false);
+    assert.deepEqual(res.payload, { configured: true, environment: 'sandbox', hostedButtonId: 'PUBLIC-HOSTED-ID' });
   } finally {
-    if (previous.id === undefined) delete process.env.PAYPAL_CLIENT_ID; else process.env.PAYPAL_CLIENT_ID = previous.id;
-    if (previous.secret === undefined) delete process.env.PAYPAL_CLIENT_SECRET; else process.env.PAYPAL_CLIENT_SECRET = previous.secret;
-    if (previous.plan === undefined) delete process.env.PAYPAL_MONTHLY_PLAN_ID; else process.env.PAYPAL_MONTHLY_PLAN_ID = previous.plan;
+    if (previous.id === undefined) delete process.env.PAYPAL_DONATE_HOSTED_BUTTON_ID; else process.env.PAYPAL_DONATE_HOSTED_BUTTON_ID = previous.id;
+    if (previous.environment === undefined) delete process.env.PAYPAL_DONATE_ENVIRONMENT; else process.env.PAYPAL_DONATE_ENVIRONMENT = previous.environment;
   }
 });
 
-test('capture reports success only for authoritative completed PayPal status', async () => {
-  const previousFetch = global.fetch;
-  const previous = { id: process.env.PAYPAL_CLIENT_ID, secret: process.env.PAYPAL_CLIENT_SECRET };
-  process.env.PAYPAL_CLIENT_ID = 'public-client-id';
-  process.env.PAYPAL_CLIENT_SECRET = 'server-secret';
-  let paypalStatus = 'PENDING';
-  global.fetch = async (url) => {
-    if (String(url).endsWith('/v1/oauth2/token')) return { ok: true, json: async () => ({ access_token: 'access-token' }) };
-    return { ok: true, json: async () => ({ id: 'ORDER12345', status: paypalStatus, purchase_units: [{ payments: { captures: [{ id: 'CAPTURE123', status: paypalStatus }] } }] }) };
-  };
+test('PayPal config reports unavailable without a hosted button ID', async () => {
+  const previous = process.env.PAYPAL_DONATE_HOSTED_BUTTON_ID;
+  delete process.env.PAYPAL_DONATE_HOSTED_BUTTON_ID;
   try {
-    const pending = response();
-    await handler(request('POST', 'paypal-capture-order', { orderId: 'ORDER12345' }), pending);
-    assert.equal(pending.statusCode, 409);
-    assert.match(pending.payload.error, /not confirmed/i);
-    paypalStatus = 'COMPLETED';
-    const completed = response();
-    await handler(request('POST', 'paypal-capture-order', { orderId: 'ORDER12345' }), completed);
-    assert.equal(completed.statusCode, 200);
-    assert.deepEqual(completed.payload, { ok: true, orderId: 'ORDER12345', status: 'COMPLETED', captureId: 'CAPTURE123' });
+    const res = response();
+    await handler(request('GET', 'paypal-config'), res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.payload.configured, false);
+    assert.equal(res.payload.hostedButtonId, '');
   } finally {
-    global.fetch = previousFetch;
-    if (previous.id === undefined) delete process.env.PAYPAL_CLIENT_ID; else process.env.PAYPAL_CLIENT_ID = previous.id;
-    if (previous.secret === undefined) delete process.env.PAYPAL_CLIENT_SECRET; else process.env.PAYPAL_CLIENT_SECRET = previous.secret;
+    if (previous === undefined) delete process.env.PAYPAL_DONATE_HOSTED_BUTTON_ID; else process.env.PAYPAL_DONATE_HOSTED_BUTTON_ID = previous;
   }
 });

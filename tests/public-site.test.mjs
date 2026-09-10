@@ -65,14 +65,13 @@ test('known placeholder and stale public links are absent', () => {
   assert.doesNotMatch(combined, /https:\/\/(?:open\.spotify\.com\/show|podcasts\.apple\.com\/us\/podcast)\/["']/i);
 });
 
-test('PayPal integration keeps secrets server-side and gates success on verified status', () => {
+test('PayPal Donate SDK uses only a hosted button identifier and cannot duplicate initialization', () => {
   const page = readFileSync(resolve(root, 'donate.html'), 'utf8');
   const api = readFileSync(resolve(root, 'api/support.js'), 'utf8');
-  assert.doesNotMatch(page, /PAYPAL_CLIENT_SECRET|clientSecret/);
-  assert.match(api, /process\.env\.PAYPAL_CLIENT_SECRET/);
-  assert.match(api, /order\.status !== 'COMPLETED'/);
-  assert.match(api, /capture\?\.status !== 'COMPLETED'/);
-  assert.match(api, /subscription\.status !== 'ACTIVE'/);
-  assert.match(api, /verify-webhook-signature/);
+  assert.match(page, /paypalobjects\.com\/donate\/sdk\/donate-sdk\.js/);
+  assert.match(page, /PayPal\.Donation\.Button/);
+  assert.match(page, /container\.dataset\.rendered/);
+  assert.match(api, /process\.env\.PAYPAL_DONATE_HOSTED_BUTTON_ID/);
+  assert.doesNotMatch(`${page}\n${api}`, /PAYPAL_CLIENT_SECRET|clientSecret|paypal-create-order|paypal-capture-order|verify-webhook-signature/);
   assert.doesNotMatch(page, /success\.html|\/success/);
 });
