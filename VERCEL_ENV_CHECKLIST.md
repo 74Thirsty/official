@@ -46,9 +46,7 @@ The Vercel dashboard path is: **Project → Settings → Environment Variables**
 
 | Variable | Required | Value | Notes |
 |---|---|---|---|
-| `PAYPAL_CLIENT_ID` | For online donations | PayPal REST application client ID | Public/browser-safe identifier used to initialize JavaScript SDK v6. |
-| `PAYPAL_CLIENT_SECRET` | For online donations | Matching PayPal REST application secret | Secret/server-only. Never expose it to browsers or source control. |
-| `PAYPAL_ENVIRONMENT` | Optional | `sandbox` or `live` | Defaults to `live`; use `sandbox` with matching Sandbox credentials for testing. |
+| `PAYPAL_DONATION_URL` | For online donations | Official Lost Limb Riders PayPal donation/payment URL | Public, HTTPS URL. PayPal handles the complete donation after the visitor follows this link. |
 
 ---
 

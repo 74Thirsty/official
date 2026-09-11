@@ -65,17 +65,13 @@ test('known placeholder and stale public links are absent', () => {
   assert.doesNotMatch(combined, /https:\/\/(?:open\.spotify\.com\/show|podcasts\.apple\.com\/us\/podcast)\/["']/i);
 });
 
-test('PayPal JavaScript SDK v6 uses server-created and server-captured donation orders', () => {
+test('PayPal donation uses a configured direct HTTPS link without SDK or payment APIs', () => {
   const page = readFileSync(resolve(root, 'donate.html'), 'utf8');
   const api = readFileSync(resolve(root, 'api/support.js'), 'utf8');
-  assert.match(page, /web-sdk\/v6\/core/);
-  assert.match(page, /<paypal-button[^>]+class="paypal-gold"/);
-  assert.match(page, /createPayPalOneTimePaymentSession/);
-  assert.match(page, /paypal-create-order/);
-  assert.match(page, /paypal-capture-order/);
-  assert.match(api, /process\.env\.PAYPAL_CLIENT_SECRET/);
-  assert.match(api, /order\.status !== 'COMPLETED'/);
-  assert.match(api, /capture\?\.status !== 'COMPLETED'/);
-  assert.doesNotMatch(page, /PAYPAL_CLIENT_SECRET|clientSecret/);
+  assert.match(page, /<a id="paypalDonationLink" class="paypal-link" hidden>Donate with PayPal<\/a>/);
+  assert.match(page, /link\.href=config\.donationUrl/);
+  assert.match(api, /process\.env\.PAYPAL_DONATION_URL/);
+  assert.match(api, /url\.protocol !== 'https:'/);
+  assert.doesNotMatch(`${page}\n${api}`, /web-sdk|paypal-create-order|paypal-capture-order|createPayPalOneTimePaymentSession|PAYPAL_CLIENT_ID|PAYPAL_CLIENT_SECRET|api-m\.paypal\.com/);
   assert.doesNotMatch(page, /success\.html|\/success/);
 });
