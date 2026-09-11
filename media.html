@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Podcast & Vlogs | Lost Limb Riders</title>
   <link rel="icon" type="image/png" href="assets/logo.png">
+  <script src="assets/public-nav.js" defer></script>
   <meta name="description" content="Podcasts, vlogs, and stories from Lost Limb Riders. Real conversations about limb loss, recovery, purpose, and the open road.">
   <style>
     :root {
@@ -912,7 +913,7 @@
       <a href="sponsors.html">Sponsors</a>
       <a href="documentation.html">Docs</a>
       <a href="index.html#guestbook">Guest Book</a>
-      <a href="tel:15158905765">Contact</a>
+      <a href="tel:5158905765">Contact</a>
     </div>
   </nav>
 
@@ -1367,10 +1368,14 @@
         grid.innerHTML = `<p style="color:var(--muted);">No vlogs yet.</p>`;
         return;
       }
-      grid.innerHTML = list.map(v => `
-        <button type="button" class="video-card" onclick="openVideoModal('${v.id}')" aria-label="Play vlog: ${escapeHtml(v.title)}">
+      grid.innerHTML = list.map(v => {
+        const playable = validVideoId(v.videoId);
+        const tag = playable ? 'button' : 'article';
+        const action = playable ? ` type="button" onclick="openVideoModal('${v.id}')" aria-label="Play vlog: ${escapeHtml(v.title)}"` : '';
+        return `
+        <${tag} class="video-card"${action}>
           <div class="video-thumb">
-            <div class="play-overlay">&#9654;</div>
+            <div class="play-overlay">${playable ? '&#9654;' : 'Coming soon'}</div>
             <span class="duration">${escapeHtml(v.duration || '')}</span>
           </div>
           <div class="video-info">
@@ -1379,8 +1384,8 @@
             <div class="ep-meta">${escapeHtml(v.date || '')}</div>
             <div class="ep-desc">${escapeHtml(v.desc)}</div>
           </div>
-        </button>
-      `).join('');
+        </${tag}>
+      `;}).join('');
     }
 
     function renderCoffeeTalk() {
@@ -1390,8 +1395,12 @@
         grid.innerHTML = `<p style="color:var(--muted);">No Coffee Talk episodes yet.</p>`;
         return;
       }
-      grid.innerHTML = list.map(ep => `
-        <button type="button" class="episode-card" onclick="playCoffeeTalk('${ep.id}')" aria-label="Play Coffee Talk: ${escapeHtml(ep.title)}">
+      grid.innerHTML = list.map(ep => {
+        const playable = validVideoId(ep.videoId);
+        const tag = playable ? 'button' : 'article';
+        const action = playable ? ` type="button" onclick="playCoffeeTalk('${ep.id}')" aria-label="Play Coffee Talk: ${escapeHtml(ep.title)}"` : '';
+        return `
+        <${tag} class="episode-card"${action}>
           <div class="ep-art coffeetalk">
             &#9749;
             <span class="ep-num">${escapeHtml(ep.num || '')}</span>
@@ -1402,15 +1411,15 @@
             <div class="ep-meta">${escapeHtml(ep.date || '')} \u2022 ${escapeHtml(ep.duration || '')}</div>
             <div class="ep-desc">${escapeHtml(ep.desc)}</div>
           </div>
-          <span class="ep-play" aria-hidden="true">&#9654;</span>
-        </button>
-      `).join('');
+          <span class="ep-play" aria-hidden="true">${playable ? '&#9654;' : 'Coming soon'}</span>
+        </${tag}>
+      `;}).join('');
     }
 
     function playCoffeeTalk(id) {
       const ep = COFFEETALK().find(e => e.id === id);
       if (!ep) return;
-      if (ep.videoId) {
+      if (validVideoId(ep.videoId)) {
         openVideoModalRaw(ep.title, ep.date, ep.duration, ep.desc, ep.videoId, 'Coffee Talk');
       } else {
         currentEpisode = { ...ep, num: ep.num, season: 'Coffee Talk' };
@@ -1506,17 +1515,22 @@
 
     function openVideoModal(id) {
       const v = VLOGS().find(vid => vid.id === id);
-      if (!v) return;
+      if (!v || !validVideoId(v.videoId)) return;
       openVideoModalRaw(v.title, v.date, v.duration, v.desc, v.videoId, 'Vlog');
     }
 
     function openVideoModalRaw(title, date, duration, desc, videoId, type) {
+      if (!validVideoId(videoId)) return;
       document.getElementById('modalVideo').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
       document.getElementById('modalTitle').textContent = title;
       document.getElementById('modalMeta').textContent = `${type} \u2022 ${date} \u2022 ${duration}`;
       document.getElementById('modalDesc').textContent = desc;
       document.getElementById('videoModal').classList.add('open');
       document.body.style.overflow = 'hidden';
+    }
+
+    function validVideoId(videoId) {
+      return /^[A-Za-z0-9_-]{11}$/.test(String(videoId || '')) && videoId !== 'dQw4w9WgXcQ';
     }
 
     function closeVideoModal() {

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sponsors | Lost Limb Riders</title>
   <link rel="icon" type="image/png" href="assets/logo-nobg.png">
+  <script src="assets/public-nav.js" defer></script>
   <meta name="description" content="Proud sponsors and partners of Lost Limb Riders — the companies and organizations that help amputees ride with purpose.">
   <style>
     :root {
@@ -229,7 +230,7 @@
       if (sponsor.description) html += '<div class="sponsor-desc">' + escapeHtml(sponsor.description) + '</div>';
       if (sponsor.contactInfo) html += '<div class="sponsor-contact">' + escapeHtml(sponsor.contactInfo) + '</div>';
       if (sponsor.websiteUrl) {
-        html += '<a class="sponsor-link" href="' + escapeHtml(sponsor.websiteUrl) + '" target="_blank" rel="noopener noopener noreferrer">Visit Website</a>';
+        html += '<a class="sponsor-link" href="' + escapeHtml(sponsor.websiteUrl) + '" target="_blank" rel="noopener noreferrer">Visit Website</a>';
       }
       return html + '</div>';
     }

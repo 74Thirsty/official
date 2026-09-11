@@ -63,6 +63,14 @@ test('known placeholder and stale public links are absent', () => {
   assert.doesNotMatch(combined, /javascript:void\(0\)|localhost|127\.0\.0\.1/i);
   assert.doesNotMatch(combined, /index\.html#(?:contact|newsletter|keynote)/i);
   assert.doesNotMatch(combined, /https:\/\/(?:open\.spotify\.com\/show|podcasts\.apple\.com\/us\/podcast)\/["']/i);
+  assert.doesNotMatch(combined, /tel:15158905765/);
+});
+
+test('known placeholder media destination is never exposed as playable content', () => {
+  const seed = readFileSync(resolve(root, 'lib/seed.js'), 'utf8');
+  const media = readFileSync(resolve(root, 'media.html'), 'utf8');
+  assert.doesNotMatch(seed, /dQw4w9WgXcQ/);
+  assert.match(media, /videoId !== 'dQw4w9WgXcQ'/);
 });
 
 test('PayPal donation uses a configured direct HTTPS link without SDK or payment APIs', () => {
