@@ -68,7 +68,7 @@ test('known placeholder and stale public links are absent', () => {
 test('PayPal donation uses a configured direct HTTPS link without SDK or payment APIs', () => {
   const page = readFileSync(resolve(root, 'donate.html'), 'utf8');
   const api = readFileSync(resolve(root, 'api/support.js'), 'utf8');
-  assert.match(page, /<a id="paypalDonationLink" class="paypal-link" hidden>Donate with PayPal<\/a>/);
+  assert.match(page, /<a id="paypalDonationLink" class="paypal-link" hidden><img[^>]+paypalobjects\.com[^>]*>Donate with PayPal<\/a>/);
   assert.match(page, /link\.href=config\.donationUrl/);
   assert.match(api, /process\.env\.PAYPAL_DONATION_URL/);
   assert.match(api, /url\.protocol !== 'https:'/);
