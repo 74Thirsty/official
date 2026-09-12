@@ -1,0 +1,209 @@
+{
+  "schema_version": 2,
+  "sourceProvenance": {
+    "generatedFrom": [
+      "LostLimbRider/official@7cb3189 (site config, media.html, lib/seed.js, tests/facebook.test.mjs)",
+      "LostLimbRider/Autobiography@543280c437726447fd6eb30214d43a547b0f6ee0 (Organization Handbook, Employer & Registration Status CMP-REF-002, Lost Limb Riders Proposal)",
+      "Live config lostlimbriders.org/api/stream (2026-09-12)"
+    ],
+    "rule": "Only details observable in the source above are marked approved. Anything unknown remains not-configured or needs-confirmation; nothing is invented."
+  },
+  "organization": {
+    "name": "Lost Limb Riders",
+    "website": {
+      "value": "https://lostlimbriders.org",
+      "status": "approved"
+    },
+    "entityStatus": {
+      "value": "Iowa nonprofit corporation with IRS 501(c)(3) determination; EIN issued by the IRS",
+      "status": "approved",
+      "source": "CMP-REF-002 Employer & Registration Status (Autobiography @543280c)"
+    },
+    "serviceRegion": {
+      "value": "Fort Dodge, Iowa and surrounding communities",
+      "status": "approved",
+      "source": "Ride/event locations in lib/seed.js"
+    },
+    "foundingDate": {
+      "value": null,
+      "status": "needs-confirmation",
+      "notes": "Do not substitute EIN issuance, IRS determination, website launch, or 501(c)(3) approval date."
+    },
+    "contact": {
+      "emails": [
+        {
+          "value": "general_llr@outlook.com",
+          "purpose": "General/public organizational inbox per Lost Limb Riders Proposal",
+          "status": "approved"
+        },
+        {
+          "value": "john.thompson@lostlimbriders.org",
+          "purpose": "Founder/CEO contact published on website",
+          "status": "approved"
+        }
+      ],
+      "phone": {
+        "value": null,
+        "status": "not-configured"
+      },
+      "address": {
+        "value": null,
+        "status": "not-configured"
+      }
+    }
+  },
+  "accounts": [
+    {
+      "platform": "facebook",
+      "status": "approved",
+      "handle": "LostLimbRiders",
+      "displayName": "Lost Limb Riders",
+      "url": "https://www.facebook.com/LostLimbRiders",
+      "configuredPageUrl": "https://www.facebook.com/1258862137317491",
+      "pageId": "1258862137317491",
+      "streamProfileTitle": "Lost Limb Riders Live",
+      "description": "Join us for live rides, podcast recordings, and community events — live on Facebook.",
+      "primaryStreamingPlatform": true,
+      "roles": [
+        "Facebook Live streaming (only streaming platform; no OBS/RTMP)",
+        "Community engagement and event announcements",
+        "Replays and broadcast alerts",
+        "Offline-state 'Follow on Facebook' destination"
+      ],
+      "notes": "Profile is referenced by facebook.com/LostLimbRiders in tests/facebook.test.mjs; production stream config resolves to the numeric page URL. Live detection requires server-side FACEBOOK_PAGE_ID + FACEBOOK_ACCESS_TOKEN (never exposed to browsers).",
+      "source": "tests/facebook.test.mjs, lib/stream.js, lib/seed.js, live /api/stream"
+    },
+    {
+      "platform": "youtube",
+      "status": "approved",
+      "handle": "@lostlimbriders",
+      "displayName": "Lost Limb Riders",
+      "url": "https://www.youtube.com/@lostlimbriders",
+      "primaryStreamingPlatform": false,
+      "roles": [
+        "Hosts Coffee Talk and vlog video content"
+      ],
+      "notes": "Linked from media.html and podcastLinks in lib/seed.js.",
+      "source": "media.html line 1067, lib/seed.js offlineChannel/podcastLinks"
+    },
+    {
+      "platform": "podcast",
+      "status": "approved",
+      "name": "Lost Limb Riders Podcast",
+      "rss": {
+        "value": "/api/media?action=podcast-rss",
+        "status": "approved"
+      },
+      "directories": [
+        {
+          "service": "YouTube",
+          "url": "https://www.youtube.com/@lostlimbriders",
+          "status": "approved"
+        },
+        {
+          "service": "Spotify",
+          "url": "https://open.spotify.com/show/",
+          "status": "not-configured",
+          "notes": "URL is a bare slug placeholder; no show id bound yet."
+        },
+        {
+          "service": "Apple Podcasts",
+          "url": "https://podcasts.apple.com/us/podcast/",
+          "status": "not-configured",
+          "notes": "URL is a bare slug placeholder; no show id bound yet."
+        }
+      ],
+      "source": "lib/seed.js podcastLinks"
+    },
+    {
+      "platform": "instagram",
+      "status": "not-configured",
+      "handle": null,
+      "url": null
+    },
+    {
+      "platform": "x-twitter",
+      "status": "not-configured",
+      "handle": null,
+      "url": null
+    },
+    {
+      "platform": "tiktok",
+      "status": "not-configured",
+      "handle": null,
+      "url": null
+    },
+    {
+      "platform": "linkedin",
+      "status": "not-configured",
+      "handle": null,
+      "url": null
+    },
+    {
+      "platform": "threads",
+      "status": "not-configured",
+      "handle": null,
+      "url": null
+    },
+    {
+      "platform": "discord",
+      "status": "not-configured",
+      "handle": null,
+      "url": null,
+      "notes": "Discord is used only as an internal owner-notification webhook (DISCORD_OWNER_WEBHOOK_URL); no public server invites are configured."
+    }
+  ],
+  "organizationProfile": {
+    "address": {
+      "value": null,
+      "status": "not-configured"
+    },
+    "hours": {
+      "value": null,
+      "status": "not-applicable",
+      "reason": "No public walk-in business address/hours are established."
+    },
+    "priceRange": {
+      "value": null,
+      "status": "not-applicable",
+      "reason": "Lost Limb Riders is a nonprofit organization, not a retail business."
+    },
+    "neighborhood": {
+      "value": null,
+      "status": "not-applicable"
+    },
+    "foundingDate": {
+      "value": null,
+      "status": "needs-confirmation",
+      "notes": "Do not substitute EIN issuance, IRS determination, website launch, or 501(c)(3) approval date."
+    }
+  },
+  "governance": {
+    "founderCEO": {
+      "title": "Founder/CEO",
+      "value": "John Thompson",
+      "status": "approved"
+    },
+    "board": {
+      "title": "Current Board Structure",
+      "value": "John Thompson is currently the sole board member.",
+      "status": "approved",
+      "publicProfileUse": false
+    }
+  },
+  "metadata": {
+    "purpose": "Canonical reusable presentation metadata for Lost Limb Riders social media profiles.",
+    "sensitiveDataAllowed": false,
+    "canonicalDocumentDuplicationAllowed": false,
+    "allowedStatuses": [
+      "approved",
+      "needs-confirmation",
+      "not-configured",
+      "not-applicable",
+      "deprecated"
+    ],
+    "lastReviewed": "2026-09-12",
+    "reviewStatus": "initial-population",
+    "notes": "Confirmed details are sourced from the site, the pinned Autobiography corpus, and the live stream config. Accounts, handles, founding date, phone, and directory bindings with no observable source remain not-configured or needs-confirmation rather than being invented. Update lastReviewed and re-verify when accounts change."
+  }
+}
