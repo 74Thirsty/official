@@ -1,0 +1,111 @@
+346
+347
+348
+349
+350
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+392
+393
+394
+395
+396
+397
+398
+399
+400
+{
+      ],
+      "address": {
+        "value": null,
+        "status": "not-configured"
+      },
+      "hours": {
+        "value": null,
+        "status": "not-applicable",
+        "reason": "No public walk-in business address/hours are established."
+      },
+      "priceRange": {
+        "value": null,
+        "status": "not-applicable",
+        "reason": "Lost Limb Riders is a nonprofit organization, not a retail business."
+      },
+      "neighborhood": {
+        "value": null,
+        "status": "not-applicable"
+      },
+      "foundingDate": {
+        "value": null,
+        "status": "needs-confirmation",
+        "notes": "Do not substitute EIN issuance, IRS determination, website launch, or 501(c)(3) approval date."
+      }
+    }
+  },
+  "governance": {
+    "founderCEO": {
+      "title": "Founder/CEO",
+      "value": "John Thompson",
+      "status": "approved"
+    },
+    "board": {
+      "title": "Current Board Structure",
+      "value": "John Thompson is currently the sole board member.",
+      "status": "approved",
+      "publicProfileUse": false
+    }
+  },
+  "metadata": {
+    "purpose": "Canonical reusable presentation metadata for Lost Limb Riders social media profiles.",
+    "sensitiveDataAllowed": false,
+    "canonicalDocumentDuplicationAllowed": false,
+    "allowedStatuses": [
+      "approved",
+      "needs-confirmation",
+      "not-configured",
+      "not-applicable",
+      "deprecated"
+    ],
+    "lastReviewed": "2026-09-12",
+    "reviewStatus": "initial-population",
+    "notes": "Unknown public contact details, handles, founding date, routes, and platform URLs are intentionally left unresolved rather than invented."
+  }
+}
