@@ -76,7 +76,7 @@ Response conventions: JSON, errors as `{ "error": "..." }` with proper status (4
 - `lib/geo.js` — ip-api.com lookup (~45 req/min free tier). Returns `{ status:'unavailable' }` on failure; localhost returns empty.
 - `lib/newsletter.js` — `buildNewsletter(userMessage, events, streams, name, unsubscribeUrl)`, `getUpcomingEvents`, `getUpcomingStreams`, `buildWelcomeEmail`, unsubscribe URL builder. Template placeholders: `{{DATE_RANGE}}`, `{{EVENTS_LIST}}`, `{{MESSAGE}}`, `{{NAME}}`.
 - `lib/seed.js` — source of truth for `seedEvents`, `seedMedia`, `seedStream`, `podcastLinks`, and the embedded `newsletterTemplate`. Edit here to change them; do not read `data/`.
-- `lib/stream.js` — Facebook and YouTube live detection (60s KV cache in `llr:fb-live-cache`), live/replay/offline state derivation, broadcast-alert dedupe (`lastAlertedLiveUrl`). Facebook uses Graph API `/{page}/live_videos`; YouTube checks Chris's confirmed personal channel and the Lost Limb Riders business channel through the YouTube Data API. Titles come from the active broadcast. Credentials remain server-side.
+- `lib/stream.js` — Facebook and YouTube live detection (60s KV cache in `llr:fb-live-cache`), live/replay/offline state derivation, broadcast-alert dedupe (`lastAlertedLiveUrl`). Facebook uses Graph API `/{page}/live_videos`; YouTube checks the Lost Limb Riders business channel through the YouTube Data API. Titles come from the active broadcast. Credentials remain server-side.
 - `lib/episodes.js` — scheduled-broadcast validation/normalization + calendar event syncing + live-state computation.
 - `lib/email.js` — Resend sender wrapper (`RESEND_API_KEY`, `RESEND_FROM`).
 - `lib/download.js` — e-book delivery: presigned S3/R2 URLs (`EBOOK_STORAGE_*`) or static fallback (`EBOOK_DOWNLOAD_URL`).
@@ -109,7 +109,7 @@ Re-seeding tip: deleting `llr:events`/`llr:media`/`llr:stream` in the Vercel KV 
 - CSS is **inline in each HTML file** (no shared stylesheet). All pages share the same `:root` custom properties (`--orange`, `--black`, `--charcoal`, `--card`, `--white`, `--muted`, `--line`, `--shadow`) — keep them consistent across all pages.
 - Admin auth: `ADMIN_KEY` env var on Vercel is the source of truth. Frontend stores it in `sessionStorage` under `llr-admin-key` and sends it as `?key=` (API also accepts `X-Admin-Key` header). Timing-safe compare only.
 - Every visitor page load hits `/api/visit` → one ip-api.com lookup; newsletter signup does another. Keep this in mind re: geo rate limits.
-- Streaming supports Facebook plus Chris's personal YouTube channel and the Lost Limb Riders business YouTube channel. No OBS/RTMP/stream keys are stored. Detection credentials (`FACEBOOK_ACCESS_TOKEN`, `FACEBOOK_PAGE_ID`, `YOUTUBE_API_KEY`) are server-side only and never returned to browsers.
+- Streaming supports Facebook plus the Lost Limb Riders business YouTube channel. No OBS/RTMP/stream keys are stored. Detection credentials (`FACEBOOK_ACCESS_TOKEN`, `FACEBOOK_PAGE_ID`, `YOUTUBE_API_KEY`) are server-side only and never returned to browsers.
 - The site was a PHP→Node migration; do not add `.php` files. Hobby plan limits Vercel functions — endpoints were deliberately consolidated to ~12; don't split them back out casually.
 
 ## Environment variables (Vercel dashboard — `.env.local` only affects local dev)

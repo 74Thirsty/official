@@ -80,8 +80,8 @@ The Vercel dashboard path is: **Project → Settings → Environment Variables**
 
 ## OPTIONAL — Facebook and YouTube Live (automatic live detection)
 
-The website can detect Facebook Live, Chris's personal YouTube channel, and the
-Lost Limb Riders business YouTube channel. Going live does not require stream
+The website can detect Facebook Live and the Lost Limb Riders business YouTube
+channel. Going live does not require stream
 keys in this application. Detection credentials remain server-side.
 
 | Variable | Required | Value | Notes |

@@ -87,23 +87,22 @@ test('facebookDetectionConfigured reflects the two env vars only', () => {
   });
 });
 
-test('YouTube detection is server-key gated and uses Chris plus the business channel', () => {
+test('YouTube detection is server-key gated and uses only the business channel', () => {
   withEnv({ YOUTUBE_API_KEY: undefined }, () => assert.equal(youtubeDetectionConfigured(), false));
   withEnv({ YOUTUBE_API_KEY: 'server-only-key' }, () => assert.equal(youtubeDetectionConfigured(), true));
   assert.deepEqual(youtubePublicChannels(), [
-    { label: 'Chris on YouTube', url: 'https://www.youtube.com/@Lakers-vs-Celtics' },
     { label: 'Lost Limb Riders on YouTube', url: 'https://www.youtube.com/@lostlimbriders' },
   ]);
 });
 
 test('YouTube live response preserves the actual broadcast title and video URL', () => {
-  const channel = { label: 'Chris on YouTube', url: 'https://www.youtube.com/@Lakers-vs-Celtics' };
+  const channel = { label: 'Lost Limb Riders on YouTube', url: 'https://www.youtube.com/@lostlimbriders' };
   const parsed = parseYouTubeLiveResponse({
-    items: [{ id: { videoId: '2ZGgAKdnOXo' }, snippet: { title: 'LLR-FDPUBLIB-02' } }],
+    items: [{ id: { videoId: 'abcdefghijk' }, snippet: { title: 'Business Channel Live Title' } }],
   }, channel);
   assert.equal(parsed.live, true);
-  assert.equal(parsed.title, 'LLR-FDPUBLIB-02');
-  assert.equal(parsed.videoUrl, 'https://www.youtube.com/watch?v=2ZGgAKdnOXo');
+  assert.equal(parsed.title, 'Business Channel Live Title');
+  assert.equal(parsed.videoUrl, 'https://www.youtube.com/watch?v=abcdefghijk');
   assert.equal(parseYouTubeLiveResponse({ items: [] }, channel).live, false);
 });
 

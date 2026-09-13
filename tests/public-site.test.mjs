@@ -73,7 +73,7 @@ test('known placeholder media destination is never exposed as playable content',
   assert.match(media, /videoId !== 'dQw4w9WgXcQ'/);
 });
 
-test('provided Chris YouTube video is seeded as a playable vlog without changing its title', () => {
+test('provided third-party YouTube video is seeded without displaying channel attribution', () => {
   const seed = readFileSync(resolve(root, 'lib/seed.js'), 'utf8');
   assert.match(seed, /title: 'LLR-FDPUBLIB-02'/);
   assert.match(seed, /videoId: '2ZGgAKdnOXo'/);

@@ -138,11 +138,11 @@ The browser reads and writes only through authenticated `/api/admin?action=socia
 
 ## Live Streaming — Facebook and YouTube Live
 
-The website is the viewing layer for Facebook Live, Chris's personal YouTube channel, and the Lost Limb Riders business YouTube channel.
+The website is the viewing layer for Facebook Live and the Lost Limb Riders business YouTube channel.
 
 ### Going live (the whole workflow)
 
-1. Start a broadcast on the Lost Limb Riders Facebook page, Chris's personal YouTube channel, or the Lost Limb Riders business YouTube channel.
+1. Start a broadcast on the Lost Limb Riders Facebook page or the Lost Limb Riders business YouTube channel.
 2. `media.html` detects the broadcast within ~60 seconds, displays its actual title, embeds the correct platform player, and sends broadcast alerts.
 
 No OBS, no stream keys, no RTMP, nothing to configure. When you end the broadcast, the site returns to its offline state (with a link to the replay on Facebook).
