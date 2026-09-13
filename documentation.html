@@ -8,271 +8,143 @@
   <script src="assets/public-nav.js" defer></script>
   <meta name="description" content="Lost Limb Riders organizational documentation library — policies, procedures, handbooks, forms, and operational documents.">
   <style>
-    :root {
-      --orange: #ff6a00;
-      --orange-dark: #c94f00;
-      --orange-glow: rgba(255,106,0,.35);
-      --black: #050505;
-      --charcoal: #101010;
-      --card: #141414;
-      --card-hover: #1a1a1a;
-      --line: rgba(255,255,255,.10);
-      --muted: #9a9a9a;
-      --white: #ffffff;
-      --shadow: 0 24px 70px rgba(0,0,0,.5);
-      --radius: 18px;
-    }
-    *, *::before, *::after { box-sizing: border-box; }
-    body { margin:0; background:var(--black); color:var(--white); font-family:'Inter',system-ui,-apple-system,Helvetica,Arial,sans-serif; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
-    body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse at 15% 10%, rgba(255,106,0,.07) 0%, transparent 55%), radial-gradient(ellipse at 85% 90%, rgba(255,106,0,.04) 0%, transparent 55%); pointer-events:none; z-index:0; }
-    a { color:var(--orange); text-decoration:none; transition:color .2s; }
-    a:hover { color:#ff8a33; }
+    :root { --orange:#ff6a00; --orange-dark:#c94f00; --black:#050505; --charcoal:#101010; --card:#141414; --white:#fff; --muted:#9a9a9a; --line:rgba(255,255,255,.10); --shadow:0 24px 70px rgba(0,0,0,.5); }
+    *,*::before,*::after { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:var(--black); color:var(--white); font-family:Inter,system-ui,-apple-system,Helvetica,Arial,sans-serif; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+    body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse at 15% 10%,rgba(255,106,0,.07),transparent 55%),radial-gradient(ellipse at 85% 90%,rgba(255,106,0,.04),transparent 55%); pointer-events:none; }
+    a { color:var(--orange); text-decoration:none; } a:hover { color:#ff8a33; }
+    button,input { font:inherit; }
+    button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible { outline:3px solid #ff9b52; outline-offset:3px; }
     .wrap { max-width:1200px; margin:0 auto; position:relative; z-index:1; }
     .orange { color:var(--orange); }
-
-    /* NAV */
     .nav { position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:14px 7vw; background:rgba(5,5,5,.92); border-bottom:1px solid var(--line); backdrop-filter:blur(20px) saturate(1.4); }
-    .brand { display:flex; align-items:center; gap:12px; color:var(--white); font-weight:900; font-size:16px; letter-spacing:.08em; text-transform:uppercase; text-decoration:none; }
+    .brand { display:flex; align-items:center; gap:12px; color:var(--white); font-weight:900; font-size:16px; letter-spacing:.08em; text-transform:uppercase; }
     .brand img { width:52px; height:52px; min-width:52px; border-radius:12px; }
     .nav-links { display:flex; gap:22px; align-items:center; }
     .nav-links a { color:#bbb; font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; position:relative; padding:4px 0; }
-    .nav-links a::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:var(--orange); border-radius:2px; transition:width .3s; }
-    .nav-links a:hover { color:var(--white); }
-    .nav-links a:hover::after, .nav-links a.active::after { width:100%; }
-    .nav-links a.active { color:var(--orange); }
-
-    /* HERO */
-    .page-hero { position:relative; padding:120px 7vw 80px; text-align:center; background:linear-gradient(180deg, rgba(255,106,0,.10) 0%, rgba(255,106,0,.02) 60%, transparent 100%); border-bottom:1px solid var(--line); overflow:hidden; }
-    .page-hero::before { content:''; position:absolute; top:-200px; left:50%; transform:translateX(-50%); width:800px; height:800px; background:radial-gradient(circle, rgba(255,106,0,.08) 0%, transparent 70%); pointer-events:none; }
-    .eyebrow { display:inline-block; padding:7px 20px; border:1px solid rgba(255,106,0,.6); border-radius:50px; font-size:11px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:var(--orange); margin-bottom:24px; background:rgba(255,106,0,.06); }
-    .page-hero h1 { font-size:clamp(42px,6vw,84px); line-height:.9; letter-spacing:-.04em; text-transform:uppercase; margin:0 0 20px; font-weight:900; }
-    .page-hero .subtitle { color:var(--muted); font-size:clamp(17px,2vw,21px); line-height:1.5; max-width:640px; margin:0 auto; }
-
-    /* SECTIONS */
-    section { padding:60px 7vw; position:relative; z-index:1; }
-    .section-heading { text-align:center; margin-bottom:40px; }
-    .section-eyebrow { display:inline-block; padding:5px 14px; border:1px solid rgba(255,106,0,.4); border-radius:50px; font-size:10px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:var(--orange); margin-bottom:16px; background:rgba(255,106,0,.05); }
-    .section-title { font-size:clamp(30px,4vw,52px); line-height:.92; letter-spacing:-.03em; text-transform:uppercase; margin:0 0 14px; font-weight:900; }
-    .divider { height:1px; background:linear-gradient(90deg, transparent, var(--line), rgba(255,106,0,.2), var(--line), transparent); margin:0; }
-
-    /* SEARCH */
-    .search-wrap { max-width:600px; margin:0 auto 40px; position:relative; }
-    .search-wrap input { width:100%; padding:16px 20px 16px 52px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,.04); color:var(--white); font-size:16px; font-family:inherit; outline:none; transition:border-color .2s, box-shadow .2s; }
-    .search-wrap input:focus { border-color:var(--orange); box-shadow:0 0 30px rgba(255,106,0,.1); }
-    .search-wrap input::placeholder { color:#555; }
-    .search-icon { position:absolute; left:18px; top:50%; transform:translateY(-50%); color:#555; font-size:18px; pointer-events:none; }
-
-    /* DEPARTMENT GROUPS */
-    .dept-group { margin-bottom:40px; }
-    .dept-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid var(--line); }
-    .dept-header h3 { font-size:15px; font-weight:900; text-transform:uppercase; letter-spacing:.1em; color:var(--orange); margin:0; }
-    .dept-count { font-size:11px; color:var(--muted); background:rgba(255,255,255,.06); padding:2px 10px; border-radius:50px; font-weight:700; }
-
-    /* DOCUMENT CARDS */
-    .doc-list { display:grid; gap:10px; }
-    .doc-card { display:grid; grid-template-columns:1fr auto; align-items:center; gap:16px; padding:16px 20px; background:var(--card); border:1px solid var(--line); border-radius:12px; transition:all .2s; }
-    .doc-card:hover { border-color:rgba(255,106,0,.3); background:var(--card-hover); transform:translateY(-1px); box-shadow:0 8px 30px rgba(0,0,0,.3); }
-    .doc-info { min-width:0; }
-    .doc-title { font-size:15px; font-weight:700; color:var(--white); margin:0 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .doc-meta { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-    .doc-id { font-size:12px; font-weight:800; color:var(--orange); font-family:'SF Mono',SFMono-Regular,Menlo,Consolas,monospace; letter-spacing:.03em; }
-    .doc-type { font-size:11px; color:var(--muted); background:rgba(255,255,255,.06); padding:2px 8px; border-radius:4px; font-weight:600; }
-    .doc-status { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; padding:3px 10px; border-radius:50px; }
-    .doc-status.active { background:rgba(34,197,94,.15); color:#22c55e; }
-    .doc-status.draft { background:rgba(245,158,11,.15); color:#f59e0b; }
-    .doc-status.superseded { background:rgba(239,68,68,.15); color:#ef4444; }
-    .doc-status.archived { background:rgba(156,163,175,.15); color:#9ca3af; }
-    .doc-open { display:inline-flex; align-items:center; gap:6px; padding:8px 18px; border:0; background:var(--orange); color:var(--white); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; border-radius:8px; white-space:nowrap; transition:all .2s; text-decoration:none; cursor:pointer; }
-    .doc-open:hover { background:var(--orange-dark); color:var(--white); transform:scale(1.03); }
-
-    /* LOGIN BOX */
-    .login-section { max-width:440px; margin:0 auto; padding:48px 20px; text-align:center; }
-    .login-box { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:36px 32px; }
-    .login-box h3 { font-size:20px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; margin:0 0 8px; }
-    .login-box p { color:var(--muted); font-size:14px; margin:0 0 24px; line-height:1.5; }
-    .login-box label { display:block; font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; margin-top:16px; text-align:left; }
-    .login-box label:first-of-type { margin-top:0; }
-    .login-box input { width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.04); color:var(--white); font-size:15px; font-family:inherit; outline:none; transition:border-color .2s; }
-    .login-box input:focus { border-color:var(--orange); }
-    .login-box .btn-login { width:100%; margin-top:24px; padding:14px; background:var(--orange); color:var(--white); border:none; border-radius:10px; font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; transition:all .2s; }
-    .login-box .btn-login:hover { background:var(--orange-dark); }
-    .login-box .btn-login:disabled { opacity:.5; cursor:not-allowed; }
-    .login-error { color:#ef4444; font-size:13px; margin-top:12px; min-height:20px; }
-
-    /* INTERNAL BANNER */
-    .internal-banner { display:flex; align-items:center; gap:10px; padding:14px 20px; background:rgba(255,106,0,.06); border:1px solid rgba(255,106,0,.2); border-radius:12px; margin-bottom:24px; font-size:13px; color:var(--muted); }
-    .internal-banner .lock-icon { font-size:16px; }
-
-    /* FOOTER */
+    .nav-links a::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:var(--orange); transition:width .3s; }
+    .nav-links a:hover,.nav-links a.active { color:var(--orange); } .nav-links a:hover::after,.nav-links a.active::after { width:100%; }
+    .page-hero { position:relative; padding:100px 7vw 64px; text-align:center; background:linear-gradient(180deg,rgba(255,106,0,.10),rgba(255,106,0,.02) 60%,transparent); border-bottom:1px solid var(--line); }
+    .eyebrow,.section-eyebrow { display:inline-block; padding:7px 18px; border:1px solid rgba(255,106,0,.55); border-radius:50px; font-size:10px; font-weight:900; letter-spacing:.22em; text-transform:uppercase; color:var(--orange); background:rgba(255,106,0,.06); }
+    .page-hero h1 { font-size:clamp(42px,6vw,76px); line-height:.92; letter-spacing:-.04em; text-transform:uppercase; margin:22px 0 18px; font-weight:900; }
+    .subtitle { color:var(--muted); font-size:clamp(16px,2vw,20px); line-height:1.55; max-width:680px; margin:0 auto; }
+    section { padding:58px 7vw; position:relative; z-index:1; }
+    .discovery { padding-top:38px; padding-bottom:16px; }
+    .search-panel { position:sticky; top:90px; z-index:20; max-width:900px; margin:0 auto; padding:16px; border:1px solid var(--line); border-radius:18px; background:rgba(16,16,16,.96); box-shadow:var(--shadow); }
+    .search-wrap { position:relative; }
+    .search-wrap input { width:100%; min-height:54px; padding:14px 46px 14px 50px; border:1px solid rgba(255,255,255,.17); border-radius:12px; background:#080808; color:var(--white); font-size:16px; outline:none; }
+    .search-wrap input:focus { border-color:var(--orange); box-shadow:0 0 0 4px rgba(255,106,0,.12); }
+    .search-icon { position:absolute; left:18px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; }
+    .search-clear { position:absolute; right:8px; top:7px; width:40px; height:40px; border:0; border-radius:8px; background:transparent; color:var(--muted); cursor:pointer; font-size:20px; }
+    .search-clear:hover { color:var(--white); background:rgba(255,255,255,.08); }
+    .search-help { display:flex; justify-content:space-between; gap:16px; margin:10px 4px 0; color:var(--muted); font-size:12px; }
+    .notice { display:flex; align-items:flex-start; gap:12px; padding:15px 18px; background:rgba(255,106,0,.06); border:1px solid rgba(255,106,0,.23); border-radius:12px; color:#b5b5b5; font-size:13px; line-height:1.5; }
+    .section-heading { margin-bottom:26px; }
+    .section-title { font-size:clamp(28px,4vw,46px); line-height:1; letter-spacing:-.03em; text-transform:uppercase; margin:14px 0 10px; font-weight:900; }
+    .section-heading p { color:var(--muted); margin:0; line-height:1.55; max-width:680px; }
+    .library-summary { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; color:var(--muted); font-size:13px; }
+    .category-grid,.subcategory-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:14px; }
+    .category-card,.subcategory-card { width:100%; min-height:148px; padding:22px; text-align:left; color:var(--white); background:linear-gradient(145deg,#171717,#111); border:1px solid var(--line); border-radius:16px; cursor:pointer; transition:border-color .2s,transform .2s,background .2s; }
+    .category-card:hover,.subcategory-card:hover { border-color:rgba(255,106,0,.55); transform:translateY(-2px); background:#191919; }
+    .category-card .card-kicker { display:block; margin-bottom:26px; color:var(--orange); font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:.16em; }
+    .category-card strong,.subcategory-card strong { display:block; font-size:18px; line-height:1.25; }
+    .category-card small,.subcategory-card small { display:block; margin-top:8px; color:var(--muted); line-height:1.4; }
+    .portal-view[hidden],.search-results[hidden] { display:none; }
+    .view-toolbar { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+    .back-button { min-height:44px; padding:9px 14px; border:1px solid var(--line); border-radius:9px; background:#151515; color:var(--white); font-weight:800; cursor:pointer; }
+    .back-button:hover { border-color:var(--orange); }
+    .breadcrumbs { color:var(--muted); font-size:13px; min-width:0; overflow-wrap:anywhere; }
+    .breadcrumbs strong { color:var(--white); }
+    .group-list { display:grid; gap:12px; }
+    .document-group { border:1px solid var(--line); border-radius:14px; background:#101010; overflow:hidden; }
+    .document-group > summary { display:flex; align-items:center; justify-content:space-between; gap:14px; min-height:58px; padding:14px 18px; cursor:pointer; list-style:none; font-weight:850; }
+    .document-group > summary::-webkit-details-marker { display:none; }
+    .document-group > summary::after { content:'+'; color:var(--orange); font-size:22px; }
+    .document-group[open] > summary::after { content:'−'; }
+    .document-group[open] > summary { border-bottom:1px solid var(--line); }
+    .group-count { color:var(--muted); font-size:12px; font-weight:600; margin-left:auto; }
+    .doc-list { display:grid; }
+    .doc-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:18px; padding:13px 18px; border-bottom:1px solid var(--line); }
+    .doc-row:last-child { border-bottom:0; }
+    .doc-row:hover { background:rgba(255,255,255,.025); }
+    .doc-title { margin:0 0 5px; color:var(--white); font-size:14px; font-weight:750; line-height:1.35; overflow-wrap:anywhere; }
+    .doc-meta { display:flex; flex-wrap:wrap; gap:5px 9px; color:var(--muted); font-size:11px; line-height:1.4; }
+    .doc-id { color:var(--orange); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:800; }
+    .doc-actions { display:flex; gap:7px; }
+    .doc-open,.doc-download { display:inline-flex; align-items:center; justify-content:center; min-height:38px; padding:8px 13px; border-radius:8px; font-size:11px; font-weight:850; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; }
+    .doc-open { border:0; background:var(--orange); color:var(--white); }
+    .doc-download { border:1px solid var(--line); background:transparent; color:#ddd; }
+    .doc-open:hover { background:var(--orange-dark); } .doc-download:hover { border-color:var(--orange); color:var(--white); }
+    .position-order { margin-bottom:14px; padding:14px 18px; border-left:3px solid var(--orange); background:rgba(255,106,0,.05); color:#bbb; font-size:13px; line-height:1.5; }
+    .position-list { counter-reset:position; }
+    .position-list .doc-row { grid-template-columns:36px minmax(0,1fr) auto; }
+    .position-list .doc-row::before { counter-increment:position; content:counter(position); display:grid; place-items:center; width:30px; height:30px; border:1px solid rgba(255,106,0,.45); border-radius:50%; color:var(--orange); font-size:11px; font-weight:900; }
+    .search-results { max-width:900px; margin:20px auto 0; border-top:1px solid var(--line); padding-top:14px; }
+    .search-heading { display:flex; justify-content:space-between; gap:14px; align-items:center; margin-bottom:10px; }
+    .search-heading h2 { margin:0; font-size:16px; text-transform:uppercase; letter-spacing:.06em; }
+    .result-context { color:var(--muted); font-size:11px; margin-top:3px; line-height:1.45; overflow-wrap:anywhere; }
+    .empty-state { padding:30px 20px; border:1px dashed rgba(255,255,255,.2); border-radius:14px; text-align:center; color:var(--muted); }
+    .divider { height:1px; background:linear-gradient(90deg,transparent,var(--line),rgba(255,106,0,.2),var(--line),transparent); }
+    .login-section { max-width:440px; margin:0 auto; padding:20px 0 40px; text-align:center; }
+    .login-box { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:32px; }
+    .login-box h3 { margin:0 0 8px; text-transform:uppercase; } .login-box p { color:var(--muted); font-size:14px; line-height:1.5; }
+    .login-box label { display:block; margin:15px 0 6px; text-align:left; color:var(--muted); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
+    .login-box input { width:100%; min-height:46px; padding:11px 13px; border:1px solid var(--line); border-radius:9px; background:#090909; color:var(--white); }
+    .btn-login { width:100%; min-height:46px; margin-top:22px; border:0; border-radius:9px; background:var(--orange); color:var(--white); font-weight:850; cursor:pointer; }
+    .btn-login:disabled { opacity:.5; } .login-error { min-height:20px; margin-top:10px; color:#ff6969; font-size:13px; }
+    .internal-banner { display:flex; align-items:center; gap:10px; padding:14px 18px; margin-bottom:20px; background:rgba(255,106,0,.06); border:1px solid rgba(255,106,0,.2); border-radius:12px; color:var(--muted); font-size:13px; }
+    .logout { margin-left:auto; min-height:40px; padding:8px 10px; border:0; background:none; color:#ff7979; cursor:pointer; font-weight:800; }
     footer { border-top:1px solid var(--line); position:relative; z-index:1; }
-    .footer-inner { max-width:1200px; margin:0 auto; padding:48px 7vw; }
-    .footer-top { display:flex; align-items:flex-start; justify-content:space-between; gap:40px; flex-wrap:wrap; }
-    .footer-brand { display:flex; align-items:center; gap:14px; }
-    .footer-brand img { width:46px; height:46px; border-radius:10px; }
-    .footer-brand .brand-text { font-weight:900; font-size:15px; text-transform:uppercase; letter-spacing:.06em; }
-    .footer-brand .brand-sub { font-size:12px; color:var(--muted); margin-top:2px; }
-    .footer-nav { display:flex; gap:20px; flex-wrap:wrap; }
-    .footer-nav a { color:#888; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; transition:color .2s; }
-    .footer-nav a:hover { color:var(--orange); }
-    .footer-contact { text-align:right; }
-    .footer-contact a { color:var(--muted); font-size:13px; display:block; transition:color .2s; }
-    .footer-contact a:hover { color:var(--orange); }
-    .footer-bottom { margin-top:32px; padding-top:24px; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-    .footer-bottom .copyright { font-size:12px; color:#555; }
-    .footer-bottom .fine-print { font-size:11px; color:#444; text-align:right; max-width:500px; line-height:1.5; }
-
-    /* RESPONSIVE */
-    @media(max-width:940px) {
-      .nav { position:static; flex-direction:column; padding:12px 20px; }
-      .brand img { width:44px; height:44px; min-width:44px; }
-      .nav-links { flex-wrap:wrap; justify-content:center; gap:14px; }
-      .footer-top { flex-direction:column; align-items:center; text-align:center; }
-      .footer-contact { text-align:center; }
-      .footer-bottom { flex-direction:column; align-items:center; text-align:center; }
-    }
-    @media(max-width:560px) {
-      .nav-links a { font-size:11px; }
-      .brand span { font-size:13px; }
-      section { padding:40px 20px; }
-      .footer-inner { padding:32px 20px; }
-      .doc-card { grid-template-columns:1fr; gap:12px; }
-      .doc-open { justify-self:start; }
+    .footer-inner { max-width:1200px; margin:0 auto; padding:44px 7vw; }
+    .footer-top,.footer-bottom { display:flex; justify-content:space-between; gap:28px; flex-wrap:wrap; }
+    .footer-brand { display:flex; align-items:center; gap:14px; } .footer-brand img { width:46px; height:46px; border-radius:10px; }
+    .brand-text { font-weight:900; text-transform:uppercase; } .brand-sub,.copyright,.fine-print { color:var(--muted); font-size:12px; }
+    .footer-nav { display:flex; gap:18px; flex-wrap:wrap; } .footer-nav a { color:#999; font-size:12px; font-weight:800; text-transform:uppercase; }
+    .footer-contact { text-align:right; font-size:13px; } .footer-contact a { display:block; color:var(--muted); }
+    .footer-bottom { margin-top:28px; padding-top:22px; border-top:1px solid var(--line); }
+    @media(max-width:940px) { .nav { position:static; flex-direction:column; padding:12px 20px; } .nav-links { flex-wrap:wrap; justify-content:center; gap:14px; } .search-panel { top:12px; } }
+    @media(max-width:620px) {
+      .page-hero { padding:64px 20px 48px; } section { padding:42px 20px; } .discovery { padding:24px 12px 8px; }
+      .search-panel { padding:10px; border-radius:14px; } .search-help span:last-child { display:none; }
+      .category-grid,.subcategory-grid { grid-template-columns:1fr; } .category-card,.subcategory-card { min-height:112px; padding:18px; } .category-card .card-kicker { margin-bottom:16px; }
+      .doc-row,.position-list .doc-row { grid-template-columns:1fr; gap:10px; padding:14px; } .position-list .doc-row::before { display:none; }
+      .doc-actions { width:100%; } .doc-open,.doc-download { flex:1; min-height:44px; }
+      .document-group > summary { padding:13px 14px; } .group-count { display:none; }
+      .view-toolbar { align-items:flex-start; } .footer-inner { padding:34px 20px; } .footer-top,.footer-bottom { flex-direction:column; align-items:center; text-align:center; } .footer-contact { text-align:center; }
     }
   </style>
 </head>
 <body>
   <nav class="nav" aria-label="Primary navigation">
-    <a class="brand" href="index.html" aria-label="Lost Limb Riders home">
-      <img src="assets/logo-nobg.png" alt="Lost Limb Riders logo">
-      <span>Lost Limb Riders</span>
-    </a>
-    <div class="nav-links">
-      <a href="index.html">Home</a>
-      <a href="events.html">Events</a>
-      <a href="media.html">Media</a>
-      <a href="mission.html">Mission</a>
-      <a href="community.html">Community</a>
-      <a href="sponsors.html">Sponsors</a>
-      <a href="documentation.html" class="active">Docs</a>
-      <a href="compliance.html">Compliance</a>
-    </div>
+    <a class="brand" href="index.html" aria-label="Lost Limb Riders home"><img src="assets/logo-nobg.png" alt="Lost Limb Riders logo"><span>Lost Limb Riders</span></a>
+    <div class="nav-links"><a href="index.html">Home</a><a href="events.html">Events</a><a href="media.html">Media</a><a href="mission.html">Mission</a><a href="community.html">Community</a><a href="sponsors.html">Sponsors</a><a href="documentation.html" class="active">Docs</a><a href="compliance.html">Compliance</a></div>
   </nav>
-
-  <header class="page-hero">
-    <div class="eyebrow">Organizational Reference</div>
-    <h1>Documentation <span class="orange">Library</span></h1>
-    <p class="subtitle">Policies, procedures, handbooks, forms, and operational documents for Lost Limb Riders.</p>
-  </header>
-
+  <header class="page-hero"><div class="eyebrow">Institutional Knowledge Portal</div><h1>Document <span class="orange">Library</span></h1><p class="subtitle">Browse the organization by functional area, move through focused document groups, or search the complete library available to you.</p></header>
   <main>
-    <!-- SEARCH -->
-    <section style="padding-bottom:0;">
+    <section class="discovery" aria-labelledby="searchLabel">
       <div class="wrap">
-        <div class="search-wrap">
-          <span class="search-icon">&#128269;</span>
-          <input type="text" id="docSearch" placeholder="Search documents by title, ID, or category..." autocomplete="off">
+        <div class="search-panel">
+          <label id="searchLabel" for="docSearch" style="display:block;font-size:12px;font-weight:850;text-transform:uppercase;letter-spacing:.1em;margin:0 4px 9px;">Search the complete library</label>
+          <div class="search-wrap"><span class="search-icon" aria-hidden="true">&#128269;</span><input type="search" id="docSearch" placeholder="Title, document ID, type, or functional area" autocomplete="off" aria-describedby="searchHelp searchStatus"><button class="search-clear" id="searchClear" type="button" aria-label="Clear document search" hidden>&times;</button></div>
+          <div class="search-help" id="searchHelp"><span id="searchStatus" role="status" aria-live="polite">Loading document index…</span><span>Search includes collapsed categories</span></div>
+          <div id="searchResults" class="search-results" hidden></div>
         </div>
       </div>
     </section>
-
-    <!-- SOURCE-OF-TRUTH NOTICE -->
-    <section style="padding-top:0;">
-      <div class="wrap">
-        <div class="internal-banner">
-          <span class="lock-icon">&#128214;</span>
-          <span><strong>Source of truth:</strong> the Autobiography repository remains the authoritative document library. This page is the document browser and reader; operational compliance workflows are a separate feature.</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- PUBLIC DOCUMENTS -->
-    <section id="public-docs">
-      <div class="wrap">
-        <div class="section-heading">
-          <div class="section-eyebrow">Open Access</div>
-          <h2 class="section-title">Public <span class="orange">Documents</span></h2>
-          <p style="color:var(--muted); font-size:15px; margin-top:12px; max-width:560px; margin-left:auto; margin-right:auto;">Handbooks, program manuals, and forms available to all visitors.</p>
-        </div>
-        <div id="publicList"></div>
-      </div>
-    </section>
-
+    <section style="padding-top:18px;padding-bottom:12px;"><div class="wrap"><div class="notice"><span aria-hidden="true">&#128214;</span><span><strong>Source of truth:</strong> the Autobiography repository remains the authoritative document library. This page is the document browser and reader; operational compliance workflows are a separate feature.</span></div></div></section>
+    <section id="public-docs" aria-labelledby="publicTitle"><div class="wrap"><div class="section-heading"><div class="section-eyebrow">Open Access</div><h2 class="section-title" id="publicTitle">Public <span class="orange">Documents</span></h2><p>Choose a library area first. Documents remain folded into their functional groups until you need them.</p></div><div id="publicList"></div></div></section>
     <div class="divider"></div>
-
-    <!-- INTERNAL LOGIN GATE -->
-    <section id="internal-gate">
-      <div class="wrap">
-        <div class="section-heading">
-          <div class="section-eyebrow">Authorized Personnel</div>
-          <h2 class="section-title">Internal <span class="orange">Documents</span></h2>
-          <p style="color:var(--muted); font-size:15px; margin-top:12px; max-width:560px; margin-left:auto; margin-right:auto;">Governance, operations, and position manuals. Login required.</p>
-        </div>
-
-        <div id="loginArea">
-          <div class="login-section">
-            <div class="login-box">
-              <h3>Document Access</h3>
-              <p>Enter your credentials to view internal organizational documents.</p>
-              <form id="loginForm" onsubmit="return docsLogin(event)">
-                <label for="loginName">Name</label>
-                <input type="text" id="loginName" placeholder="Your name" required autocomplete="username">
-                <label for="loginKey">Access Key</label>
-                <input type="password" id="loginKey" placeholder="Access key" required autocomplete="current-password">
-                <button type="submit" class="btn-login" id="loginBtn">Access Documents</button>
-                <div class="login-error" id="loginError"></div>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <div id="internalDocs" style="display:none;">
-          <div class="internal-banner">
-            <span class="lock-icon">&#128274;</span>
-            <span>Logged in as <strong id="loggedInUser"></strong></span>
-            <span id="docsAdminActions"></span>
-            <span style="margin-left:auto;"><button type="button" onclick="docsLogout()" style="color:#ef4444; background:none; border:0; padding:8px; cursor:pointer; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.05em;">Logout</button></span>
-          </div>
-          <div id="internalList"></div>
-        </div>
-      </div>
-    </section>
+    <section id="internal-gate" aria-labelledby="internalTitle"><div class="wrap"><div class="section-heading"><div class="section-eyebrow">Authorized Personnel</div><h2 class="section-title" id="internalTitle">Internal <span class="orange">Documents</span></h2><p>Authorized users can browse governance, operations, position manuals, and controlled resources.</p></div>
+      <div id="loginArea"><div class="login-section"><div class="login-box"><h3>Document Access</h3><p>Enter your credentials to view internal organizational documents.</p><form id="loginForm" onsubmit="return docsLogin(event)"><label for="loginName">Name</label><input type="text" id="loginName" required autocomplete="username"><label for="loginKey">Access Key</label><input type="password" id="loginKey" required autocomplete="current-password"><button type="submit" class="btn-login" id="loginBtn">Access Documents</button><div class="login-error" id="loginError" role="alert"></div></form></div></div></div>
+      <div id="internalDocs" style="display:none;"><div class="internal-banner"><span aria-hidden="true">&#128274;</span><span>Logged in as <strong id="loggedInUser"></strong></span><span id="docsAdminActions"></span><button class="logout" type="button" onclick="docsLogout()">Logout</button></div><div id="internalList"></div></div>
+    </div></section>
   </main>
-
-  <footer>
-    <div class="footer-inner">
-      <div class="footer-top">
-        <div class="footer-brand">
-          <img src="assets/logo-nobg.png" alt="Lost Limb Riders">
-          <div>
-            <div class="brand-text">Lost Limb Riders</div>
-            <div class="brand-sub">Motorcycle Club &bull; Est. 2025</div>
-          </div>
-        </div>
-        <div class="footer-nav">
-          <a href="index.html">Home</a>
-          <a href="events.html">Events</a>
-          <a href="media.html">Media</a>
-          <a href="mission.html">Mission</a>
-          <a href="community.html">Community</a>
-          <a href="sponsors.html">Sponsors</a>
-          <a href="documentation.html">Docs</a>
-          <a href="compliance.html">Compliance</a>
-        </div>
-        <div class="footer-contact">
-          <a href="mailto:john.thompson@lostlimbriders.org">john.thompson@lostlimbriders.org</a>
-          <a href="tel:5158905765">515-890-5765</a>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <div class="copyright">&copy; 2026 Lost Limb Riders Motorcycle Club. All rights reserved.</div>
-        <div class="fine-print">Ride With Purpose &bull; Support Amputees &bull; Build Community &bull; Never Give Up</div>
-      </div>
-    </div>
-  </footer>
-
+  <footer><div class="footer-inner"><div class="footer-top"><div class="footer-brand"><img src="assets/logo-nobg.png" alt="Lost Limb Riders"><div><div class="brand-text">Lost Limb Riders</div><div class="brand-sub">Motorcycle Club &bull; Est. 2025</div></div></div><div class="footer-nav"><a href="index.html">Home</a><a href="events.html">Events</a><a href="media.html">Media</a><a href="mission.html">Mission</a><a href="community.html">Community</a><a href="sponsors.html">Sponsors</a><a href="documentation.html">Docs</a><a href="compliance.html">Compliance</a></div><div class="footer-contact"><a href="mailto:john.thompson@lostlimbriders.org">john.thompson@lostlimbriders.org</a><a href="tel:5158905765">515-890-5765</a></div></div><div class="footer-bottom"><div class="copyright">&copy; 2026 Lost Limb Riders Motorcycle Club.</div><div class="fine-print">Ride With Purpose &bull; Support Amputees &bull; Build Community &bull; Never Give Up</div></div></div></footer>
   <script>
     var allDocs = [];
     var docsSession = null;
+    var portalState = { publicList: [], internalList: [] };
 
     function apiHeaders() {
       var headers = { 'Content-Type': 'application/json' };
@@ -280,180 +152,200 @@
       return headers;
     }
 
-    function groupDocuments(docs) {
-      var groups = {};
-      docs.forEach(function(doc) { (groups[doc.section] = groups[doc.section] || []).push(doc); });
-      return Object.keys(groups).sort().map(function(section) { return { section: section, items: groups[section] }; });
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, function(character) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]; });
     }
 
-    function renderDocCard(doc) {
-      var statusClass = doc.status || 'active';
-      var statusLabel = statusClass.charAt(0).toUpperCase() + statusClass.slice(1);
-      var idHtml = doc.document_id ? '<span class="doc-id">' + escapeHtml(doc.document_id) + '</span>' : '';
-      var descHtml = doc.description ? '<div style="font-size:12px; color:var(--muted); margin-top:2px;">' + escapeHtml(doc.description) + '</div>' : '';
-      return '<div class="doc-card" data-search="' + escapeHtml((doc.title + ' ' + (doc.document_id || '') + ' ' + (doc.type || '') + ' ' + (doc.description || '')).toLowerCase()) + '">' +
-        '<div class="doc-info">' +
-          '<div class="doc-title">' + escapeHtml(doc.title) + '</div>' +
-          '<div class="doc-meta">' +
-            idHtml +
-            '<span class="doc-type">' + escapeHtml(doc.type) + '</span>' +
-            '<span class="doc-status ' + statusClass + '">' + statusLabel + '</span>' +
-          '</div>' +
-          descHtml +
-        '</div>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="doc-open" type="button" onclick="openDocument(\'' + escapeHtml(doc.document_code) + '\')">View</button><button class="doc-open" type="button" onclick="downloadDocument(\'' + escapeHtml(doc.document_code) + '\')">Download</button></div>' +
-      '</div>';
+    function cleanSegment(value) {
+      return String(value || '').replace(/^\d{2}-/, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, function(letter) { return letter.toUpperCase(); });
+    }
+
+    function documentPath(doc) {
+      var path = String(doc.section || '').split(' / ').filter(Boolean);
+      if (path[0] === 'employees') return ['Organizational Positions', 'Position Manuals'];
+      if (path[0] === 'lost_limb_riders_handbooks') {
+        if (path[1] === 'transactional_operations') return ['Transactional Operations', cleanSegment(path[2] || 'Operations')];
+        return ['Handbooks & Program Resources', cleanSegment(path[1] || 'Library Overview')];
+      }
+      return [cleanSegment(path[0] || doc.domain || 'Documents'), cleanSegment(path[1] || doc.type || 'General')];
+    }
+
+    function docSort(left, right) {
+      if (left.canonical_path.startsWith('employees/') && right.canonical_path.startsWith('employees/')) return left.canonical_path.localeCompare(right.canonical_path, undefined, { numeric:true });
+      return (left.document_id || left.title).localeCompare(right.document_id || right.title, undefined, { numeric:true });
+    }
+
+    function buildTree(docs) {
+      var majors = {};
+      docs.forEach(function(doc) {
+        var path = documentPath(doc);
+        if (!majors[path[0]]) majors[path[0]] = {};
+        if (!majors[path[0]][path[1]]) majors[path[0]][path[1]] = [];
+        majors[path[0]][path[1]].push(doc);
+      });
+      return majors;
+    }
+
+    function renderDocRow(doc, context, positionMode) {
+      var metadata = [];
+      if (doc.document_id) metadata.push('<span class="doc-id">' + escapeHtml(doc.document_id) + '</span>');
+      if (doc.type) metadata.push('<span>' + escapeHtml(doc.type) + '</span>');
+      if (doc.responsible_area) metadata.push('<span>' + escapeHtml(doc.responsible_area) + '</span>');
+      var contextHtml = context ? '<div class="result-context">' + escapeHtml(context) + '</div>' : '';
+      return '<div class="doc-row" data-document-code="' + escapeHtml(doc.document_code) + '">' +
+        '<div class="doc-info"><div class="doc-title">' + escapeHtml(doc.title) + '</div><div class="doc-meta">' + metadata.join('<span aria-hidden="true">&bull;</span>') + '</div>' + contextHtml + '</div>' +
+        '<div class="doc-actions"><button class="doc-open" type="button" data-action="view">View</button><button class="doc-download" type="button" data-action="download">Download</button></div></div>';
+    }
+
+    function renderDocumentGroups(docs, path) {
+      var groups = {};
+      docs.slice().sort(docSort).forEach(function(doc) { var type = doc.type || 'Documents'; (groups[type] = groups[type] || []).push(doc); });
+      var positionMode = path[0] === 'Organizational Positions';
+      var html = positionMode ? '<div class="position-order"><strong>Canonical organizational order.</strong> Position manuals follow the numbered order established by the authoritative HR-REF-001 source series; alphabetical title sorting is intentionally not used.</div>' : '';
+      html += '<div class="group-list">';
+      Object.keys(groups).sort().forEach(function(type) {
+        html += '<details class="document-group"><summary><span>' + escapeHtml(type) + '</span><span class="group-count">' + groups[type].length + ' document' + (groups[type].length === 1 ? '' : 's') + '</span></summary><div class="doc-list' + (positionMode ? ' position-list' : '') + '">';
+        groups[type].forEach(function(doc) { html += renderDocRow(doc, '', positionMode); });
+        html += '</div></details>';
+      });
+      return html + '</div>';
+    }
+
+    function renderPortal(container, docs) {
+      if (!docs.length) { container.innerHTML = '<div class="empty-state">No documents are available in this section.</div>'; return; }
+      var tree = buildTree(docs);
+      portalState[container.id] = { docs:docs, tree:tree, major:null, subcategory:null };
+      showMajorCategories(container.id);
+    }
+
+    function showMajorCategories(containerId) {
+      var state = portalState[containerId];
+      var names = Object.keys(state.tree).sort();
+      var total = state.docs.length;
+      var html = '<div class="library-summary"><span><strong>' + total + '</strong> available document' + (total === 1 ? '' : 's') + '</span><span>' + names.length + ' major area' + (names.length === 1 ? '' : 's') + '</span></div><div class="category-grid">';
+      names.forEach(function(name) {
+        var subcategories = Object.keys(state.tree[name]);
+        var count = subcategories.reduce(function(sum, subcategory) { return sum + state.tree[name][subcategory].length; }, 0);
+        html += '<button type="button" class="category-card" data-portal="' + containerId + '" data-major="' + escapeHtml(name) + '" aria-label="Browse ' + escapeHtml(name) + ', ' + count + ' documents"><span class="card-kicker">Library Area</span><strong>' + escapeHtml(name) + '</strong><small>' + subcategories.length + ' functional area' + (subcategories.length === 1 ? '' : 's') + ' &bull; ' + count + ' documents</small></button>';
+      });
+      document.getElementById(containerId).innerHTML = html + '</div>';
+    }
+
+    function showSubcategories(containerId, major) {
+      var state = portalState[containerId];
+      state.major = major;
+      var subcategories = Object.keys(state.tree[major]).sort();
+      var html = '<div class="view-toolbar"><button type="button" class="back-button" data-portal="' + containerId + '" data-back="root">&larr; All areas</button><div class="breadcrumbs" aria-label="Breadcrumb">Document Library &rsaquo; <strong>' + escapeHtml(major) + '</strong></div></div><div class="subcategory-grid">';
+      subcategories.forEach(function(name) {
+        var count = state.tree[major][name].length;
+        html += '<button type="button" class="subcategory-card" data-portal="' + containerId + '" data-major="' + escapeHtml(major) + '" data-subcategory="' + escapeHtml(name) + '"><strong>' + escapeHtml(name) + '</strong><small>' + count + ' document' + (count === 1 ? '' : 's') + ' &rsaquo;</small></button>';
+      });
+      document.getElementById(containerId).innerHTML = html + '</div>';
+      document.getElementById(containerId).scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+
+    function showDocuments(containerId, major, subcategory) {
+      var state = portalState[containerId];
+      state.subcategory = subcategory;
+      document.getElementById(containerId).innerHTML = '<div class="view-toolbar"><button type="button" class="back-button" data-portal="' + containerId + '" data-back="major">&larr; ' + escapeHtml(major) + '</button><div class="breadcrumbs" aria-label="Breadcrumb">Document Library &rsaquo; ' + escapeHtml(major) + ' &rsaquo; <strong>' + escapeHtml(subcategory) + '</strong></div></div>' + renderDocumentGroups(state.tree[major][subcategory], [major, subcategory]);
+      document.getElementById(containerId).scrollIntoView({ behavior:'smooth', block:'start' });
     }
 
     function renderGroup(container, groups) {
-      if (!groups.length) { container.innerHTML = '<div class="internal-banner">No documents are available in this section.</div>'; return; }
-      var html = '';
-      for (var i = 0; i < groups.length; i++) {
-        var g = groups[i];
-        html += '<div class="dept-group">';
-        html += '<div class="dept-header"><h3>' + escapeHtml(g.section) + '</h3><span class="dept-count">' + g.items.length + '</span></div>';
-        html += '<div class="doc-list">';
-        for (var j = 0; j < g.items.length; j++) {
-          html += renderDocCard(g.items[j]);
-        }
-        html += '</div></div>';
-      }
-      container.innerHTML = html;
+      var docs = [];
+      groups.forEach(function(group) { docs = docs.concat(group.items || []); });
+      renderPortal(container, docs);
     }
 
-    function escapeHtml(v) {
-      return String(v || '').replace(/[&<>"']/g, function(c) {
-        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-      });
+    function groupDocuments(docs) {
+      var groups = {};
+      docs.forEach(function(doc) { (groups[doc.section] = groups[doc.section] || []).push(doc); });
+      return Object.keys(groups).map(function(section) { return { section:section, items:groups[section] }; });
     }
 
-    document.getElementById('docSearch').addEventListener('input', function() {
-      var q = this.value.toLowerCase().trim();
-      var cards = document.querySelectorAll('.doc-card');
-      for (var i = 0; i < cards.length; i++) {
-        var haystack = cards[i].getAttribute('data-search') || '';
-        cards[i].style.display = (!q || haystack.indexOf(q) !== -1) ? '' : 'none';
-      }
-      var groups = document.querySelectorAll('.dept-group');
-      for (var g = 0; g < groups.length; g++) {
-        var visibleCards = groups[g].querySelectorAll('.doc-card:not([style*="display: none"])');
-        groups[g].style.display = visibleCards.length ? '' : 'none';
+    function searchText(doc) {
+      return [doc.title,doc.document_id,doc.document_code,doc.type,doc.section,doc.domain,doc.responsible_area,doc.canonical_path].filter(Boolean).join(' ').toLowerCase();
+    }
+
+    function updateSearch() {
+      var input = document.getElementById('docSearch');
+      var query = input.value.trim().toLowerCase();
+      var results = document.getElementById('searchResults');
+      document.getElementById('searchClear').hidden = !query;
+      if (!query) { results.hidden = true; results.innerHTML = ''; document.getElementById('searchStatus').textContent = allDocs.length + ' documents indexed' + (docsSession ? ' for this authorized session' : ' for public access'); return; }
+      var matches = allDocs.filter(function(doc) { return searchText(doc).indexOf(query) !== -1; }).sort(docSort);
+      var html = '<div class="search-heading"><h2>Search results</h2><span class="group-count">' + matches.length + ' found</span></div><div class="doc-list">';
+      matches.slice(0, 100).forEach(function(doc) { var path = documentPath(doc); html += renderDocRow(doc, path[0] + ' › ' + path[1] + (doc.access === 'internal' ? ' › Internal' : ' › Public'), false); });
+      if (!matches.length) html += '<div class="empty-state">No available documents match “' + escapeHtml(input.value.trim()) + '”.</div>';
+      if (matches.length > 100) html += '<div class="empty-state">Showing the first 100 results. Refine your search to narrow the list.</div>';
+      results.innerHTML = html + '</div>'; results.hidden = false;
+      document.getElementById('searchStatus').textContent = matches.length + ' document' + (matches.length === 1 ? '' : 's') + ' found';
+    }
+
+    document.addEventListener('click', function(event) {
+      var target = event.target.closest('button');
+      if (!target) return;
+      if (target.dataset.major && !target.dataset.subcategory) showSubcategories(target.dataset.portal, target.dataset.major);
+      else if (target.dataset.subcategory) showDocuments(target.dataset.portal, target.dataset.major, target.dataset.subcategory);
+      else if (target.dataset.back === 'root') showMajorCategories(target.dataset.portal);
+      else if (target.dataset.back === 'major') showSubcategories(target.dataset.portal, portalState[target.dataset.portal].major);
+      else if (target.dataset.action) {
+        var row = target.closest('[data-document-code]');
+        if (target.dataset.action === 'view') openDocument(row.dataset.documentCode);
+        else downloadDocument(row.dataset.documentCode);
       }
     });
 
-    function docsLogin(e) {
-      e.preventDefault();
-      var name = document.getElementById('loginName').value.trim();
-      var key = document.getElementById('loginKey').value.trim();
-      var errEl = document.getElementById('loginError');
-      var btn = document.getElementById('loginBtn');
-      if (!name || !key) { errEl.textContent = 'Enter both name and key.'; return false; }
-      btn.disabled = true; btn.textContent = 'Checking...'; errEl.textContent = '';
-      fetch('/api/admin?action=docs-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, key: key })
-      }).then(function(r) { return r.json(); }).then(function(data) {
-        if (data.ok) {
-          docsSession = { name: data.name, role: data.role, token: data.token };
-          sessionStorage.setItem('llr-docs-session', JSON.stringify(docsSession));
-          loadLibrary(true);
-        } else {
-          errEl.textContent = data.error || 'Access denied.';
-        }
-        btn.disabled = false; btn.textContent = 'Access Documents';
-      }).catch(function() {
-        errEl.textContent = 'Connection error.';
-        btn.disabled = false; btn.textContent = 'Access Documents';
-      });
+    document.getElementById('docSearch').addEventListener('input', updateSearch);
+    document.getElementById('searchClear').addEventListener('click', function() { document.getElementById('docSearch').value = ''; updateSearch(); document.getElementById('docSearch').focus(); });
+
+    function docsLogin(event) {
+      event.preventDefault();
+      var name = document.getElementById('loginName').value.trim(); var key = document.getElementById('loginKey').value.trim(); var error = document.getElementById('loginError'); var button = document.getElementById('loginBtn');
+      if (!name || !key) { error.textContent = 'Enter both name and key.'; return false; }
+      button.disabled = true; button.textContent = 'Checking…'; error.textContent = '';
+      fetch('/api/admin?action=docs-login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:name,key:key}) }).then(function(response) { return response.json(); }).then(function(data) {
+        if (!data.ok) throw new Error(data.error || 'Access denied.');
+        docsSession = { name:data.name, role:data.role, token:data.token }; sessionStorage.setItem('llr-docs-session', JSON.stringify(docsSession)); return loadLibrary(true);
+      }).catch(function(err) { error.textContent = err.message; }).finally(function() { button.disabled = false; button.textContent = 'Access Documents'; });
       return false;
     }
 
     function showInternalDocs(name) {
-      document.getElementById('loginArea').style.display = 'none';
-      document.getElementById('internalDocs').style.display = '';
-      document.getElementById('loggedInUser').textContent = name;
-      document.getElementById('docsAdminActions').innerHTML = docsSession && docsSession.role === 'admin' ? '<button class="doc-open" type="button" onclick="validateSources()">Validate Sources</button>' : '';
+      document.getElementById('loginArea').style.display = 'none'; document.getElementById('internalDocs').style.display = ''; document.getElementById('loggedInUser').textContent = name;
+      document.getElementById('docsAdminActions').innerHTML = docsSession && docsSession.role === 'admin' ? '<button class="doc-download" type="button" onclick="validateSources()">Validate Sources</button>' : '';
       renderGroup(document.getElementById('internalList'), groupDocuments(allDocs.filter(function(doc) { return doc.access === 'internal'; })));
     }
 
     function docsLogout() {
-      sessionStorage.removeItem('llr-docs-session');
-      docsSession = null;
-      document.getElementById('loginArea').style.display = '';
-      document.getElementById('internalDocs').style.display = 'none';
-      document.getElementById('loginName').value = '';
-      document.getElementById('loginKey').value = '';
-      document.getElementById('loginError').textContent = '';
-      loadLibrary(false);
+      sessionStorage.removeItem('llr-docs-session'); docsSession = null; document.getElementById('loginArea').style.display = ''; document.getElementById('internalDocs').style.display = 'none'; document.getElementById('loginName').value = ''; document.getElementById('loginKey').value = ''; document.getElementById('loginError').textContent = ''; loadLibrary(false);
     }
 
     function loadLibrary(showLoginError) {
-      fetch('/api/admin?action=docs-list', { headers: apiHeaders() }).then(function(r) {
-        return r.json().then(function(data) { return { ok: r.ok, data: data }; });
-      }).then(function(result) {
+      return fetch('/api/admin?action=docs-list', { headers:apiHeaders() }).then(function(response) { return response.json().then(function(data) { return {ok:response.ok,data:data}; }); }).then(function(result) {
         if (!result.ok) throw new Error(result.data.error || 'Unable to load documents.');
         allDocs = result.data.documents || [];
         renderGroup(document.getElementById('publicList'), groupDocuments(allDocs.filter(function(doc) { return doc.access === 'public'; })));
-        if (result.data.authenticated) showInternalDocs(result.data.name);
-        else if (docsSession) docsLogout();
-      }).catch(function(err) {
-        if (showLoginError) document.getElementById('loginError').textContent = err.message;
-        document.getElementById('publicList').innerHTML = '<div class="internal-banner">Document library unavailable. Please try again later.</div>';
-      });
+        if (result.data.authenticated) showInternalDocs(result.data.name); else if (docsSession) return docsLogout();
+        updateSearch();
+      }).catch(function(err) { if (showLoginError) document.getElementById('loginError').textContent = err.message; document.getElementById('publicList').innerHTML = '<div class="empty-state">Document library unavailable. Please try again later.</div>'; document.getElementById('searchStatus').textContent = 'Document index unavailable'; });
     }
 
-    function openDocument(code) {
-      window.location.href = 'documentation-viewer.html?code=' + encodeURIComponent(code);
-    }
-
+    function openDocument(code) { window.location.href = 'documentation-viewer.html?code=' + encodeURIComponent(code); }
     function downloadDocument(code) {
-      fetch('/api/admin?action=docs-document&code=' + encodeURIComponent(code), { headers: apiHeaders() }).then(function(r) {
-        return r.json().then(function(data) { return { ok: r.ok, data: data }; });
-      }).then(function(result) {
+      fetch('/api/admin?action=docs-document&code=' + encodeURIComponent(code), { headers:apiHeaders() }).then(function(response) { return response.json().then(function(data) { return {ok:response.ok,data:data}; }); }).then(function(result) {
         if (!result.ok) throw new Error(result.data.error || 'Document unavailable.');
-        var blob = new Blob([result.data.content], { type: 'text/markdown;charset=utf-8' });
-        var url = URL.createObjectURL(blob);
-        var link = document.createElement('a');
-        link.href = url;
-        link.download = result.data.document.document_code + '.md';
-        link.click();
-        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+        var blob = new Blob([result.data.content], {type:'text/markdown;charset=utf-8'}); var url = URL.createObjectURL(blob); var link = document.createElement('a'); link.href = url; link.download = result.data.document.document_code + '.md'; link.click(); setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
       }).catch(function(err) { window.alert(err.message); });
     }
-
-    function validateSources() {
-      fetch('/api/admin?action=docs-validate', { method: 'POST', headers: apiHeaders(), body: '{}' })
-        .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
-        .then(function(result) { if (!result.ok) throw new Error(result.data.error || 'Validation failed.'); return loadLibrary(true); })
-        .catch(function(err) { window.alert(err.message); });
-    }
+    function validateSources() { fetch('/api/admin?action=docs-validate', {method:'POST',headers:apiHeaders(),body:'{}'}).then(function(response) { return response.json().then(function(data) { return {ok:response.ok,data:data}; }); }).then(function(result) { if (!result.ok) throw new Error(result.data.error || 'Validation failed.'); return loadLibrary(true); }).catch(function(err) { window.alert(err.message); }); }
 
     document.addEventListener('DOMContentLoaded', function() {
       try { docsSession = JSON.parse(sessionStorage.getItem('llr-docs-session') || 'null'); } catch { docsSession = null; }
       loadLibrary(false);
-
-      fetch('/api/visit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          screen: screen.width + 'x' + screen.height,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          lang: navigator.language,
-          platform: navigator.platform,
-          cookies: navigator.cookieEnabled ? 'enabled' : 'disabled',
-          dnt: navigator.doNotTrack || 'unknown',
-          page: location.href
-        }),
-        keepalive: true
-      }).catch(function() {});
+      fetch('/api/visit', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({screen:screen.width+'x'+screen.height,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,lang:navigator.language,platform:navigator.platform,cookies:navigator.cookieEnabled?'enabled':'disabled',dnt:navigator.doNotTrack||'unknown',page:location.href}),keepalive:true}).catch(function() {});
     });
-
-    window.docsLogin = docsLogin;
-    window.docsLogout = docsLogout;
-    window.openDocument = openDocument;
-    window.downloadDocument = downloadDocument;
-    window.validateSources = validateSources;
+    window.docsLogin=docsLogin; window.docsLogout=docsLogout; window.openDocument=openDocument; window.downloadDocument=downloadDocument; window.validateSources=validateSources;
   </script>
 </body>
 </html>
