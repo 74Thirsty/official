@@ -38,3 +38,18 @@ test('buildEventCalendar uses exclusive end dates for all-day multi-day events',
   assert.match(calendar, /DTSTART;VALUE=DATE:20260919/);
   assert.match(calendar, /DTEND;VALUE=DATE:20260921/);
 });
+
+test('recurring events use the end date as the recurrence limit, not occurrence duration', () => {
+  const calendar = buildEventCalendar([{
+    id: 'ev-3',
+    title: 'Weekly Meeting',
+    date: '2026-09-10',
+    endDate: '2026-12-31',
+    repeat: 'weekly',
+    repeatUntil: '2026-12-31',
+  }]);
+
+  assert.match(calendar, /DTSTART;VALUE=DATE:20260910/);
+  assert.match(calendar, /DTEND;VALUE=DATE:20260911/);
+  assert.match(calendar, /RRULE:FREQ=WEEKLY;UNTIL=20261231T235959Z/);
+});
