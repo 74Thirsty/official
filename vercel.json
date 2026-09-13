@@ -2,13 +2,6 @@
   "rewrites": [
     { "source": "/api/contact", "destination": "/api/support?action=contact" }
   ],
-  "redirects": [
-    {
-      "source": "/SOCIAL_MEDIA.json",
-      "destination": "/__blocked_social_media__",
-      "permanent": false
-    }
-  ],
   "crons": [
     {
       "path": "/api/cron-newsletter",

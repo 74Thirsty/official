@@ -21,7 +21,8 @@ test('canonical navigation preserves homepage groups and verified destinations',
   const script = readFileSync(resolve(root, 'assets/public-nav.js'), 'utf8');
   for (const label of ['Home', 'About', 'Programs', 'Get Involved', 'Community', 'Contact']) assert.match(script, new RegExp(`>${label}(?: |<)`));
   for (const destination of ['mission.html#story', 'peer-support.html', 'healthcare-partnerships.html', 'join.html',
-    'volunteer-employment.html', 'sponsors.html', 'events.html', 'media.html', 'community.html', 'documentation.html']) {
+    'volunteer-employment.html', 'sponsors.html', 'events.html', 'media.html', 'community.html', 'documentation.html',
+    'compliance.html']) {
     assert.match(script, new RegExp(destination.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
 });
