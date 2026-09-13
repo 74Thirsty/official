@@ -73,6 +73,17 @@ test('known placeholder media destination is never exposed as playable content',
   assert.match(media, /videoId !== 'dQw4w9WgXcQ'/);
 });
 
+test('provided Chris YouTube video is seeded as a playable vlog without changing its title', () => {
+  const seed = readFileSync(resolve(root, 'lib/seed.js'), 'utf8');
+  assert.match(seed, /title: 'LLR-FDPUBLIB-02'/);
+  assert.match(seed, /videoId: '2ZGgAKdnOXo'/);
+  assert.match(seed, /duration: '30:00'/);
+  const media = readFileSync(resolve(root, 'media.html'), 'utf8');
+  assert.match(media, /stream\.platform === 'youtube'/);
+  assert.match(media, /youtubeEmbed/);
+  assert.match(media, /document\.getElementById\('liveTitle'\)\.textContent = isLive && stream\.title/);
+});
+
 test('PayPal donation uses a configured direct HTTPS link without SDK or payment APIs', () => {
   const page = readFileSync(resolve(root, 'donate.html'), 'utf8');
   const api = readFileSync(resolve(root, 'api/support.js'), 'utf8');

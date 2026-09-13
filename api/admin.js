@@ -17,6 +17,7 @@ import { getAccessibleDocuments, findDocumentByCode, getDocumentIntegrity, DOCUM
 import { expandDocument } from '../lib/document-references.js';
 import { getWorkflow, getTemplate, publicWorkflow, publicTemplate, resolveCategoryGroups, workflowSourceRevision } from '../lib/compliance-engine.js';
 import { createInstance, saveFieldValues, addEvidence, approveStage, advanceStage, createDocumentInstance, saveDocumentFieldValues, applySignature, finalizeDocument, cancelInstance, isAceInstance, summarizeInstance, detailInstance, buildInstanceExport } from '../lib/compliance-engine.js';
+import { initialSocialMediaConfig, validateSocialMediaConfig } from '../lib/social-media.js';
 
 export const maxDuration = 60;
 
@@ -293,6 +294,30 @@ export default function handler(req, res) {
       const limit = Math.min(200, Math.max(1, parseInt(getParam(req, 'limit') || '100', 10) || 100));
       sendJson(res, { audit: audit.slice(0, limit), total: audit.length });
     }).catch(fail);
+    return;
+  }
+
+  if (action === 'social-media-config') {
+    if (req.method === 'GET') {
+      getList(KEYS.socialMediaConfig).then((entries) => {
+        sendJson(res, { config: entries[0] || initialSocialMediaConfig(), source: entries.length ? 'stored' : 'repository-default' });
+      }).catch(fail);
+      return;
+    }
+    if (req.method === 'POST') {
+      readBody(req).then(async (payload) => {
+        const result = validateSocialMediaConfig(payload.config);
+        if (!result.ok) return sendJson(res, { error: result.error }, 422);
+        await setList(KEYS.socialMediaConfig, [result.config]);
+        await addAudit('social_media_config_updated', 'admin', {
+          schemaVersion: result.config.schema_version,
+          accountCount: result.config.accounts.length,
+        });
+        return sendJson(res, { ok: true, config: result.config });
+      }).catch(fail);
+      return;
+    }
+    sendJson(res, { error: 'Method not allowed.' }, 405);
     return;
   }
 

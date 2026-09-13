@@ -1,8 +1,10 @@
-import { getList, setList, KEYS } from '../lib/storage.js';
+import { getList, setList, getDate, setDate, KEYS } from '../lib/storage.js';
 import { sendJson, sendEmpty, readBody, isAdmin, clean, getParam } from '../lib/http.js';
 import { seedMedia } from '../lib/seed.js';
 
 const TYPES = ['podcast', 'vlog', 'coffeetalk'];
+const MEDIA_SEED_REVISION = '2026-09-12-video-2ZGgAKdnOXo';
+const REQUIRED_SEED_IDS = ['md-v-07'];
 
 const FIELDS = [
   ['type', 20],
@@ -33,6 +35,16 @@ export default function handler(req, res) {
         if (!media.length) {
           media = seedMedia;
           await setList(KEYS.media, media);
+        }
+        const appliedRevision = await getDate(KEYS.mediaSeedRevision);
+        if (appliedRevision !== MEDIA_SEED_REVISION) {
+          const existingIds = new Set(media.map((item) => item.id));
+          const additions = seedMedia.filter((item) => REQUIRED_SEED_IDS.includes(item.id) && !existingIds.has(item.id));
+          if (additions.length) {
+            media = additions.concat(media);
+            await setList(KEYS.media, media);
+          }
+          await setDate(KEYS.mediaSeedRevision, MEDIA_SEED_REVISION);
         }
         sendJson(res, { media });
       })

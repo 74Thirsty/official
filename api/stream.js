@@ -29,9 +29,10 @@ async function maybeSendBroadcastAlerts(stream, state) {
   stream.lastAlertedLiveUrl = state.liveUrl;
   if (!active.length) return;
   const title = state.title || 'Lost Limb Riders Live';
-  const watchUrl = state.liveUrl || state.pageUrl || 'https://www.facebook.com';
+  const watchUrl = state.liveUrl || state.pageUrl || 'https://lostlimbriders.org/media.html';
+  const platform = state.platform === 'youtube' ? 'YouTube' : 'Facebook';
   const subject = `🔴 LIVE NOW: ${title}`;
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0; padding:0; background:#111; font-family:Arial,sans-serif;"><div style="max-width:560px; margin:0 auto; padding:32px 24px;"><h1 style="color:#ff6a00; font-size:24px; margin:0 0 16px;">🔴 We're Live Now!</h1><p style="color:#d7d7d7; font-size:16px; line-height:1.6; margin:0 0 24px;"><strong>${title}</strong> is streaming live on Facebook right now.</p><a href="${watchUrl}" style="display:inline-block; background:#ff6a00; color:#fff; font-weight:900; font-size:14px; text-transform:uppercase; letter-spacing:.06em; text-decoration:none; padding:14px 30px; border-radius:10px;">Watch Now</a><p style="color:#8f8f8f; font-size:12px; margin:32px 0 0;">You're receiving this because you signed up for broadcast alerts at lostlimbriders.org.</p></div></body></html>`;
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0; padding:0; background:#111; font-family:Arial,sans-serif;"><div style="max-width:560px; margin:0 auto; padding:32px 24px;"><h1 style="color:#ff6a00; font-size:24px; margin:0 0 16px;">🔴 We're Live Now!</h1><p style="color:#d7d7d7; font-size:16px; line-height:1.6; margin:0 0 24px;"><strong>${title}</strong> is streaming live on ${platform} right now.</p><a href="${watchUrl}" style="display:inline-block; background:#ff6a00; color:#fff; font-weight:900; font-size:14px; text-transform:uppercase; letter-spacing:.06em; text-decoration:none; padding:14px 30px; border-radius:10px;">Watch Now</a><p style="color:#8f8f8f; font-size:12px; margin:32px 0 0;">You're receiving this because you signed up for broadcast alerts at lostlimbriders.org.</p></div></body></html>`;
   let sent = 0;
   for (const sub of active) {
     const result = await sendEmail(sub.email, subject, html);

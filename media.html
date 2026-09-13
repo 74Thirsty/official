@@ -1197,18 +1197,30 @@
       renderCoffeeTalk();
     }
 
-    // --- Live Stream (Facebook Live) ---
+    // --- Live Stream (Facebook and YouTube Live) ---
     let lastRenderedStreamKey = null;
     const POLL_MS = 60000;
 
     function streamStateKey(s) {
-      return JSON.stringify([!!s.live, s.liveUrl || '', s.title || '', s.replayUrl || '', s.pageUrl || '']);
+      return JSON.stringify([!!s.live, s.platform || '', s.liveUrl || '', s.title || '', s.replayUrl || '', s.pageUrl || '']);
     }
 
     function facebookEmbed(url) {
       return '<iframe src="https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(url) +
         '&show_text=false&autoplay=true" frameborder="0" ' +
         'allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="Lost Limb Riders live on Facebook"></iframe>';
+    }
+
+    function youtubeEmbed(url) {
+      let videoId = '';
+      try { videoId = new URL(url).searchParams.get('v') || ''; } catch (e) {}
+      if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) return '';
+      return '<iframe src="https://www.youtube.com/embed/' + videoId + '?autoplay=1" frameborder="0" ' +
+        'allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="Live on YouTube"></iframe>';
+    }
+
+    function liveEmbed(stream) {
+      return stream.platform === 'youtube' ? youtubeEmbed(stream.liveUrl) : facebookEmbed(stream.liveUrl);
     }
 
     async function loadStream() {
@@ -1245,7 +1257,7 @@
       if (isLive) {
         const viewers = parseInt(stream.viewers, 10) || 0;
         frame.innerHTML =
-          facebookEmbed(stream.liveUrl) +
+          liveEmbed(stream) +
           '<div class="live-overlay">' +
             '<span class="live-dot"></span>' +
             '<span class="status-text live-now">LIVE NOW</span>' +
@@ -1259,11 +1271,14 @@
         actions.push('<a class="btn btn-secondary btn-sm" href="' + escapeHtml(stream.replayUrl) + '" target="_blank" rel="noopener">&#9654; Watch Our Latest Broadcast</a>');
       }
       if (stream.pageUrl) {
-        actions.push('<a class="btn btn-primary btn-sm" href="' + escapeHtml(stream.pageUrl) + '" target="_blank" rel="noopener">Follow on Facebook</a>');
+        actions.push('<a class="btn btn-primary btn-sm" href="' + escapeHtml(stream.pageUrl) + '" target="_blank" rel="noopener">Open Broadcast Page</a>');
       }
+      (stream.youtubeChannels || []).forEach(channel => {
+        actions.push('<a class="btn btn-secondary btn-sm" href="' + escapeHtml(channel.url) + '" target="_blank" rel="noopener">' + escapeHtml(channel.label) + '</a>');
+      });
       const offlineText = stream.replayUrl
-        ? 'The broadcast ended. Catch the replay on Facebook \u2014 and check back soon for the next live ride or recording.'
-        : 'When we go live on Facebook, the broadcast plays right here. Follow us on Facebook so you never miss a ride, a podcast recording, or a community event.';
+        ? 'The broadcast ended. Catch the replay and check back soon for the next live ride or recording.'
+        : 'When Chris or Lost Limb Riders goes live on YouTube or Facebook, the broadcast plays right here.';
       frame.innerHTML =
         '<div class="live-placeholder">' +
           '<div class="placeholder-icon">&#127911;</div>' +

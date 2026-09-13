@@ -2,7 +2,7 @@
 
 Complete reference for managing the website: events, live streaming (Facebook Live), newsletter, community moderation, guestbook, visitor data, the Document Library, and operational compliance.
 
-**Stack:** static HTML/CSS/JS frontend · Vercel serverless functions (Node) · Vercel KV (Redis) storage · Resend email · deployed at `lostlimbriders.org`. There are no PHP endpoints and no `data/*.json` files anymore — all data lives in KV under `llr:*` keys.
+**Stack:** static HTML/CSS/JS frontend · Vercel serverless functions (Node) · Vercel KV (Redis) storage · Resend email · deployed at `lostlimbriders.org`. There are no PHP endpoints or runtime `data/*.json` files. Operational data lives in KV under `llr:*` keys; the protected repository file `SOCIAL_MEDIA.json` supplies the initial social-media configuration.
 
 ---
 
@@ -25,6 +25,7 @@ Complete reference for managing the website: events, live streaming (Facebook Li
 15. [Troubleshooting](#troubleshooting)
 16. [Quick Reference Card](#quick-reference-card)
 17. [Compliance Engine](#compliance-engine)
+18. [Social Media Configuration](#social-media-configuration)
 
 ---
 
@@ -60,7 +61,7 @@ There is no hidden admin mode anywhere (the old press-A toggle is gone). Events 
 | `/api/ebook` | Token | One-time e-book download links (`?token=...`) |
 | `/api/unsubscribe` | Token | Newsletter unsubscribe links |
 | `/api/community` | mixed | Gallery/testimonials/comments list+submit (public), pending/approve/delete (admin); sponsor list (public) + sponsor CRUD/levels/reorder (admin) |
-| `/api/admin` | Yes | Stats, subscribers, visitors, newsletter preview + blast, stream config, audit |
+| `/api/admin` | Yes | Stats, subscribers, visitors, newsletter preview + blast, stream config, social-media configuration, audit |
 | `/api/cron-newsletter` | Cron | Automated weekly sender (gated by `CRON_SECRET`) |
 
 Admin auth everywhere: `?key=YOUR_ADMIN_KEY` query param or `X-Admin-Key` header, timing-safe compared against the `ADMIN_KEY` env var.
@@ -118,24 +119,37 @@ If login fails with "Invalid admin key," the `ADMIN_KEY` env var on Vercel is th
 | Sponsors | Full Sponsor Wall management: add/edit/delete, activate/deactivate, reorder, logos, recognition levels |
 | Gallery / Testimonials / Comments | Moderate visitor submissions — approve/unapprove/delete |
 | Guestbook | Read entries, download JSON backup, clear |
+| Social Media | View and edit the protected hierarchical social-media configuration with validation |
 
 ---
 
-## Live Streaming — Facebook Live
+## Social Media Configuration
 
-Streaming is simple now: **Facebook Live is the only platform**, and the website is just the viewing layer.
+Open `admin.html` → **Administration** → **Social Media**. The editor displays the internal configuration as labeled hierarchical sections and fields; operators do not edit raw JSON.
+
+1. Expand the organization, accounts, profile, governance, or metadata section.
+2. Edit the required values without changing the locked field structure.
+3. Select **Validate & Save**.
+4. A successful save persists the validated configuration to `llr:social-media-config` and records an audit event.
+
+The browser reads and writes only through authenticated `/api/admin?action=social-media-config` requests. Direct public access to `/SOCIAL_MEDIA.json` is blocked. When KV has no saved administrative configuration, the server initializes the editor from the protected repository JSON source.
+
+---
+
+## Live Streaming — Facebook and YouTube Live
+
+The website is the viewing layer for Facebook Live, Chris's personal YouTube channel, and the Lost Limb Riders business YouTube channel.
 
 ### Going live (the whole workflow)
 
-1. Open **Facebook on your phone**
-2. Press **Go Live** on the Lost Limb Riders page
-3. That's it. `media.html` detects the broadcast within ~60 seconds, shows a big **LIVE NOW** player, and riders who signed up for **broadcast alerts** get an email
+1. Start a broadcast on the Lost Limb Riders Facebook page, Chris's personal YouTube channel, or the Lost Limb Riders business YouTube channel.
+2. `media.html` detects the broadcast within ~60 seconds, displays its actual title, embeds the correct platform player, and sends broadcast alerts.
 
 No OBS, no stream keys, no RTMP, nothing to configure. When you end the broadcast, the site returns to its offline state (with a link to the replay on Facebook).
 
 ### One-time setup (already done? skip this)
 
-Automatic detection needs two environment variables on Vercel: `FACEBOOK_PAGE_ID` and `FACEBOOK_ACCESS_TOKEN` (a Page access token). Facebook offers no public way to detect a live Page without them. Without them the site still works but always shows the offline view with a link to your Facebook page — the admin panel's Live Stream tab tells you when they're missing.
+Facebook detection needs `FACEBOOK_PAGE_ID` and `FACEBOOK_ACCESS_TOKEN`. YouTube detection needs `YOUTUBE_API_KEY`. These values are configured only in Vercel and are never returned to browsers. If one platform is unconfigured, any configured platform can still be detected.
 
 ### Live Stream tab
 

@@ -78,18 +78,18 @@ The Vercel dashboard path is: **Project → Settings → Environment Variables**
 
 ---
 
-## OPTIONAL — Facebook Live (automatic live detection)
+## OPTIONAL — Facebook and YouTube Live (automatic live detection)
 
-Facebook Live is the only streaming platform. Going live needs **zero setup**:
-open the Facebook app and press Go Live. The website detects the broadcast and
-plays it automatically — but only if these two variables are set, because
-Facebook offers no public way to detect a live Page without them.
+The website can detect Facebook Live, Chris's personal YouTube channel, and the
+Lost Limb Riders business YouTube channel. Going live does not require stream
+keys in this application. Detection credentials remain server-side.
 
 | Variable | Required | Value | Notes |
 |---|---|---|---|
 | `FACEBOOK_PAGE_ID` | Optional (needed for auto-detection) | Numeric page ID | `lib/stream.js`. Graph API `/{page}/live_videos` read. |
 | `FACEBOOK_ACCESS_TOKEN` | Optional (needed for auto-detection) | Page access token | `lib/stream.js`. Server-side only; never sent to browsers. |
 | `FACEBOOK_PAGE_URL` | Optional | `https://www.facebook.com/YourPage` | Offline-state "Follow on Facebook" link. The admin panel field overrides this. |
+| `YOUTUBE_API_KEY` | Optional (needed for YouTube auto-detection) | YouTube Data API v3 key | Server-side only. Checks the two approved channel IDs; never returned to browsers. |
 
 ### Content Engine (Story + Event-Idea Generation)
 
@@ -108,7 +108,7 @@ Without the first two, the site still works but always shows its offline state.
 ## REMOVED — old streaming variables
 
 `FB_STREAM_KEY`, `YOUTUBE_STREAM_KEY`, `TWITCH_STREAM_KEY`, `OWNCAST_STREAM_KEY`,
-`YOUTUBE_API_KEY`, `YOUTUBE_VIDEO_ID`, `STREAM_VIDEO_ID`, `TWITCH_*`, `OWNCAST_URL`
+`YOUTUBE_VIDEO_ID`, `STREAM_VIDEO_ID`, `TWITCH_*`, `OWNCAST_URL`
 and `STREAM_PLATFORM` are no longer read by any code and can be deleted from
 the Vercel dashboard. OBS/RTMP streaming was replaced by Facebook Live.
 

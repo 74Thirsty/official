@@ -617,6 +617,7 @@
         <div class="menu-group">
           <button type="button" class="menu-btn" onclick="toggleMenu(this)">Administration <span class="menu-caret">&#9662;</span></button>
           <div class="menu-drop">
+            <button type="button" class="menu-item" onclick="switchTab('social-media', this)">Social Media</button>
             <button type="button" class="menu-item" onclick="switchTab('documents', this)">Document Access</button>
           </div>
         </div>
@@ -719,8 +720,8 @@
        <!-- Live Stream panel -->
        <div id="panel-stream" class="tab-panel">
          <div class="panel">
-            <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px;">Facebook Live</h3>
-            <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">Streaming is simple now: go live from the Facebook app on your phone, and this site automatically shows the broadcast. There are no stream keys, no OBS, and nothing to configure to go live.</p>
+            <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px;">Facebook &amp; YouTube Live</h3>
+            <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">The site detects Facebook Live plus live broadcasts from Chris's personal YouTube channel and the Lost Limb Riders business channel. The live video's actual title is displayed automatically.</p>
 
            <div id="fbStatusCard" style="padding:14px 16px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.03); margin-bottom:16px;">
              <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
@@ -1100,6 +1101,21 @@
         </div>
 
         <!-- Document Access Panel -->
+        <div id="panel-social-media" class="tab-panel">
+          <div class="panel">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:18px;">
+              <div>
+                <h3 style="color:var(--orange); font-size:16px; font-weight:900; text-transform:uppercase; letter-spacing:.05em; margin:0 0 6px;">Social Media Configuration</h3>
+                <p style="color:var(--muted); font-size:13px; line-height:1.6; margin:0;">Authorized editor for the internal hierarchical configuration. Field structure is locked to prevent accidental schema damage.</p>
+              </div>
+              <button type="button" class="btn btn-primary" id="socialMediaSaveBtn" onclick="saveSocialMediaConfig()">Validate &amp; Save</button>
+            </div>
+            <div id="socialMediaSource" style="font-size:12px; color:var(--muted); margin-bottom:14px;"></div>
+            <div id="socialMediaEditor" style="display:grid; gap:10px;"></div>
+            <div id="socialMediaStatus" role="status" style="margin-top:14px; min-height:20px; font-size:13px;"></div>
+          </div>
+        </div>
+
         <div id="panel-documents" class="tab-panel">
           <div class="panel">
             <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin:0 0 10px;">Document Library Access</h3>
@@ -1305,6 +1321,7 @@
         if (name === 'testimonials') loadTestimonialPending();
         if (name === 'comments') loadCommentsPending();
         if (name === 'guestbook') loadGuestbook();
+        if (name === 'social-media') loadSocialMediaConfig();
         if (name === 'documents') loadDocsUsers();
         if (name === 'content') { loadContentSettings(); loadStoryLibrary(); }
         if (name === 'ideas') loadIdeas();
@@ -1640,7 +1657,7 @@
       }
      }
 
-     // --- Live Stream (Facebook Live) ---
+     // --- Live Stream (Facebook and YouTube Live) ---
      async function loadStreamConfig() {
        const status = document.getElementById('streamSaveStatus');
        status.textContent = 'Loading...';
@@ -1665,12 +1682,12 @@
        if (!line) return;
        if (data.detection === 'unconfigured') {
          line.innerHTML = '<span style="color:#fcd34d;">&#10007; Automatic live detection is not set up on the server yet.</span><br>' +
-           '<span style="color:var(--muted);">Add <code style="color:var(--white);">FACEBOOK_PAGE_ID</code> and <code style="color:var(--white);">FACEBOOK_ACCESS_TOKEN</code> environment variables on Vercel. Until then the site shows its offline view with a link to your Facebook page \u2014 going live itself needs zero setup.</span>';
+           '<span style="color:var(--muted);">Configure Facebook credentials and/or the server-side <code style="color:var(--white);">YOUTUBE_API_KEY</code> on Vercel.</span>';
          return;
        }
        if (data.stream && data.stream.live) {
          const viewers = parseInt(data.stream.viewers, 10) || 0;
-         let html = '<span style="color:#22c55e;">&#9679; LIVE NOW on Facebook</span>';
+         let html = '<span style="color:#22c55e;">&#9679; LIVE NOW on ' + escapeHtml(data.stream.platform === 'youtube' ? 'YouTube' : 'Facebook') + '</span>';
          if (viewers > 0) html += ' <span style="color:var(--muted);">\u2022 ' + viewers + ' watching</span>';
          if (data.stream.liveUrl) html += ' \u2022 <a href="' + escapeHtml(data.stream.liveUrl) + '" target="_blank" rel="noopener" style="color:#fca5a5;">open broadcast</a>';
          line.innerHTML = html;
@@ -1691,7 +1708,7 @@
 
      async function refreshStreamStatus() {
        const line = document.getElementById('fbStatusLine');
-       if (line) line.textContent = 'Checking Facebook\u2026';
+       if (line) line.textContent = 'Checking Facebook and YouTube\u2026';
        await checkStreamLive();
      }
 
@@ -3015,6 +3032,130 @@
 
     function closeIdeaPreview() {
       document.getElementById('ideaPreviewModal').style.display = 'none';
+    }
+
+    // --- Social media configuration ---
+    let socialMediaConfig = null;
+
+    function socialFieldLabel(key) {
+      return String(key).replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ');
+    }
+
+    function setSocialMediaValue(path, value) {
+      let target = socialMediaConfig;
+      for (let i = 0; i < path.length - 1; i++) target = target[path[i]];
+      target[path[path.length - 1]] = value;
+    }
+
+    function renderSocialMediaNode(value, key, path, depth) {
+      if (value && typeof value === 'object') {
+        const details = document.createElement('details');
+        details.open = depth < 2;
+        details.style.cssText = 'border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.025);padding:10px 12px;';
+        const summary = document.createElement('summary');
+        summary.style.cssText = 'cursor:pointer;color:var(--white);font-weight:800;text-transform:capitalize;';
+        const count = Array.isArray(value) ? ` (${value.length} items)` : '';
+        summary.textContent = socialFieldLabel(key) + count;
+        details.appendChild(summary);
+        const children = document.createElement('div');
+        children.style.cssText = 'display:grid;gap:9px;margin-top:10px;padding-left:8px;';
+        Object.entries(value).forEach(([childKey, childValue]) => {
+          const label = Array.isArray(value) && childValue && typeof childValue === 'object'
+            ? (childValue.platform || childValue.service || childValue.name || `Item ${Number(childKey) + 1}`)
+            : childKey;
+          children.appendChild(renderSocialMediaNode(childValue, label, path.concat(childKey), depth + 1));
+        });
+        details.appendChild(children);
+        return details;
+      }
+
+      const row = document.createElement('label');
+      row.style.cssText = 'display:grid;grid-template-columns:minmax(150px,240px) minmax(180px,1fr);gap:12px;align-items:center;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.025);';
+      const label = document.createElement('span');
+      label.textContent = socialFieldLabel(key);
+      label.style.cssText = 'font-size:12px;font-weight:800;color:var(--muted);text-transform:capitalize;';
+      row.appendChild(label);
+
+      let input;
+      if (typeof value === 'boolean') {
+        input = document.createElement('select');
+        input.innerHTML = '<option value="true">True</option><option value="false">False</option>';
+        input.value = String(value);
+        input.addEventListener('change', () => setSocialMediaValue(path, input.value === 'true'));
+      } else {
+        input = document.createElement('input');
+        input.type = typeof value === 'number' ? 'number' : 'text';
+        input.value = value === null ? '' : String(value);
+        if (value === null) input.placeholder = 'Not configured (leave blank for null)';
+        input.addEventListener('input', () => {
+          if (typeof value === 'number') {
+            const number = Number(input.value);
+            if (Number.isFinite(number)) setSocialMediaValue(path, number);
+          } else if (value === null) {
+            setSocialMediaValue(path, input.value.trim() ? input.value : null);
+          } else {
+            setSocialMediaValue(path, input.value);
+          }
+        });
+      }
+      input.style.cssText = 'width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#111;color:var(--white);font:inherit;';
+      row.appendChild(input);
+      return row;
+    }
+
+    function renderSocialMediaConfig() {
+      const editor = document.getElementById('socialMediaEditor');
+      editor.replaceChildren();
+      Object.entries(socialMediaConfig || {}).forEach(([key, value]) => {
+        editor.appendChild(renderSocialMediaNode(value, key, [key], 0));
+      });
+    }
+
+    async function loadSocialMediaConfig() {
+      const status = document.getElementById('socialMediaStatus');
+      status.style.color = 'var(--muted)';
+      status.textContent = 'Loading authorized configuration…';
+      try {
+        const res = await fetch(apiUrl('social-media-config'));
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Unable to load configuration.');
+        socialMediaConfig = data.config;
+        document.getElementById('socialMediaSource').textContent = data.source === 'stored'
+          ? 'Source: saved administrative configuration'
+          : 'Source: repository default (first save will persist it securely)';
+        renderSocialMediaConfig();
+        status.textContent = '';
+      } catch (error) {
+        status.style.color = '#ef4444';
+        status.textContent = error.message;
+      }
+    }
+
+    async function saveSocialMediaConfig() {
+      if (!socialMediaConfig) return;
+      const button = document.getElementById('socialMediaSaveBtn');
+      const status = document.getElementById('socialMediaStatus');
+      button.disabled = true;
+      status.style.color = 'var(--muted)';
+      status.textContent = 'Validating and saving…';
+      try {
+        const res = await fetch(apiUrl('social-media-config'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config: socialMediaConfig }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Unable to save configuration.');
+        socialMediaConfig = data.config;
+        document.getElementById('socialMediaSource').textContent = 'Source: saved administrative configuration';
+        status.style.color = '#22c55e';
+        status.textContent = 'Configuration validated and saved.';
+      } catch (error) {
+        status.style.color = '#ef4444';
+        status.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
     }
 
     // --- Init ---

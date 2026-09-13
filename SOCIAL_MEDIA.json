@@ -79,12 +79,28 @@
       "handle": "@lostlimbriders",
       "displayName": "Lost Limb Riders",
       "url": "https://www.youtube.com/@lostlimbriders",
+      "channelId": "UCbwHcDHNGlwWj7HnWuL2zxw",
       "primaryStreamingPlatform": false,
       "roles": [
-        "Hosts Coffee Talk and vlog video content"
+        "Hosts Coffee Talk and vlog video content",
+        "Business-channel live streaming source"
       ],
       "notes": "Linked from media.html and podcastLinks in lib/seed.js.",
       "source": "media.html line 1067, lib/seed.js offlineChannel/podcastLinks"
+    },
+    {
+      "platform": "youtube-personal",
+      "status": "approved",
+      "handle": "@Lakers-vs-Celtics",
+      "displayName": "gadget_Saavy",
+      "owner": "Chris",
+      "url": "https://www.youtube.com/@Lakers-vs-Celtics",
+      "channelId": "UCMteFpc0O2sPIBAUpO10kDg",
+      "primaryStreamingPlatform": true,
+      "roles": [
+        "Chris's personal YouTube live streaming source"
+      ],
+      "source": "YouTube channel metadata and owner confirmation (2026-09-12)"
     },
     {
       "platform": "podcast",
