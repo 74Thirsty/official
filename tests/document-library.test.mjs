@@ -36,3 +36,33 @@ test('viewer renders provenance-labelled, collapsible referenced material', () =
   assert.match(viewer, /document\.createElement\('details'\)/);
   assert.match(viewer, /renderDocument\(reference\.content/);
 });
+
+test('library progressively discloses category, functional area, and document groups', () => {
+  assert.match(library, /function buildTree\(docs\)/);
+  assert.match(library, /function showMajorCategories\(containerId\)/);
+  assert.match(library, /function showSubcategories\(containerId, major\)/);
+  assert.match(library, /function showDocuments\(containerId, major, subcategory\)/);
+  assert.match(library, /<details class="document-group">/);
+  assert.match(library, /class="category-card"/);
+  assert.match(library, /class="subcategory-card"/);
+});
+
+test('search covers complete authorized metadata rather than rendered cards', () => {
+  assert.match(library, /allDocs\.filter\(function\(doc\) \{ return searchText\(doc\)/);
+  assert.match(library, /doc\.document_id,doc\.document_code,doc\.type,doc\.section,doc\.domain,doc\.responsible_area,doc\.canonical_path/);
+  assert.match(library, /Search includes collapsed categories/);
+});
+
+test('position manuals preserve canonical source-series order', () => {
+  assert.match(library, /canonical_path\.startsWith\('employees\/'\)/);
+  assert.match(library, /localeCompare\(right\.canonical_path, undefined, \{ numeric:true \}\)/);
+  assert.match(library, /Canonical organizational order/);
+  assert.match(library, /alphabetical title sorting is intentionally not used/);
+});
+
+test('library disclosures and document actions use semantic controls', () => {
+  assert.doesNotMatch(library, /<div[^>]+onclick=/);
+  assert.match(library, /aria-live="polite"/);
+  assert.match(library, /button:focus-visible/);
+  assert.match(library, /min-height:44px/);
+});
