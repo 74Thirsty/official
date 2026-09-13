@@ -4,11 +4,28 @@ import { addAudit } from '../lib/audit.js';
 import { isPubliclyVisible, normalizeIdeaPayload, ideaToEvent, validateIdea, OUTCOME_FIELDS } from '../lib/event-model.js';
 import { notifyOwner } from '../lib/notify.js';
 import { seedEvents } from '../lib/seed.js';
+import { buildEventCalendar } from '../lib/icalendar.js';
 
 export default function handler(req, res) {
   if (req.method === 'OPTIONS') return sendEmpty(res);
 
   const action = getParam(req, 'action') || 'list';
+
+  if (action === 'calendar') {
+    getList(KEYS.events).then(async (events) => {
+      if (!events.length) {
+        await setList(KEYS.events, seedEvents);
+        events = seedEvents;
+      }
+      const calendar = buildEventCalendar(events.filter(isPubliclyVisible));
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+      res.setHeader('Content-Disposition', 'inline; filename="lost-limb-riders-events.ics"');
+      res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=60');
+      res.status(200).send(calendar);
+    }).catch(() => sendJson(res, { error: 'Storage error.' }, 500));
+    return;
+  }
 
   if (action === 'list') {
     getList(KEYS.events).then(async (events) => {
@@ -227,4 +244,3 @@ export default function handler(req, res) {
     sendJson(res, { error: 'Unsupported action.' }, 404);
   }).catch(() => sendJson(res, { error: 'Storage error.' }, 500));
 }
-
