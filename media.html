@@ -509,6 +509,12 @@
       overflow: hidden;
     }
 
+    .video-thumb iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
     .video-thumb .play-overlay {
       display: flex;
       align-items: center;
@@ -1385,12 +1391,12 @@
       }
       grid.innerHTML = list.map(v => {
         const playable = validVideoId(v.videoId);
-        const tag = playable ? 'button' : 'article';
-        const action = playable ? ` type="button" onclick="openVideoModal('${v.id}')" aria-label="Play vlog: ${escapeHtml(v.title)}"` : '';
         return `
-        <${tag} class="video-card"${action}>
+        <article class="video-card">
           <div class="video-thumb">
-            <div class="play-overlay">${playable ? '&#9654;' : 'Coming soon'}</div>
+            ${playable
+              ? `<iframe src="https://www.youtube-nocookie.com/embed/${escapeHtml(v.videoId)}" title="${escapeHtml(v.title)}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`
+              : '<div class="play-overlay">Coming soon</div>'}
             <span class="duration">${escapeHtml(v.duration || '')}</span>
           </div>
           <div class="video-info">
@@ -1399,7 +1405,7 @@
             <div class="ep-meta">${escapeHtml(v.date || '')}</div>
             <div class="ep-desc">${escapeHtml(v.desc)}</div>
           </div>
-        </${tag}>
+        </article>
       `;}).join('');
     }
 

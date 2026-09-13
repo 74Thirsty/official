@@ -81,6 +81,8 @@ test('provided third-party YouTube video is seeded without displaying channel at
   const media = readFileSync(resolve(root, 'media.html'), 'utf8');
   assert.match(media, /stream\.platform === 'youtube'/);
   assert.match(media, /youtubeEmbed/);
+  assert.match(media, /youtube-nocookie\.com\/embed\/\$\{escapeHtml\(v\.videoId\)\}/);
+  assert.doesNotMatch(media, /onclick="openVideoModal\('\$\{v\.id\}'\)"/);
   assert.match(media, /document\.getElementById\('liveTitle'\)\.textContent = isLive && stream\.title/);
 });
 
