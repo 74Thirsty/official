@@ -38,23 +38,36 @@ test('public internal links resolve to files and valid static fragments', () => 
   }
 });
 
-test('homepage ends with book then footer and has no legacy tail', () => {
+test('homepage ends with one consolidated book and newsletter offer', () => {
   const html = readFileSync(resolve(root, 'index.html'), 'utf8');
-  const book = html.indexOf('<section id="book">');
-  const bookEnd = html.indexOf('</section>', book);
-  const mainEnd = html.indexOf('</main>', bookEnd);
+  const offer = html.indexOf('<section id="newsletter-offer">');
+  const offerEnd = html.indexOf('</section>', offer);
+  const mainEnd = html.indexOf('</main>', offerEnd);
   const footer = html.indexOf('<footer>', mainEnd);
-  assert.ok(book > -1 && bookEnd < mainEnd && mainEnd < footer);
-  assert.doesNotMatch(html.slice(bookEnd, mainEnd), /<section\b/i);
+  assert.ok(offer > -1 && offerEnd < mainEnd && mainEnd < footer);
+  assert.doesNotMatch(html.slice(offerEnd, mainEnd), /<section\b/i);
+  assert.doesNotMatch(html, /<section id="book">/);
   assert.doesNotMatch(html, /id="(?:newsletter|contact)"/);
 });
 
 test('newsletter funnel is linked from the homepage and shared navigation', () => {
   const home = readFileSync(resolve(root, 'index.html'), 'utf8');
   const nav = readFileSync(resolve(root, 'assets/public-nav.js'), 'utf8');
-  assert.match(home, /<section id="newsletter-offer">[\s\S]*?href="newsletter\.html">Get My Copy/);
+  assert.match(home, /<section id="newsletter-offer">[\s\S]*?href="newsletter\.html">Get the Exclusive Offer<\/a>/);
+  assert.match(home, /href="https:\/\/books\.apple\.com\/ve\/book\/i-can-i-will\/id6789604598\?l=en-GB"/);
+  assert.match(home, /href="https:\/\/www\.barnesandnoble\.com\/w\/i-can-i-will-john-thompson\/1150743583"/);
   assert.match(home, /<a href="newsletter\.html" role="menuitem">Newsletter<\/a>/);
   assert.match(nav, /<a href="newsletter\.html">Newsletter<\/a>/);
+});
+
+test('homepage footer uses a compact hierarchy and canonical general contact', () => {
+  const home = readFileSync(resolve(root, 'index.html'), 'utf8');
+  assert.match(home, /class="footer-grid"/);
+  assert.match(home, /<h3>Explore<\/h3>/);
+  assert.match(home, /<h3>Get Involved<\/h3>/);
+  assert.match(home, /<h3>Connect<\/h3>/);
+  assert.match(home, /href="mailto:general_llr@outlook\.com">general_llr@outlook\.com<\/a>/);
+  assert.doesNotMatch(home, /footer[\s\S]*mailto:john\.thompson@lostlimbriders\.org/);
 });
 
 test('Where to Go Next tiles are full-card links to verified routes', () => {

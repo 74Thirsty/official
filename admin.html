@@ -502,8 +502,10 @@
     .social-field { display:grid; gap:6px; min-width:0; }
     .social-field.full { grid-column:1/-1; }
     .social-field label { color:#ddd; font-size:12px; font-weight:800; }
+    .social-value-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px; align-items:start; }
     .social-field input,.social-field textarea,.social-field select { width:100%; padding:10px 11px; border:1px solid var(--line); border-radius:8px; background:#0c0c0c; color:var(--white); font:inherit; box-sizing:border-box; }
     .social-field textarea { min-height:150px; resize:vertical; line-height:1.55; }
+    .social-copy { min-width:76px; justify-content:center; }
     .social-help { color:var(--muted); font-size:11px; line-height:1.5; }
     .social-editor-head { display:flex; justify-content:space-between; gap:14px; align-items:flex-start; margin-bottom:16px; }
     .social-badge { padding:5px 9px; border-radius:999px; font-size:11px; font-weight:900; white-space:nowrap; }
@@ -1135,9 +1137,12 @@
         <!-- Document Access Panel -->
         <div id="panel-social-media" class="tab-panel">
           <div class="panel">
-            <div style="margin-bottom:18px;">
+            <div style="margin-bottom:18px; display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap;">
+              <div>
               <h3 style="color:var(--orange); font-size:16px; font-weight:900; text-transform:uppercase; letter-spacing:.05em; margin:0 0 6px;">Social Media Configuration Center</h3>
               <p style="color:var(--muted); font-size:13px; line-height:1.6; margin:0;">Manage the public profile information stored by Lost Limb Riders. Saving here does not publish changes to an external social-media account.</p>
+              </div>
+              <button type="button" class="btn btn-sm btn-primary" onclick="exportSocialMediaJson()">Export JSON</button>
             </div>
             <div id="socialMediaSource" style="font-size:12px; color:var(--muted); margin-bottom:14px;"></div>
             <div class="social-center">
@@ -3094,9 +3099,31 @@
     function socialInput(field, label, type, value, options = {}) {
       const id = 'social-' + field;
       const input = type === 'textarea'
-        ? `<textarea id="${id}" maxlength="5000" placeholder="Not configured">${escapeHtml(value || '')}</textarea><span class="social-help" id="${id}-count">${String(value || '').length} / 5,000 characters</span>`
+        ? `<textarea id="${id}" maxlength="5000" placeholder="Not configured">${escapeHtml(value || '')}</textarea>`
         : `<input id="${id}" type="${type || 'text'}" value="${escapeHtml(value || '')}" placeholder="Not configured"${options.readonly ? ' readonly' : ''}>`;
-      return `<div class="social-field${options.full ? ' full' : ''}"><label for="${id}">${escapeHtml(label)}</label>${input}${options.help ? `<span class="social-help">${escapeHtml(options.help)}</span>` : ''}</div>`;
+      const count = type === 'textarea' ? `<span class="social-help" id="${id}-count">${String(value || '').length} / 5,000 characters</span>` : '';
+      return `<div class="social-field${options.full ? ' full' : ''}"><label for="${id}">${escapeHtml(label)}</label><div class="social-value-row">${input}<button type="button" class="btn btn-sm social-copy" onclick="copySocialValue(this,'${id}')">Copy</button></div>${count}${options.help ? `<span class="social-help">${escapeHtml(options.help)}</span>` : ''}</div>`;
+    }
+
+    async function copySocialValue(button, inputId) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      const value = input.value;
+      try {
+        if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(value);
+        else {
+          input.focus();
+          input.select();
+          if (!document.execCommand('copy')) throw new Error('Copy failed');
+        }
+        button.textContent = 'Copied ✓';
+        clearTimeout(button.copyResetTimer);
+        button.copyResetTimer = setTimeout(() => { button.textContent = 'Copy'; }, 1600);
+      } catch {
+        button.textContent = 'Try again';
+        clearTimeout(button.copyResetTimer);
+        button.copyResetTimer = setTimeout(() => { button.textContent = 'Copy'; }, 1600);
+      }
     }
 
     function bindSocialFields(fields) {
@@ -3184,11 +3211,59 @@
     }
 
     function collectVisibleSocialDraft() {
-      document.querySelectorAll('#socialMediaEditor .social-field > input, #socialMediaEditor .social-field > textarea').forEach((input) => {
+      document.querySelectorAll('#socialMediaEditor .social-field input, #socialMediaEditor .social-field textarea').forEach((input) => {
         const key = input.id.replace(/^social-/, '');
         if (!key.startsWith('link-') && !input.readOnly) socialMediaDraft[key] = input.value.trim() || null;
       });
       return { ...socialAccount('youtube'), ...socialMediaDraft };
+    }
+
+    function currentSocialMediaExport() {
+      const config = JSON.parse(JSON.stringify(socialMediaConfig));
+      if (!config) return null;
+      document.querySelectorAll('#socialMediaEditor .social-field input, #socialMediaEditor .social-field textarea').forEach((input) => {
+        const key = input.id.replace(/^social-/, '');
+        if (!key.startsWith('link-') && !input.readOnly) socialMediaDraft[key] = input.value.trim() || null;
+      });
+      if (selectedSocialPlatform === 'organization') {
+        const changes = socialMediaDraft;
+        const organization = config.organization;
+        if ('name' in changes) organization.name = changes.name;
+        for (const key of ['website', 'foundingDate']) if (key in changes) organization[key] = { ...(organization[key] || {}), value: changes[key] };
+        for (const key of ['phone', 'address']) if (key in changes) organization.contact[key] = { ...(organization.contact[key] || {}), value: changes[key] };
+        if ('publicEmail' in changes) {
+          const emails = organization.contact.emails || [];
+          const index = emails.findIndex((entry) => String(entry.purpose || '').toLowerCase().includes('public'));
+          const entry = { ...(index >= 0 ? emails[index] : {}), value: changes.publicEmail, purpose:'General/public organizational inbox' };
+          if (index >= 0) emails[index] = entry; else emails.push(entry);
+          organization.contact.emails = emails;
+        }
+        if ('description' in changes) organization.description = changes.description;
+        if ('founderCEO' in changes) config.governance.founderCEO = { ...(config.governance.founderCEO || {}), value:changes.founderCEO };
+        if ('board' in changes) config.governance.board = { ...(config.governance.board || {}), value:changes.board };
+      } else {
+        const account = config.accounts.find((entry) => entry.platform === selectedSocialPlatform);
+        if (account) Object.assign(account, socialMediaDraft);
+        if (account && selectedSocialPlatform === 'youtube') account.links = collectSocialLinks();
+      }
+      return config;
+    }
+
+    function exportSocialMediaJson() {
+      if (!socialMediaConfig) return;
+      const currentConfig = currentSocialMediaExport();
+      const blob = new Blob([JSON.stringify(currentConfig, null, 2) + '\n'], { type:'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'lost-limb-riders-social-media.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      const status = document.getElementById('socialMediaStatus');
+      status.style.color = '#22c55e';
+      status.textContent = 'Exported the complete current social-media configuration.';
     }
 
     function addSocialLink() {

@@ -64,6 +64,17 @@ test('admin panel provides platform-aware authenticated editing without exposing
   assert.doesNotMatch(adminPage, /fetch\(['"]\/SOCIAL_MEDIA\.json/);
 });
 
+test('social-media fields have value-only copy controls and complete current-state JSON export', () => {
+  assert.match(adminPage, /onclick="copySocialValue\(this,'\$\{id\}'\)">Copy<\/button>/);
+  assert.match(adminPage, /navigator\.clipboard\.writeText\(value\)/);
+  assert.match(adminPage, /button\.textContent = 'Copied ✓'/);
+  assert.match(adminPage, /function currentSocialMediaExport\(\)/);
+  assert.match(adminPage, /JSON\.parse\(JSON\.stringify\(socialMediaConfig\)\)/);
+  assert.match(adminPage, /account\.links = collectSocialLinks\(\)/);
+  assert.match(adminPage, /JSON\.stringify\(currentConfig, null, 2\)/);
+  assert.match(adminPage, /link\.download = 'lost-limb-riders-social-media\.json'/);
+});
+
 test('platform patches validate human-facing fields and preserve unrelated and legacy data', () => {
   const config = initialSocialMediaConfig();
   config.accounts[1].legacyIntegration = { retained: true };

@@ -538,24 +538,16 @@
       font-size: 16px;
     }
 
-    /* ── BOOK ── */
-    .book-card {
-      display: grid;
-      grid-template-columns: 190px minmax(0,1fr);
-      gap: 22px;
-      align-items: center;
-    }
-
     .book-cover {
       border-radius: 18px;
       box-shadow: 0 20px 50px rgba(0,0,0,.55);
     }
 
-    /* ── NEWSLETTER PROMOTION ── */
-    .newsletter-promo {
+    /* ── BOOK + NEWSLETTER PROMOTION ── */
+    .book-newsletter {
       display: grid;
-      grid-template-columns: minmax(180px, 270px) minmax(0, 1fr);
-      gap: clamp(28px, 5vw, 70px);
+      grid-template-columns: minmax(170px, 240px) minmax(0, 1fr);
+      gap: clamp(28px, 4vw, 54px);
       align-items: center;
       overflow: hidden;
       border-color: rgba(255,106,0,.45);
@@ -564,26 +556,24 @@
         linear-gradient(135deg, #18110c, var(--card) 55%);
     }
 
-    .newsletter-promo .book-cover { transform: rotate(-2deg); }
-    .newsletter-promo .eyebrow {
-      margin-bottom: 12px;
+    .book-newsletter .book-cover { transform: rotate(-2deg); }
+    .book-newsletter h2 { margin-bottom: 10px; font-size: clamp(32px, 4vw, 52px); line-height: 1; letter-spacing: -.04em; text-transform: uppercase; }
+    .book-newsletter-intro { max-width: 760px; color: #ddd; font-size: 17px; line-height: 1.55; }
+    .offer-paths { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; margin-top: 24px; }
+    .offer-path { padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: rgba(0,0,0,.38); }
+    .offer-path-exclusive { border-color: rgba(255,106,0,.55); background: rgba(255,106,0,.09); }
+    .offer-label {
+      margin-bottom: 10px;
       color: var(--orange);
       font-size: 12px;
       font-weight: 900;
       letter-spacing: .18em;
       text-transform: uppercase;
     }
-
-    .newsletter-promo h2 {
-      max-width: 820px;
-      margin-bottom: 18px;
-      font-size: clamp(34px, 5vw, 68px);
-      line-height: .94;
-      letter-spacing: -.04em;
-      text-transform: uppercase;
-    }
-
-    .newsletter-promo p { max-width: 720px; color: #ddd; font-size: 18px; line-height: 1.55; }
+    .offer-path h3 { margin-bottom: 9px; font-size: 22px; }
+    .offer-path p { margin-bottom: 16px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .retailer-links { display: flex; flex-wrap: wrap; gap: 10px; }
+    .retailer-links .btn { padding: 11px 15px; font-size: 12px; }
 
     /* ── NEWSLETTER ── */
     .newsletter-row {
@@ -650,17 +640,16 @@
     /* ── FOOTER ── */
     footer { border-top: 1px solid var(--line); padding: 0; position: relative; z-index: 1; }
     .footer-inner { max-width: 1180px; margin: 0 auto; padding: 48px 7vw; }
-    .footer-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 40px; flex-wrap: wrap; }
-    .footer-brand { display: flex; align-items: center; gap: 14px; }
-    .footer-brand img { width: 48px; height: 48px; border-radius: 10px; }
+    .footer-grid { display: grid; grid-template-columns: 1.5fr repeat(3, minmax(130px,1fr)); gap: clamp(28px, 5vw, 64px); }
+    .footer-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .footer-brand img { width: 52px; height: 52px; border-radius: 10px; }
     .footer-brand .brand-text { font-weight: 900; font-size: 15px; text-transform: uppercase; letter-spacing: .06em; }
-    .footer-brand .brand-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-    .footer-nav { display: flex; gap: 20px; flex-wrap: wrap; }
-    .footer-nav a { color: #999; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; transition: color .2s; }
-    .footer-nav a:hover { color: var(--orange); }
-    .footer-contact { text-align: right; }
-    .footer-contact a { color: var(--muted); font-size: 13px; display: block; transition: color .2s; }
-    .footer-contact a:hover { color: var(--orange); }
+    .footer-identity p { max-width: 310px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .footer-motto { display: block; margin-top: 12px; color: var(--white); font-weight: 800; }
+    .footer-column h3 { margin-bottom: 14px; color: var(--white); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+    .footer-links { display: grid; gap: 10px; }
+    .footer-links a { color: #999; font-size: 13px; line-height: 1.4; transition: color .2s; }
+    .footer-links a:hover { color: var(--orange); }
     .footer-bottom { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
     .footer-bottom .copyright { font-size: 12px; color: #666; }
     .footer-bottom .fine-print { font-size: 11px; color: #555; text-align: right; max-width: 500px; line-height: 1.5; }
@@ -723,8 +712,9 @@
       .hero-carousel { aspect-ratio: 16 / 9; max-height: 50vh; }
       .dest-grid { grid-template-columns: 1fr 1fr; }
       .split, .form, .newsletter-row { grid-template-columns: 1fr; }
-      .book-card { grid-template-columns: 150px 1fr; }
-      .newsletter-promo { grid-template-columns: 170px minmax(0,1fr); }
+      .book-newsletter { grid-template-columns: 170px minmax(0,1fr); }
+      .offer-paths { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1.3fr repeat(3,1fr); gap: 28px; }
       .event-spotlight { flex-direction: column; align-items: stretch; text-align: center; }
       .event-icon { margin: 0 auto; }
       .event-meta { justify-content: center; }
@@ -736,16 +726,15 @@
       .brand span { font-size: 14px; }
       section { padding: 52px 22px; }
       .dest-grid { grid-template-columns: 1fr; }
-      .book-card { grid-template-columns: 1fr; }
-      .book-card img { max-width: 160px; margin: 0 auto; }
-      .newsletter-promo { grid-template-columns: 1fr; text-align: center; }
-      .newsletter-promo p { margin-left: auto; margin-right: auto; }
+      .book-newsletter { grid-template-columns: 1fr; text-align: center; }
+      .book-newsletter .book-cover { width: 150px; margin: 0 auto; }
+      .book-newsletter-intro { margin-left: auto; margin-right: auto; }
+      .offer-paths { text-align: left; }
       h1 { letter-spacing: -.045em; }
       .carousel-btn { width: 40px; height: 40px; font-size: 18px; }
       .carousel-btn-prev { left: 8px; }
       .carousel-btn-next { right: 8px; }
-      .footer-top { flex-direction: column; align-items: center; text-align: center; }
-      .footer-contact { text-align: center; }
+      .footer-grid { grid-template-columns: 1fr; text-align: left; }
       .footer-bottom { flex-direction: column; align-items: center; text-align: center; }
       .footer-inner { padding: 32px 22px; }
     }
@@ -953,25 +942,28 @@
     </section>
 
     <section id="newsletter-offer">
-      <div class="wrap panel newsletter-promo">
+      <div class="wrap panel book-newsletter" id="book">
         <img class="book-cover" src="assets/icaniwill.png" alt="Cover of I Can. I Will. by John Thompson" loading="lazy">
         <div>
-          <div class="eyebrow">Subscriber Special Edition</div>
-          <h2>Get John's Digitally <span class="orange">Autographed Edition</span></h2>
-          <p>Subscribe to Lost Limb Riders and receive the special digitally autographed and verified edition of <em>I Can. I Will.</em>, with its signature certificate included.</p>
-          <a class="btn btn-primary" href="newsletter.html">Get My Copy &rarr;</a>
-        </div>
-      </div>
-    </section>
-
-    <section id="book">
-      <div class="wrap panel book-card">
-        <img class="book-cover" src="assets/icaniwill.png" alt="I Can I Will book cover by John Thompson">
-        <div>
-          <h2 class="section-title">Buy John's <span class="orange">Book</span></h2>
-          <p><strong>I Can. I Will.</strong> is John Thompson's autobiography about surviving limb loss, fighting through pain and doubt, leaning on faith and family, and turning a life-changing setback into the Lost Limb Riders mission.</p>
-          <p>The story is gritty, honest, road-tested, and built around a promise that amputees can keep moving forward with purpose.</p>
-        <a class="btn btn-primary" href="https://www.barnesandnoble.com/w/i-can-i-will-john-thompson/1150743583" target="_blank" rel="noopener">Buy on Barnes & Noble</a>
+          <h2>Get <span class="orange"><em>I Can. I Will.</em></span></h2>
+          <p class="book-newsletter-intro">Choose the published edition from a verified bookseller, or join the Lost Limb Riders community for access to our subscriber-exclusive autographed-copy opportunity.</p>
+          <div class="offer-paths">
+            <article class="offer-path">
+              <div class="offer-label">Buy the Book</div>
+              <h3>Available from your favorite booksellers.</h3>
+              <p>Purchase the regular published edition of John Thompson's story.</p>
+              <div class="retailer-links">
+                <a class="btn" href="https://books.apple.com/ve/book/i-can-i-will/id6789604598?l=en-GB" target="_blank" rel="noopener">Apple Books</a>
+                <a class="btn" href="https://www.barnesandnoble.com/w/i-can-i-will-john-thompson/1150743583" target="_blank" rel="noopener">Barnes &amp; Noble</a>
+              </div>
+            </article>
+            <article class="offer-path offer-path-exclusive">
+              <div class="offer-label">Newsletter Exclusive</div>
+              <h3>Get the exclusive.</h3>
+              <p>Newsletter subscribers get Lost Limb Riders updates, stories, announcements, and special offers&mdash;including access to our limited-time autographed edition opportunity.</p>
+              <a class="btn btn-primary" href="newsletter.html">Get the Exclusive Offer</a>
+            </article>
+          </div>
         </div>
       </div>
     </section>
@@ -980,35 +972,19 @@
 
   <footer>
     <div class="footer-inner">
-      <div class="footer-top">
-        <div class="footer-brand">
-          <img src="assets/logo-nobg.png" alt="Lost Limb Riders">
-          <div>
-            <div class="brand-text">Lost Limb Riders</div>
-            <div class="brand-sub">Motorcycle Club &bull; Est. 2025</div>
-          </div>
+      <div class="footer-grid">
+        <div class="footer-identity">
+          <div class="footer-brand"><img src="assets/logo-nobg.png" alt="Lost Limb Riders"><div class="brand-text">Lost Limb Riders</div></div>
+          <p>Supporting amputees and people with limb differences through community, connection, advocacy, and opportunity.<span class="footer-motto">No one is left behind. No one stands alone.</span></p>
         </div>
-        <div class="footer-nav">
-          <a href="index.html">Home</a>
-          <a href="events.html">Events</a>
-          <a href="media.html">Media</a>
-          <a href="mission.html">Mission</a>
-          <a href="community.html">Community</a>
-          <a href="newsletter.html">Newsletter</a>
-          <a href="sponsors.html">Sponsors</a>
-          <a href="join.html">Join</a>
-          <a href="volunteer-employment.html">Volunteer / Employment</a>
-          <a href="donate.html">Donate</a>
-          <a href="documentation.html">Docs</a>
-        </div>
-        <div class="footer-contact">
-          <a href="mailto:john.thompson@lostlimbriders.org">john.thompson@lostlimbriders.org</a>
-          <a href="tel:5158905765">515-890-5765</a>
+        <div class="footer-column"><h3>Explore</h3><div class="footer-links"><a href="mission.html">Our Mission</a><a href="events.html">Events</a><a href="media.html">Media</a><a href="community.html">Community</a></div></div>
+        <div class="footer-column"><h3>Get Involved</h3><div class="footer-links"><a href="join.html">Become a Member</a><a href="volunteer-employment.html">Volunteer</a><a href="sponsors.html">Sponsor</a><a href="donate.html">Donate</a><a href="newsletter.html">Newsletter</a></div></div>
+        <div class="footer-column"><h3>Connect</h3><div class="footer-links"><a href="mailto:general_llr@outlook.com">general_llr@outlook.com</a><a href="tel:5158905765">515-890-5765</a><a href="https://www.facebook.com/LostLimbRiders" target="_blank" rel="noopener">Facebook</a><a href="https://www.youtube.com/@lostlimbriders" target="_blank" rel="noopener">YouTube</a></div>
         </div>
       </div>
       <div class="footer-bottom">
         <div class="copyright">&copy; 2026 Lost Limb Riders Motorcycle Club. All rights reserved.</div>
-        <div class="fine-print">Ride With Purpose &bull; Support Amputees &bull; Build Community &bull; Never Give Up</div>
+        <div class="fine-print">Iowa nonprofit corporation &bull; IRS 501(c)(3)</div>
       </div>
     </div>
   </footer>
