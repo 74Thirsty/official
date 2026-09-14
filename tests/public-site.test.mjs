@@ -70,6 +70,12 @@ test('homepage footer uses a compact hierarchy and canonical general contact', (
   assert.doesNotMatch(home, /footer[\s\S]*mailto:john\.thompson@lostlimbriders\.org/);
 });
 
+test('homepage guestbook uses public-facing community language', () => {
+  const home = readFileSync(resolve(root, 'index.html'), 'utf8');
+  assert.match(home, /Read messages of encouragement from the Lost Limb Riders community, then add your own\./);
+  assert.doesNotMatch(home, /broken backend dependency|Messages save in this browser/);
+});
+
 test('Where to Go Next tiles are full-card links to verified routes', () => {
   const html = readFileSync(resolve(root, 'index.html'), 'utf8');
   const start = html.indexOf('<section id="destinations">');
