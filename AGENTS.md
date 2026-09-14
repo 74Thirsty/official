@@ -46,7 +46,7 @@ Static vanilla HTML/CSS/JS frontend (no build step, no bundler, no framework) wi
 - `media.html` — podcast player, YouTube vlogs, Coffee Talk, Facebook Live embed (auto-detects go-live, shows replay when offline) + schedule display, broadcast-alert signup. Calls `/api/media`, `/api/stream`, `/api/media?action=podcast-rss` (RSS subscribe link), `/api/stream?action=subscribe-alerts`.
 - `mission.html` — mission, board, programs, donate. **Eight section-navigation tiles** on the Table of Contents must navigate to their matching on-page `section[id]` (see Engineering invariants + `tests/mission-nav.test.mjs`). No API calls.
 - `community.html` — community hub: photo gallery, testimonials, comments. Public submit goes to a pending queue; calls `/api/community`.
-- `compliance.html` — authenticated intent-driven Compliance Engine. Creates operational transactions from the generated `ADM-REF-002` workflow manifest and enforces evidence, approval, transition, and audit gates through `/api/admin?action=compliance-*`.
+- `compliance.html` — authenticated intent-driven ACE. Creates operational transactions from the generated `ADM-REF-002` workflow manifest and enforces evidence, approval, transition, and audit gates through `/api/admin?action=compliance-*`.
 - `sponsors.html` — sponsor wall (Title/Major/Supporting tiers). Static.
 - `admin.html` — **the single admin dashboard**: key login (`sessionStorage` key `llr-admin-key`), tabs: Subscribers, Visitor Log, Send Newsletter (**Preview builds only; "Send to All Subscribers" performs a real blast** capped at 100), Live Stream, Events CRUD, Gallery / Testimonials / Comments moderation, Guestbook. Calls `/api/admin`, `/api/events`, `/api/stream`.
 
@@ -151,11 +151,11 @@ These are guaranteed behaviors. Preserve them; changes that threaten them need e
 
 `LostLimbRider/official` is the executable production application. Operational compliance enforcement—including workflow definitions, transaction instances, requirement status, evidence, approvals, gate evaluation, state transitions, audit history, persistence, APIs, and user interfaces—lives here and consumes controlled requirements derived from Autobiography.
 
-Do not implement the production compliance engine in Autobiography. Do not create an independently maintained controlled-document or policy corpus in `official` or a third system. Any machine-readable compliance manifest used by `official` must be reproducibly derived from, traceable to, and versioned against the canonical Autobiography source.
+Do not implement production ACE in Autobiography. Do not create an independently maintained controlled-document or policy corpus in `official` or a third system. Any machine-readable compliance manifest used by `official` must be reproducibly derived from, traceable to, and versioned against the canonical Autobiography source.
 
-### COMPLIANCE ENGINE INVARIANTS
+### ACE INVARIANTS
 
-- **Intent First:** The Compliance Engine begins with an intended organizational action, not a filtered document list.
+- **Intent First:** ACE begins with an intended organizational action, not a filtered document list.
 - **Canonical Derivation:** Workflow definitions are reproducibly generated from the canonical Autobiography Transaction Map (`ADM-REF-002`) and retain source ID, path, version, and hash provenance.
 - **Operational Separation:** Transaction instances, requirement status, evidence, approvals, gates, transitions, and audit events are runtime records in `official`; they are not controlled-document copies.
 - **Server Enforcement:** The server rejects progression until the current requirement is complete. Approval-designated stages require evidence and a separate administrator approval; an evidence submitter cannot approve the same requirement.
@@ -170,7 +170,7 @@ Do not implement the production compliance engine in Autobiography. Do not creat
 - **Conditional Enforcement:** Conditional fields and stages are declared in the versioned definition, rendered only when applicable, and evaluated by the server. Non-applicable requirements do not block completion; applicable requirements cannot be bypassed by hiding browser fields.
 - **Unified Record Data:** New schema-version-2 records store workflow input once in `fieldValues`. Do not restore a parallel `creationValues` model or expose persistence structure as duplicate operator input areas. Schema-version-1 records retain read compatibility.
 - **Relationship-Specific Onboarding:** Employee, volunteer, and member onboarding use separate predefined schemas. Relationship type is workflow-derived and server-enforced. Employee positions are generated from canonical `HR-REF-001` position manuals; chapter/location choices may contain only canonically authorized locations.
-- **Restricted Onboarding Records:** The Organization Handbook Privacy Policy plus `REC-SOP-001` govern onboarding data. SSNs, birth dates, W-4/I-9 contents, government identification, identity documents, and bank information must never enter generic compliance `fieldValues`, APIs, exports, titles, search, audit details, URLs, or browser persistence. Until an encrypted, need-to-know, access-audited restricted-record provider exists, the Compliance Engine may store only completion/verification status and an opaque restricted-record reference.
+- **Restricted Onboarding Records:** The Organization Handbook Privacy Policy plus `REC-SOP-001` govern onboarding data. SSNs, birth dates, W-4/I-9 contents, government identification, identity documents, and bank information must never enter generic compliance `fieldValues`, APIs, exports, titles, search, audit details, URLs, or browser persistence. Until an encrypted, need-to-know, access-audited restricted-record provider exists, ACE may store only completion/verification status and an opaque restricted-record reference.
 - **Volunteer Assignment Enforcement:** Volunteer Onboarding never inherits employee position, compensation, payroll, tax, SSN, or I-9 requirements. Program/area options are canonically generated; assignments follow VOL-FORM-006 rather than an invented role taxonomy. Screening, driving, safeguarding, training, confidentiality, and least-privilege access gates are activated and server-enforced from the assignment risks defined by VOL-APP-001 and VOL-PROC-001.
 
 Protected by `tests/compliance-engine.test.mjs`, `tests/compliance-ui.test.mjs`, and `tests/docs-auth.test.mjs`.
@@ -181,7 +181,7 @@ Protected by `tests/compliance-engine.test.mjs`, `tests/compliance-ui.test.mjs`,
 - **Access:** Every canonical document has one authoritative access classification. Explicit `PUBLIC` documents are publicly readable. Internal or unclassified documents require authentication. Authenticated authorized users may access the complete canonical corpus.
 - **Authentication Monotonicity:** Authentication may grant additional document access but must not remove documents already publicly accessible.
 - **Session Continuity:** An authenticated Document Library session survives ordinary navigation between the library and document viewer according to the defined session lifetime.
-- **Feature Separation:** The Document Library and Compliance Engine are separate product features. The Library provides comprehensive document discovery and reading; the Compliance Engine enforces controlled organizational workflows.
+- **Feature Separation:** The Document Library and ACE are separate product features. The Library provides comprehensive document discovery and reading; ACE enforces controlled organizational workflows.
 - **Source Preservation:** Render-time transformations, including reference expansion, never modify canonical source documents.
 - **Canonical Name Uniqueness:** Every canonical document name is unique across the authoritative corpus.
 - **Reference Transclusion:** When canonical documents reference other canonical material, the Document Library may resolve and transclude the relevant authorized material at render time to provide a coherent reading experience while preserving source provenance.
@@ -215,9 +215,9 @@ Authoritative organizational documents remain **Markdown source** (single source
 
 ### 2026-09-04 — Document Library corpus, session, and feature-boundary failures
 
-- **Reported:** Authentication appeared to remove public documents, authenticated discovery exposed only a curated subset, opening an internal document lost the session, and the library presented a document matrix as a Compliance Engine.
+- **Reported:** Authentication appeared to remove public documents, authenticated discovery exposed only a curated subset, opening an internal document lost the session, and the library presented a document matrix as ACE.
 - **Root causes:** `lib/document-registry.js` contained 14 hand-maintained entries instead of a generated canonical inventory. The library stored its bearer token in `sessionStorage` but opened the viewer in a new `noopener` browsing context, which did not carry that session. Compliance review controls were embedded directly in the library page.
-- **Correction:** Generate the complete metadata-only manifest from the pinned Autobiography source and its canonical access register; treat unclassified documents as internal; navigate the viewer in the same browsing context; keep public results rendered after authentication; remove Compliance Engine presentation from the library; resolve authorized references into bounded, provenance-labelled render-time expansions.
+- **Correction:** Generate the complete metadata-only manifest from the pinned Autobiography source and its canonical access register; treat unclassified documents as internal; navigate the viewer in the same browsing context; keep public results rendered after authentication; remove ACE presentation from the library; resolve authorized references into bounded, provenance-labelled render-time expansions.
 - **Canonical-name determination:** The two `00-FORMS-INDEX.md` basenames are scoped indexes with different canonical names and roles: the public handbook forms index and controlled `FRM-INDEX-001` transactional index. The canonical controlled naming system is Document ID plus Document Title; `validate_ops.py` explicitly limits filename uniqueness to active controlled documents. This is not a canonical-name collision.
 - **Regression protection:** `tests/document-registry.test.mjs`, `tests/document-references.test.mjs`, `tests/document-library.test.mjs`, `tests/docs-auth.test.mjs`, and `tests/markdown-render.test.mjs`.
 

@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 const page = await readFile(new URL('../compliance.html', import.meta.url), 'utf8');
 const library = await readFile(new URL('../documentation.html', import.meta.url), 'utf8');
 
-test('Compliance Engine is a separate catalog-driven route', () => {
+test('ACE is a separate catalog-driven route', () => {
   assert.match(page, /Workflow library/);
   assert.match(page, /compliance-workflows/);
   assert.match(page, /compliance-start/);
@@ -44,13 +44,13 @@ test('record route state survives browser refresh', () => {
   assert.match(page, /location\.hash\.match/);
 });
 
-test('Compliance Engine reuses the Document Library bearer session without URL secrets', () => {
+test('ACE reuses the Document Library bearer session without URL secrets', () => {
   assert.match(page, /sessionStorage\.getItem\('llr-docs-session'\)/);
   assert.match(page, /'Authorization':'Bearer '\+session\.token/);
   assert.doesNotMatch(page, /[?&](?:key|token)=/i);
 });
 
-test('Compliance Engine presents predefined stages, provenance, evidence, approvals, gates, and audit history', () => {
+test('ACE presents predefined stages, provenance, evidence, approvals, gates, and audit history', () => {
   assert.match(page, /ADM-REF-002/);
   assert.match(page, /predefined stages/);
   assert.match(page, /Evidence description/);
@@ -59,7 +59,7 @@ test('Compliance Engine presents predefined stages, provenance, evidence, approv
   assert.match(page, /Current stage gate/);
 });
 
-test('Compliance Engine renders controlled template sections and works from a managed catalog', () => {
+test('ACE renders controlled template sections and works from a managed catalog', () => {
   assert.match(page, /creationSection/);
   assert.match(page, /canonical approval authority/);
   assert.match(page, /data-save-section/);
@@ -74,7 +74,7 @@ test('Compliance Engine renders controlled template sections and works from a ma
   assert.match(page, /flattened legacy template/);
 });
 
-test('Compliance Engine lists legacy records as read-only migrations', () => {
+test('ACE lists legacy records as read-only migrations', () => {
   assert.match(page, /legacy \u00b7 read-only/);
   assert.match(page, /adapted definition/);
 });

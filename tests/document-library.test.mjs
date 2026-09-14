@@ -24,7 +24,7 @@ test('public documents remain rendered while authenticated documents are added',
   assert.doesNotMatch(library, /publicList[^\n]*display\s*=\s*['"]none/);
 });
 
-test('Document Library does not masquerade as the Compliance Engine', () => {
+test('Document Library does not masquerade as ACE', () => {
   assert.doesNotMatch(library, /<h2[^>]*>Compliance\s*<span[^>]*>Engine/);
   assert.doesNotMatch(library, /docs-compliance-update/);
   assert.match(library, /operational compliance workflows are a separate feature/);

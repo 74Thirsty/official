@@ -649,7 +649,7 @@ async function handleCompliance(req, res, action) {
   const index = transactions.findIndex((transaction) => transaction.id === id);
   if (index < 0) return sendJson(res, { error: 'Compliance record not found.' }, 404);
   const transaction = transactions[index];
-  if (!isAceInstance(transaction)) return sendJson(res, { error: 'Legacy records are read-only under the new compliance engine.' }, 409);
+  if (!isAceInstance(transaction)) return sendJson(res, { error: 'Legacy records are read-only under ACE.' }, 409);
   const workflow = transaction.workflowDefinition || getWorkflow(transaction.workflowId);
   const template = transaction.templateDefinition || getTemplate(transaction.templateId);
   if (!workflow || !template) return sendJson(res, { error: 'Controlled workflow or template is unavailable.' }, 409);
