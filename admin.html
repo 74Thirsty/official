@@ -669,6 +669,7 @@
               <tr>
                 <th>Name</th>
                 <th>Email</th>
+                <th>Phone</th>
                 <th>Country</th>
                 <th>City</th>
                 <th>Coords</th>
@@ -1471,6 +1472,7 @@
           return '<tr>' +
             '<td>' + escapeHtml(s.name || '') + '</td>' +
             '<td>' + escapeHtml(s.email || '') + '</td>' +
+            '<td>' + escapeHtml(s.phone || '—') + '</td>' +
             '<td>' + escapeHtml(geo.country || 'N/A') + '</td>' +
             '<td>' + escapeHtml(geo.city || 'N/A') + '</td>' +
             '<td style="white-space:nowrap;font-family:monospace;font-size:12px;">' + escapeHtml(coords) + '</td>' +

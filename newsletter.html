@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Newsletter | Lost Limb Riders</title>
+  <meta name="description" content="Join the Lost Limb Riders community and receive John Thompson's digitally autographed and verified subscriber edition of I Can. I Will.">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <script src="assets/public-nav.js" defer></script>
+  <style>
+    :root {
+      --orange: #ff6a00;
+      --orange-dark: #c94f00;
+      --black: #050505;
+      --charcoal: #101010;
+      --card: #171717;
+      --white: #ffffff;
+      --muted: #b7b7b7;
+      --line: rgba(255,255,255,.14);
+      --shadow: 0 24px 70px rgba(0,0,0,.45);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      background: var(--black);
+      color: var(--white);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(255,106,0,.22), transparent 30rem),
+        radial-gradient(circle at 92% 28%, rgba(255,106,0,.12), transparent 28rem);
+    }
+
+    img { display: block; max-width: 100%; }
+    a { color: inherit; }
+    h1, h2, h3, p { margin-top: 0; }
+    .orange { color: var(--orange); }
+    .wrap { width: min(1180px, calc(100% - 44px)); margin: 0 auto; }
+    section { padding: 80px 0; }
+
+    .hero {
+      min-height: calc(100vh - 76px);
+      display: grid;
+      align-items: center;
+      padding: 30px 0 38px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0,1.05fr) minmax(340px,.75fr);
+      gap: clamp(42px, 7vw, 92px);
+      align-items: center;
+    }
+
+    .hero-copy { position: relative; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255,106,0,.65);
+      border-radius: 999px;
+      padding: 9px 15px;
+      background: rgba(255,106,0,.08);
+      color: var(--orange);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 740px;
+      margin-bottom: 22px;
+      font-size: clamp(48px, 5.5vw, 76px);
+      line-height: .92;
+      letter-spacing: -.055em;
+      text-transform: uppercase;
+    }
+
+    .hero-lead {
+      max-width: 690px;
+      margin-bottom: 28px;
+      color: #dedede;
+      font-size: clamp(18px, 2vw, 22px);
+      line-height: 1.55;
+    }
+
+    .offer-list, .benefit-list {
+      display: grid;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .offer-list { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .offer-list li, .benefit-list li { position: relative; padding-left: 27px; line-height: 1.45; }
+    .offer-list li::before, .benefit-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--orange);
+      font-weight: 900;
+    }
+
+    .signup-card {
+      position: relative;
+      border: 1px solid rgba(255,106,0,.48);
+      border-radius: 24px;
+      padding: clamp(22px, 3vw, 32px);
+      background: linear-gradient(145deg, rgba(31,22,16,.98), rgba(18,18,18,.98));
+      box-shadow: var(--shadow);
+    }
+
+    .signup-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      box-shadow: 0 0 70px rgba(255,106,0,.12);
+    }
+
+    .signup-card h2 { margin-bottom: 10px; font-size: 27px; line-height: 1.1; }
+    .signup-card > p { margin-bottom: 18px; color: var(--muted); line-height: 1.5; }
+    .field { margin-bottom: 12px; }
+    label { display: block; margin-bottom: 7px; font-size: 14px; font-weight: 900; }
+    input {
+      width: 100%;
+      min-height: 50px;
+      border: 1px solid #555;
+      border-radius: 12px;
+      padding: 13px 15px;
+      background: #090909;
+      color: var(--white);
+      font: inherit;
+      font-size: 16px;
+    }
+
+    input:focus { outline: 3px solid var(--orange); outline-offset: 2px; border-color: var(--orange); }
+    input[aria-invalid="true"] { border-color: #ff8b72; }
+    .field-error { min-height: 18px; margin: 6px 0 0; color: #ffad9c; font-size: 13px; }
+    .field-error:empty { display: none; }
+    .consent-field { display: grid; grid-template-columns: 22px 1fr; gap: 11px; align-items: start; margin: 3px 0 8px; }
+    .consent-field input { width: 20px; min-height: 20px; margin: 1px 0 0; accent-color: var(--orange); }
+    .consent-field label { margin: 0; color: #dedede; font-size: 13px; font-weight: 700; line-height: 1.5; }
+    .consent-field a { color: var(--orange); }
+    .phone-note { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .privacy-disclosure { margin: 10px 0 14px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+    .cta {
+      width: 100%;
+      min-height: 56px;
+      border: 0;
+      border-radius: 13px;
+      padding: 14px 20px;
+      background: var(--orange);
+      color: #111;
+      font: inherit;
+      font-weight: 900;
+      letter-spacing: .035em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 16px 34px rgba(255,106,0,.22);
+    }
+
+    .cta:hover { background: #ff7b1f; }
+    .cta:focus-visible, a:focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; }
+    .cta:disabled { cursor: wait; opacity: .7; }
+    .form-status { min-height: 24px; margin: 16px 0 0; color: #f1f1f1; font-weight: 800; line-height: 1.45; }
+    .form-status.success { color: #8ee5a8; }
+    .form-status.error { color: #ffad9c; }
+
+    .section-heading { max-width: 760px; margin-bottom: 36px; }
+    .section-heading h2 {
+      margin-bottom: 14px;
+      font-size: clamp(38px, 5vw, 65px);
+      line-height: .96;
+      letter-spacing: -.045em;
+      text-transform: uppercase;
+    }
+
+    .section-heading p { color: var(--muted); font-size: 19px; line-height: 1.6; }
+    .value-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .value-card { border: 1px solid var(--line); border-radius: 18px; padding: 28px; background: var(--card); }
+    .value-card .number { display: block; margin-bottom: 18px; color: var(--orange); font-size: 13px; font-weight: 900; letter-spacing: .15em; }
+    .value-card h3 { margin-bottom: 10px; font-size: 23px; }
+    .value-card p { margin-bottom: 0; color: var(--muted); line-height: 1.6; }
+
+    .edition {
+      border-block: 1px solid var(--line);
+      background: linear-gradient(110deg, rgba(255,106,0,.09), transparent 44%);
+    }
+
+    .edition-grid { display: grid; grid-template-columns: minmax(220px, 340px) minmax(0, 1fr); gap: clamp(42px, 8vw, 100px); align-items: center; }
+    .book-shell { position: relative; padding: 18px; }
+    .book-shell::after { content: "Subscriber Edition"; position: absolute; right: -10px; bottom: 40px; border-radius: 8px; padding: 10px 14px; background: var(--orange); color: #111; font-size: 12px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; transform: rotate(-3deg); }
+    .book-shell img { border-radius: 16px; box-shadow: 0 30px 65px rgba(0,0,0,.6); transform: rotate(-2deg); }
+    .edition-copy h2 { margin-bottom: 18px; font-size: clamp(40px, 5vw, 70px); line-height: .94; letter-spacing: -.045em; text-transform: uppercase; }
+    .edition-copy > p { max-width: 690px; color: #ddd; font-size: 19px; line-height: 1.65; }
+    .benefit-list { margin-top: 25px; font-size: 17px; font-weight: 800; }
+
+    .updates-grid { display: grid; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); gap: 65px; align-items: start; }
+    .updates-copy h2 { font-size: clamp(39px, 5vw, 64px); line-height: .96; letter-spacing: -.045em; text-transform: uppercase; }
+    .updates-copy p { color: var(--muted); font-size: 18px; line-height: 1.65; }
+    .updates-list { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
+    .update-item { border-left: 3px solid var(--orange); padding: 15px 18px; background: rgba(255,255,255,.045); color: #e7e7e7; font-weight: 800; line-height: 1.4; }
+
+    .final-cta { padding-top: 30px; }
+    .final-panel { display: grid; grid-template-columns: minmax(0,1fr) minmax(320px,.65fr); gap: 55px; align-items: center; border: 1px solid rgba(255,106,0,.45); border-radius: 24px; padding: clamp(28px, 5vw, 58px); background: linear-gradient(135deg, #211208, #111 58%); box-shadow: var(--shadow); }
+    .final-panel h2 { margin-bottom: 14px; font-size: clamp(38px, 5vw, 66px); line-height: .95; letter-spacing: -.045em; text-transform: uppercase; }
+    .final-panel p { margin-bottom: 0; color: #ddd; font-size: 18px; line-height: 1.6; }
+    .final-panel .cta { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+
+    footer { margin-top: 80px; border-top: 1px solid var(--line); padding: 36px 22px; text-align: center; color: #888; font-size: 13px; }
+    footer a { color: #bbb; }
+
+    @media (max-width: 900px) {
+      .hero { min-height: auto; }
+      .hero-grid { grid-template-columns: 1fr; gap: 32px; }
+      .hero-copy { text-align: center; }
+      .hero-lead { margin-left: auto; margin-right: auto; }
+      .offer-list { max-width: 590px; margin: 0 auto; text-align: left; }
+      .signup-card { width: min(100%, 600px); margin: 0 auto; }
+      .value-grid { grid-template-columns: 1fr; }
+      .edition-grid, .updates-grid, .final-panel { grid-template-columns: 1fr; }
+      .book-shell { width: min(320px, 82vw); margin: 0 auto; }
+      .final-panel { text-align: center; }
+    }
+
+    @media (max-width: 560px) {
+      .wrap { width: min(100% - 32px, 1180px); }
+      section { padding: 60px 0; }
+      .hero { padding: 24px 0 44px; }
+      .hero-grid { gap: 24px; }
+      .eyebrow { max-width: 100%; margin-bottom: 15px; padding: 8px 12px; font-size: 10px; letter-spacing: .13em; text-align: center; }
+      h1 { margin-bottom: 16px; font-size: clamp(36px, 10.5vw, 45px); line-height: .94; }
+      .hero-lead { margin-bottom: 0; font-size: 17px; line-height: 1.48; }
+      .offer-list { display: none; }
+      .updates-list { grid-template-columns: 1fr; }
+      .signup-card { padding: 20px 18px; }
+      .book-shell::after { right: -2px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <nav aria-label="Primary navigation"></nav>
+
+  <main>
+    <section class="hero" id="top">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow">Join the Lost Limb Riders Community</div>
+          <h1>Get the Digitally Autographed Edition of <span class="orange"><em>I Can. I Will.</em></span></h1>
+          <p class="hero-lead">Subscribe to stay connected with Lost Limb Riders and receive John Thompson's special digitally autographed edition, with its signature verification and certificate material included as part of the book.</p>
+          <ul class="offer-list" aria-label="Subscriber benefits">
+            <li>Digitally autographed edition</li>
+            <li>Verification and certificate included</li>
+            <li>Mission news and opportunities</li>
+            <li>Community stories and events</li>
+          </ul>
+        </div>
+
+        <form class="signup-card" id="newsletterForm" novalidate>
+          <h2>Subscribe &amp; Receive</h2>
+          <p>Your subscriber edition is delivered through the secure link in your welcome email.</p>
+          <div class="field">
+            <label for="subscriberName">Name</label>
+            <input id="subscriberName" name="name" type="text" autocomplete="name" maxlength="120" required aria-describedby="nameError">
+            <p class="field-error" id="nameError"></p>
+          </div>
+          <div class="field">
+            <label for="subscriberEmail">Email</label>
+            <input id="subscriberEmail" name="email" type="email" autocomplete="email" inputmode="email" required aria-describedby="emailError">
+            <p class="field-error" id="emailError"></p>
+          </div>
+          <div class="field">
+            <label for="subscriberPhone">Phone Number</label>
+            <input id="subscriberPhone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="40" required aria-describedby="phoneError phoneNote">
+            <p class="field-error" id="phoneError"></p>
+            <p class="phone-note" id="phoneNote">Providing a phone number does not consent to promotional text messages.</p>
+          </div>
+          <div class="consent-field">
+            <input id="newsletterConsent" name="newsletterConsent" type="checkbox" required aria-describedby="consentError privacyDisclosure">
+            <label for="newsletterConsent">I agree to receive the Lost Limb Riders newsletter and related organizational communications, and I acknowledge the <a href="documentation-viewer.html?code=DOC-D5A18EA7A04D74B4" target="_blank" rel="noopener">Privacy Policy</a>. I can unsubscribe at any time.</label>
+          </div>
+          <p class="field-error" id="consentError"></p>
+          <p class="privacy-disclosure" id="privacyDisclosure">Information supplied during subscription may be associated with information from your website activity to help Lost Limb Riders understand engagement, improve communications and services, and measure its audience.</p>
+          <button class="cta" id="submitButton" type="submit">Get My Autographed Copy</button>
+          <p class="form-status" id="formStatus" role="status" aria-live="polite" aria-atomic="true" tabindex="-1"></p>
+        </form>
+      </div>
+    </section>
+
+    <section aria-labelledby="whyJoinHeading">
+      <div class="wrap">
+        <div class="section-heading">
+          <h2 id="whyJoinHeading">Why <span class="orange">Join?</span></h2>
+          <p>The newsletter keeps you connected with Lost Limb Riders' work supporting amputees and people with limb differences through community, outreach, peer connection, advocacy, and opportunities to take part.</p>
+        </div>
+        <div class="value-grid">
+          <article class="value-card"><span class="number">01 / CONNECT</span><h3>Stay Close to the Mission</h3><p>Follow the programs, outreach, and community work helping people keep moving forward after limb loss.</p></article>
+          <article class="value-card"><span class="number">02 / PARTICIPATE</span><h3>Find Ways to Take Part</h3><p>Hear about upcoming events and opportunities to participate, volunteer, support, or connect.</p></article>
+          <article class="value-card"><span class="number">03 / BELONG</span><h3>Join the Community</h3><p>Receive stories and updates grounded in shared experience, encouragement, and the belief that nobody rides alone.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="edition" aria-labelledby="editionHeading">
+      <div class="wrap edition-grid">
+        <div class="book-shell"><img src="assets/icaniwill.png" alt="Cover of I Can. I Will. by John Thompson" loading="lazy"></div>
+        <div class="edition-copy">
+          <div class="eyebrow">The Special Edition</div>
+          <h2 id="editionHeading">More Than a Digital <span class="orange">Book</span></h2>
+          <p>This subscriber edition of John Thompson's <em>I Can. I Will.</em> is delivered digitally and distinguished by John's digital autograph and the verification and certificate material included with the edition.</p>
+          <ul class="benefit-list">
+            <li>Digitally autographed by John Thompson</li>
+            <li>Verification/certificate included with the edition</li>
+            <li>Delivered digitally through the existing subscriber welcome process</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="updatesHeading">
+      <div class="wrap updates-grid">
+        <div class="updates-copy">
+          <h2 id="updatesHeading">What You'll Hear <span class="orange">From Us</span></h2>
+          <p>Subscribing is a way to stay connected—not simply another marketing list. We'll share the work, people, and opportunities that move the Lost Limb Riders mission forward.</p>
+        </div>
+        <div class="updates-list">
+          <div class="update-item">Lost Limb Riders news and organizational updates</div>
+          <div class="update-item">Upcoming events and opportunities</div>
+          <div class="update-item">Amputee community stories</div>
+          <div class="update-item">Program and outreach developments</div>
+          <div class="update-item">Ways to participate or volunteer</div>
+          <div class="update-item">Ways to support or connect</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="final-cta" aria-labelledby="finalCtaHeading">
+      <div class="wrap final-panel">
+        <div><h2 id="finalCtaHeading">Ready to Join the <span class="orange">Ride?</span></h2><p>Subscribe and receive your digitally autographed and verified edition of <em>I Can. I Will.</em></p></div>
+        <a class="cta" href="#newsletterForm">Get My Autographed Copy</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>&copy; 2026 Lost Limb Riders Motorcycle Club &bull; <a href="index.html">Return Home</a></footer>
+
+  <script>
+    (function () {
+      var form = document.getElementById('newsletterForm');
+      var nameInput = document.getElementById('subscriberName');
+      var emailInput = document.getElementById('subscriberEmail');
+      var phoneInput = document.getElementById('subscriberPhone');
+      var consentInput = document.getElementById('newsletterConsent');
+      var nameError = document.getElementById('nameError');
+      var emailError = document.getElementById('emailError');
+      var phoneError = document.getElementById('phoneError');
+      var consentError = document.getElementById('consentError');
+      var formStatus = document.getElementById('formStatus');
+      var submitButton = document.getElementById('submitButton');
+      var submitting = false;
+      var visitReady = fetch('/api/visit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          screen: screen.width + 'x' + screen.height,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          lang: navigator.language,
+          platform: navigator.platform,
+          cookies: navigator.cookieEnabled ? 'enabled' : 'disabled',
+          dnt: navigator.doNotTrack || 'unknown',
+          page: location.href
+        }),
+        keepalive: true
+      }).catch(function () {});
+
+      function setFieldError(input, output, message) {
+        input.setAttribute('aria-invalid', message ? 'true' : 'false');
+        output.textContent = message;
+      }
+
+      function showStatus(message, type) {
+        formStatus.textContent = message;
+        formStatus.className = 'form-status' + (type ? ' ' + type : '');
+      }
+
+      function validate() {
+        var name = nameInput.value.trim();
+        var email = emailInput.value.trim();
+        var phone = phoneInput.value.trim();
+        var phoneDigits = phone.replace(/\D/g, '');
+        var firstInvalid = null;
+        setFieldError(nameInput, nameError, '');
+        setFieldError(emailInput, emailError, '');
+        setFieldError(phoneInput, phoneError, '');
+        setFieldError(consentInput, consentError, '');
+
+        if (!name) {
+          setFieldError(nameInput, nameError, 'Please enter your name.');
+          firstInvalid = nameInput;
+        }
+        if (!email || !emailInput.validity.valid) {
+          setFieldError(emailInput, emailError, 'Please enter a valid email address.');
+          firstInvalid = firstInvalid || emailInput;
+        }
+        if (phoneDigits.length < 7 || phoneDigits.length > 15) {
+          setFieldError(phoneInput, phoneError, 'Please enter a valid phone number.');
+          firstInvalid = firstInvalid || phoneInput;
+        }
+        if (!consentInput.checked) {
+          setFieldError(consentInput, consentError, 'Please confirm your newsletter consent.');
+          firstInvalid = firstInvalid || consentInput;
+        }
+        if (firstInvalid) firstInvalid.focus();
+        return !firstInvalid;
+      }
+
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (submitting || !validate()) return;
+
+        var name = nameInput.value.trim();
+        var email = emailInput.value.trim();
+        var phone = phoneInput.value.trim();
+        submitting = true;
+        submitButton.disabled = true;
+        submitButton.textContent = 'Sending My Copy…';
+        showStatus('Submitting your subscription…', '');
+
+        visitReady.then(function () { return fetch('/api/newsletter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name,
+            email: email,
+            phone: phone,
+            newsletterConsent: consentInput.checked,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+            lang: navigator.language || '',
+            platform: navigator.platform || '',
+            screen: window.screen.width + 'x' + window.screen.height,
+            viewport: window.innerWidth + 'x' + window.innerHeight,
+            cookies: navigator.cookieEnabled ? 'enabled' : 'disabled',
+            dnt: navigator.doNotTrack || '',
+            page: window.location.href
+          })
+        }); }).then(function (response) {
+          return response.json().catch(function () { return {}; }).then(function (data) {
+            if (!response.ok) throw new Error(response.status === 422 ? 'validation' : 'request');
+            return data;
+          });
+        }).then(function (data) {
+          var alreadySubscribed = /already subscribed/i.test(String(data.message || ''));
+          if (alreadySubscribed) {
+            showStatus("You're already subscribed. Watch your inbox for Lost Limb Riders updates.", 'success');
+          } else {
+            showStatus("You're in. Check your email for your welcome message and secure link to the digitally autographed edition.", 'success');
+          }
+          form.reset();
+          submitButton.textContent = 'Subscribed';
+        }).catch(function (error) {
+          if (error.message === 'validation') {
+            showStatus('Please check your name and email, then try again.', 'error');
+          } else {
+            showStatus("We couldn't complete your subscription right now. Please try again in a moment.", 'error');
+          }
+          submitButton.disabled = false;
+          submitButton.textContent = 'Get My Autographed Copy';
+          submitting = false;
+          formStatus.focus();
+        });
+      });
+
+    })();
+  </script>
+</body>
+</html>

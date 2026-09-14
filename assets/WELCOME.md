@@ -10,9 +10,9 @@ Lost Limb Riders was founded on a belief that strength is not measured by what l
 
 ## Your Welcome Gift
 
-As a new subscriber, you will receive a **free autographed copy of *I Can, I Will***, the autobiography of **John Thompson**.
+As a new subscriber, you will receive the **digitally autographed and verified subscriber edition of *I Can, I Will***, the autobiography of **John Thompson**. The signature verification and certificate material are included with this digital edition.
 
-This personally signed autobiography shares John's experiences, challenges, setbacks, determination, and journey through circumstances that could have stopped him—but didn't.
+This special edition shares John's experiences, challenges, setbacks, determination, and journey through circumstances that could have stopped him—but didn't.
 
 We are proud to include this book as a special welcome gift for our subscribers. We hope that as you read *I Can, I Will*, you find encouragement in its pages and a reminder that sometimes the most important step forward begins with believing that you can take it.
 

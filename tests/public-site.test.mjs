@@ -8,6 +8,7 @@ const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const pages = ['index.html', 'events.html', 'media.html', 'mission.html', 'community.html', 'sponsors.html',
   'documentation.html', 'documentation-viewer.html', 'peer-support.html', 'healthcare-partnerships.html', 'join.html',
   'volunteer-employment.html', 'donate.html'];
+pages.push('newsletter.html');
 
 function hrefs(html) {
   const markup = html.replace(/<script\b[\s\S]*?<\/script>/gi, '');
@@ -24,7 +25,8 @@ test('public internal links resolve to files and valid static fragments', () => 
     for (const href of hrefs(html)) {
       if (/^(?:https?:|mailto:|tel:|\/api\/)/.test(href)) continue;
       assert.notEqual(href, '#', `${page} contains a placeholder href`);
-      const [pathname, fragment] = href.split('#');
+      const [pathAndQuery, fragment] = href.split('#');
+      const pathname = pathAndQuery.split('?')[0];
       const targetName = pathname || page;
       const target = resolve(root, targetName);
       assert.equal(existsSync(target), true, `${page} links to missing ${href}`);
@@ -45,6 +47,14 @@ test('homepage ends with book then footer and has no legacy tail', () => {
   assert.ok(book > -1 && bookEnd < mainEnd && mainEnd < footer);
   assert.doesNotMatch(html.slice(bookEnd, mainEnd), /<section\b/i);
   assert.doesNotMatch(html, /id="(?:newsletter|contact)"/);
+});
+
+test('newsletter funnel is linked from the homepage and shared navigation', () => {
+  const home = readFileSync(resolve(root, 'index.html'), 'utf8');
+  const nav = readFileSync(resolve(root, 'assets/public-nav.js'), 'utf8');
+  assert.match(home, /<section id="newsletter-offer">[\s\S]*?href="newsletter\.html">Get My Copy/);
+  assert.match(home, /<a href="newsletter\.html" role="menuitem">Newsletter<\/a>/);
+  assert.match(nav, /<a href="newsletter\.html">Newsletter<\/a>/);
 });
 
 test('Where to Go Next tiles are full-card links to verified routes', () => {

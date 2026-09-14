@@ -5,6 +5,7 @@ import { geolocateIp } from '../lib/geo.js';
 import { sendEmail } from '../lib/email.js';
 import { buildWelcomeEmail } from '../lib/newsletter.js';
 import { addAudit } from '../lib/audit.js';
+import { normalizeNewsletterSignup, newsletterConsentRecord } from '../lib/newsletter-signup.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -60,16 +61,17 @@ function buildProfile(req, payload, ip, geo) {
 
 function newSubscriber(payload, profile, visitorId) {
   const now = new Date().toISOString();
-  const name = clean(payload.name, 120);
-  const email = String(payload.email ?? '').trim().toLowerCase();
+  const { name, email, phone } = normalizeNewsletterSignup(payload);
   return {
     name,
     email,
+    phone,
     visitorId: visitorId || null,
     signedAt: now,
     ...profile,
     status: 'active',
     signupSource: profile.context.landingPage,
+    consent: newsletterConsentRecord(profile.context.landingPage),
     welcomeStatus: null,
     welcomeSentAt: null,
     welcomeError: null,
@@ -134,11 +136,10 @@ export default function handler(req, res) {
   }
 
   readBody(req).then(async (payload) => {
-    const name = clean(payload.name, 120);
-    const email = String(payload.email ?? '').trim().toLowerCase();
+    const { name, email, phone, phoneValid, consented } = normalizeNewsletterSignup(payload);
 
-    if (!name || !email || !EMAIL_RE.test(email)) {
-      return sendJson(res, { error: 'Valid name and email are required.' }, 422);
+    if (!name || !email || !EMAIL_RE.test(email) || !phoneValid || !consented) {
+      return sendJson(res, { error: 'Valid name, email, phone, and newsletter consent are required.' }, 422);
     }
 
     const ip = getClientIp(req);
@@ -150,17 +151,29 @@ export default function handler(req, res) {
     const existing = entries.find((e) => e.email === email);
 
     if (existing && (existing.status ?? 'active') === 'active') {
+      existing.name = name;
+      existing.phone = phone;
+      existing.visitorId = visitorId || existing.visitorId || null;
+      existing.consent = newsletterConsentRecord(profile.context.landingPage);
+      await setList(KEYS.subscribers, entries.slice(0, LIMITS.subscribers));
+      const linked = await linkVisitor(existing);
       await addAudit('duplicate_signup', email, { source: profile.context.landingPage });
+      if (linked) {
+        await addAudit('visitor_linked', email, { visitorId: existing.visitorId, linkedRecords: linked });
+      }
       return sendJson(res, { ok: true, message: 'You are already subscribed.' });
     }
 
     let sub;
     if (existing) {
       sub = { ...existing, ...profile, status: 'active', unsubscribedAt: null };
+      sub.name = name;
+      sub.phone = phone;
       sub.visitorId = visitorId || sub.visitorId || null;
       sub.signedAt = sub.signedAt || new Date().toISOString();
       sub.resubscribedAt = new Date().toISOString();
       sub.signupSource = profile.context.landingPage;
+      sub.consent = newsletterConsentRecord(profile.context.landingPage);
       sub.ebookToken = makeToken();
       sub.ebookTokenIssuedAt = null;
       sub.ebookLinkIssued = false;
@@ -195,7 +208,7 @@ export default function handler(req, res) {
     return sendJson(res, {
       ok: true,
       message: welcomeOk
-        ? 'Welcome to the ride. Check your email for the welcome letter and your free e-book.'
+        ? 'Welcome to the ride. Check your email for the welcome letter and your digitally autographed and verified subscriber edition.'
         : 'Welcome to the ride. You are subscribed.',
     }, 201);
   }).catch(() => sendJson(res, { error: 'Storage error.' }, 500));
