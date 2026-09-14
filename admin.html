@@ -144,6 +144,34 @@
       margin-top: 6px;
     }
 
+    .analytics-heading { display:flex; justify-content:space-between; align-items:end; gap:20px; margin-bottom:18px; }
+    .analytics-heading h2 { margin:0; font-size:24px; text-transform:uppercase; letter-spacing:-.02em; }
+    .analytics-heading p { margin:0; color:var(--muted); font-size:12px; }
+    .analytics-grid { display:grid; grid-template-columns:1.35fr 1fr; gap:20px; margin-bottom:20px; }
+    .analytics-panel h3 { margin:0 0 4px; color:var(--white); font-size:15px; text-transform:uppercase; letter-spacing:.06em; }
+    .analytics-panel .chart-note { color:var(--muted); font-size:11px; margin-bottom:18px; }
+    .trend-chart { display:grid; grid-template-columns:repeat(14,minmax(20px,1fr)); align-items:end; gap:7px; height:220px; padding-top:12px; }
+    .trend-day { display:grid; grid-template-rows:1fr auto; height:100%; min-width:0; }
+    .trend-bars { display:flex; align-items:end; justify-content:center; gap:3px; min-height:0; }
+    .trend-bar { width:42%; min-height:3px; border-radius:4px 4px 0 0; background:var(--orange); }
+    .trend-bar.unique { background:#f7b267; }
+    .trend-label { margin-top:7px; color:#777; font-size:9px; text-align:center; white-space:nowrap; }
+    .chart-legend { display:flex; gap:16px; margin-top:12px; color:var(--muted); font-size:11px; }
+    .chart-legend span::before { content:''; display:inline-block; width:9px; height:9px; margin-right:6px; border-radius:2px; background:var(--orange); }
+    .chart-legend span.unique::before { background:#f7b267; }
+    .ranked-list { display:grid; gap:12px; }
+    .ranked-row { display:grid; grid-template-columns:minmax(100px,1fr) 3fr auto; gap:10px; align-items:center; }
+    .ranked-label { overflow:hidden; color:#ddd; font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
+    .ranked-track { height:9px; border-radius:999px; background:#090909; overflow:hidden; }
+    .ranked-fill { height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--orange),#ff9a52); }
+    .ranked-value { min-width:28px; color:var(--white); font-size:12px; font-weight:800; text-align:right; }
+    .audience-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:32px; }
+    .audience-card { padding:18px; border:1px solid var(--line); border-radius:12px; background:var(--charcoal); }
+    .audience-card h3 { margin:0 0 13px; color:var(--orange); font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
+    .audience-item { display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.06); color:var(--muted); font-size:12px; }
+    .audience-item:last-child { border-bottom:0; }
+    .audience-item strong { color:var(--white); }
+
     .tab-menu {
       display: flex;
       flex-wrap: wrap;
@@ -533,8 +561,17 @@
       .social-grid,.social-checks { grid-template-columns:1fr; }
       .social-link-row { grid-template-columns:1fr; }
       .stat-grid { grid-template-columns: 1fr 1fr; }
+      .analytics-grid { grid-template-columns:1fr; }
+      .audience-grid { grid-template-columns:1fr 1fr; }
+      .trend-chart { gap:3px; }
       .menu-btn { padding: 9px 14px; font-size: 12px; }
       .menu-drop { min-width: 200px; }
+    }
+    @media (max-width: 480px) {
+      .analytics-heading { align-items:flex-start; flex-direction:column; }
+      .audience-grid { grid-template-columns:1fr; }
+      .trend-label { font-size:8px; }
+      .ranked-row { grid-template-columns:minmax(80px,1fr) 2fr auto; }
     }
   </style>
 </head>
@@ -574,6 +611,8 @@
   <section style="padding-top:0;">
     <div class="wrap">
 
+      <div class="analytics-heading"><div><h2>Audience Intelligence</h2><p>Traffic and newsletter performance from existing first-party records.</p></div><p>Reporting timezone: America/Chicago</p></div>
+
       <!-- Stats -->
       <div class="stat-grid">
         <div class="stat-card">
@@ -595,22 +634,38 @@
         </div>
         <div class="stat-card">
           <div class="num" id="statSubs">–</div>
-          <div class="label">Subscribers</div>
+          <div class="label">Active Subscribers</div>
+          <div class="sub" id="statSubsSplit"></div>
+        </div>
+        <div class="stat-card"><div class="num" id="statVisits7">–</div><div class="label">Visits · 7 Days</div><div class="sub" id="statUnique7"></div></div>
+        <div class="stat-card"><div class="num" id="statVisits30">–</div><div class="label">Visits · 30 Days</div><div class="sub" id="statUnique30"></div></div>
+        <div class="stat-card"><div class="num" id="statReturningRate">–</div><div class="label">Returning Visitors</div><div class="sub" id="statReturningCount"></div></div>
+        <div class="stat-card"><div class="num" id="statPagesPerVisitor">–</div><div class="label">Views per Visitor</div><div class="sub">All recorded traffic</div></div>
+        <div class="stat-card"><div class="num" id="statConversion">–</div><div class="label">Newsletter Conversion</div><div class="sub" id="statIdentified"></div></div>
+      </div>
+
+      <!-- Analytics visuals -->
+      <div class="analytics-grid">
+        <div class="panel analytics-panel">
+          <h3>14-Day Traffic Trend</h3>
+          <div class="chart-note">Daily visits compared with unique visitors</div>
+          <div id="trafficTrend" class="trend-chart" aria-label="Fourteen day traffic chart"></div>
+          <div id="trafficTrendEmpty" class="empty-state" style="display:none;">No recent traffic yet.</div>
+          <div class="chart-legend"><span>Visits</span><span class="unique">Unique visitors</span></div>
+        </div>
+        <div class="panel analytics-panel">
+          <h3>Most-Viewed Pages</h3>
+          <div class="chart-note">Top destinations across recorded visits</div>
+          <div id="pagePopularity" class="ranked-list"></div>
+          <div id="pagePopularityEmpty" class="empty-state" style="display:none;">No page data yet.</div>
         </div>
       </div>
 
-      <!-- Charts row -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:32px;">
-        <div class="panel">
-          <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:16px;">Top Countries</h3>
-          <div id="chartCountries" class="chart-bar-wrap"></div>
-          <div id="chartCountriesEmpty" class="empty-state" style="display:none;">No data yet.</div>
-        </div>
-        <div class="panel">
-          <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:16px;">Browsers</h3>
-          <div id="chartBrowsers" class="chart-bar-wrap"></div>
-          <div id="chartBrowsersEmpty" class="empty-state" style="display:none;">No data yet.</div>
-        </div>
+      <div class="audience-grid">
+        <div class="audience-card"><h3>Top Countries</h3><div id="audienceCountries"></div></div>
+        <div class="audience-card"><h3>Top Cities</h3><div id="audienceCities"></div></div>
+        <div class="audience-card"><h3>Browsers &amp; Devices</h3><div id="audienceTechnology"></div></div>
+        <div class="audience-card"><h3>Traffic Sources</h3><div id="audienceReferrers"></div></div>
       </div>
 
       <!-- Menus -->
@@ -1405,6 +1460,46 @@
       }).join('');
     }
 
+    function renderTrafficTrend(series) {
+      const container = document.getElementById('trafficTrend');
+      const empty = document.getElementById('trafficTrendEmpty');
+      const points = Array.isArray(series) ? series : [];
+      const max = Math.max(...points.map((point) => point.visits || 0), 0);
+      if (!points.length || !max) { container.style.display = 'none'; empty.style.display = 'block'; return; }
+      container.style.display = 'grid'; empty.style.display = 'none';
+      container.innerHTML = points.map((point) => {
+        const visitHeight = Math.max(3, Math.round(((point.visits || 0) / max) * 100));
+        const uniqueHeight = Math.max(3, Math.round(((point.unique || 0) / max) * 100));
+        const label = String(point.date || '').slice(5).replace('-', '/');
+        return '<div class="trend-day" title="' + escapeHtml(point.date + ': ' + point.visits + ' visits, ' + point.unique + ' unique') + '">' +
+          '<div class="trend-bars"><div class="trend-bar" style="height:' + visitHeight + '%"></div><div class="trend-bar unique" style="height:' + uniqueHeight + '%"></div></div>' +
+          '<div class="trend-label">' + escapeHtml(label) + '</div></div>';
+      }).join('');
+    }
+
+    function renderRankedList(containerId, emptyId, data) {
+      const container = document.getElementById(containerId);
+      const empty = document.getElementById(emptyId);
+      const entries = Object.entries(data || {});
+      if (!entries.length) { container.style.display = 'none'; empty.style.display = 'block'; return; }
+      container.style.display = 'grid'; empty.style.display = 'none';
+      const max = Math.max(...entries.map(([, count]) => count), 1);
+      container.innerHTML = entries.map(([label, count]) => '<div class="ranked-row">' +
+        '<div class="ranked-label" title="' + escapeHtml(label) + '">' + escapeHtml(label) + '</div>' +
+        '<div class="ranked-track"><div class="ranked-fill" style="width:' + ((count / max) * 100) + '%"></div></div>' +
+        '<div class="ranked-value">' + count + '</div></div>').join('');
+    }
+
+    function renderAudienceList(containerId, groups) {
+      const container = document.getElementById(containerId);
+      const rows = [];
+      groups.forEach((group) => {
+        if (group.label) rows.push('<div class="social-help" style="margin:5px 0 3px;text-transform:uppercase;letter-spacing:.06em;">' + escapeHtml(group.label) + '</div>');
+        Object.entries(group.data || {}).filter(([, count]) => count > 0).slice(0, 5).forEach(([label, count]) => rows.push('<div class="audience-item"><span>' + escapeHtml(label) + '</span><strong>' + count + '</strong></div>'));
+      });
+      container.innerHTML = rows.length ? rows.join('') : '<div class="social-help">No data yet.</div>';
+    }
+
     // --- Stats ---
     async function loadStats() {
       try {
@@ -1417,9 +1512,23 @@
         document.getElementById('statUniqueToday').textContent = data.uniqueToday || 0;
         document.getElementById('statTodaySplit').textContent =
           (data.newVisitorsToday || 0) + ' new · ' + (data.returningVisitorsToday || 0) + ' returning';
-        document.getElementById('statSubs').textContent = data.subscribers || 0;
-        renderBarChart('chartCountries', 'chartCountriesEmpty', data.topCountries || {});
-        renderBarChart('chartBrowsers', 'chartBrowsersEmpty', data.browserStats || {});
+        document.getElementById('statSubs').textContent = data.activeSubscribers || 0;
+        document.getElementById('statSubsSplit').textContent = (data.unsubscribedSubscribers || 0) + ' unsubscribed · ' + (data.subscribers || 0) + ' total records';
+        document.getElementById('statVisits7').textContent = data.visits7 || 0;
+        document.getElementById('statUnique7').textContent = (data.unique7 || 0) + ' unique visitors';
+        document.getElementById('statVisits30').textContent = data.visits30 || 0;
+        document.getElementById('statUnique30').textContent = (data.unique30 || 0) + ' unique visitors';
+        document.getElementById('statReturningRate').textContent = (data.returningRate || 0) + '%';
+        document.getElementById('statReturningCount').textContent = (data.returningVisitors || 0) + ' repeat visitors';
+        document.getElementById('statPagesPerVisitor').textContent = data.pagesPerVisitor || 0;
+        document.getElementById('statConversion').textContent = (data.newsletterConversionRate || 0) + '%';
+        document.getElementById('statIdentified').textContent = (data.identifiedVisitors || 0) + ' identified visitor' + ((data.identifiedVisitors || 0) === 1 ? '' : 's');
+        renderTrafficTrend(data.trafficSeries || []);
+        renderRankedList('pagePopularity', 'pagePopularityEmpty', data.topPages || {});
+        renderAudienceList('audienceCountries', [{ data:data.topCountries || {} }]);
+        renderAudienceList('audienceCities', [{ data:data.topCities || {} }]);
+        renderAudienceList('audienceTechnology', [{ label:'Browsers', data:data.browserStats || {} }, { label:'Devices', data:data.deviceStats || {} }]);
+        renderAudienceList('audienceReferrers', [{ data:data.topReferrers || {} }]);
       } catch {}
     }
 

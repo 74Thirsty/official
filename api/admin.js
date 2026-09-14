@@ -44,7 +44,7 @@ export default function handler(req, res) {
   if (action === 'stats') {
     Promise.all([getList(KEYS.visitors), getList(KEYS.subscribers)]).then(([visitors, subscribers]) => {
       sendJson(res, {
-        ...computeVisitorStats(visitors),
+        ...computeVisitorStats(visitors, new Date(), subscribers),
         subscribers: subscribers.length,
         signedCopyReady: signedCopyAvailable(),
       });

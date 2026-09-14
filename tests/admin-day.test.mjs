@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { iowaDay, computeVisitorStats } from '../lib/visitor-stats.js';
+
+const adminPage = await readFile(new URL('../admin.html', import.meta.url), 'utf8');
 
 test('iowaDay maps summer instants on America/Chicago calendar days (CDT, UTC-5)', () => {
   assert.equal(iowaDay('2026-07-14T22:00:00Z'), '2026-07-14');
@@ -75,4 +78,47 @@ test('malformed or missing timestamps never crash stats nor count as Today', () 
   assert.equal(stats.totalVisits, 3);
   assert.equal(stats.uniqueVisitors, 3);
   assert.equal(stats.todayVisits, 1);
+});
+
+test('enriched analytics calculate traffic windows, retention, conversion, and chart data', () => {
+  const visitors = [
+    { timestamp:'2026-07-10T12:00:00Z', visitorId:'a', page:'https://lostlimbriders.org/', referrer:'direct', city:'Fort Dodge', country:'United States', userAgent:'Mozilla/5.0 (iPhone) Mobile Safari/605' },
+    { timestamp:'2026-07-11T12:00:00Z', visitorId:'a', page:'https://lostlimbriders.org/newsletter.html', referrer:'https://facebook.com/post', city:'Fort Dodge', country:'United States', userAgent:'Mozilla/5.0 (iPhone) Mobile Safari/605' },
+    { timestamp:'2026-07-12T12:00:00Z', visitorId:'b', page:'/mission.html', referrer:'direct', city:'Des Moines', country:'United States', userAgent:'Mozilla/5.0 Chrome/120' },
+    { timestamp:'2026-07-13T12:00:00Z', visitorId:'b', page:'/mission.html', referrer:'https://lostlimbriders.org/', city:'Des Moines', country:'United States', userAgent:'Mozilla/5.0 Chrome/120' },
+    { timestamp:'2026-07-14T12:00:00Z', visitorId:'c', page:'/events.html', referrer:'direct', city:'Ames', country:'United States', userAgent:'Mozilla/5.0 (iPad) Safari/605' },
+    { timestamp:'2026-07-15T12:00:00Z', visitorId:'d', page:'/', referrer:'direct', city:'Ames', country:'United States', userAgent:'Mozilla/5.0 Firefox/130' },
+  ];
+  const subscribers = [
+    { visitorId:'a', status:'active' },
+    { visitorId:'missing', status:'active' },
+    { visitorId:'b', status:'unsubscribed' },
+  ];
+  const stats = computeVisitorStats(visitors, new Date('2026-07-15T12:00:00Z'), subscribers);
+  assert.equal(stats.visits7, 6);
+  assert.equal(stats.visits30, 6);
+  assert.equal(stats.unique7, 4);
+  assert.equal(stats.returningVisitors, 2);
+  assert.equal(stats.returningRate, 50);
+  assert.equal(stats.pagesPerVisitor, 1.5);
+  assert.equal(stats.activeSubscribers, 2);
+  assert.equal(stats.unsubscribedSubscribers, 1);
+  assert.equal(stats.identifiedVisitors, 1);
+  assert.equal(stats.newsletterConversionRate, 25);
+  assert.equal(stats.trafficSeries.length, 14);
+  assert.equal(stats.trafficSeries.at(-1).visits, 1);
+  assert.deepEqual(stats.topPages, { Home:2, mission:2, newsletter:1, events:1 });
+  assert.deepEqual(stats.deviceStats, { Mobile:2, Desktop:3, Tablet:1 });
+  assert.deepEqual(stats.topReferrers, { Direct:4, 'facebook.com':1, Internal:1 });
+});
+
+test('admin dashboard renders enriched KPIs and the two primary analytics visuals', () => {
+  for (const id of ['statVisits7', 'statVisits30', 'statReturningRate', 'statPagesPerVisitor', 'statConversion']) {
+    assert.match(adminPage, new RegExp(`id="${id}"`));
+  }
+  assert.match(adminPage, /id="trafficTrend"/);
+  assert.match(adminPage, /id="pagePopularity"/);
+  assert.match(adminPage, /function renderTrafficTrend\(series\)/);
+  assert.match(adminPage, /function renderRankedList\(containerId, emptyId, data\)/);
+  assert.match(adminPage, /Reporting timezone: America\/Chicago/);
 });
