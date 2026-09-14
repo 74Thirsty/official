@@ -492,6 +492,33 @@
     }
     .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--orange); }
     .form-field textarea { resize: vertical; min-height: 80px; }
+    .social-center { display:grid; grid-template-columns:210px minmax(0,1fr); gap:20px; align-items:start; }
+    .social-nav { display:grid; gap:7px; position:sticky; top:18px; }
+    .social-nav button { display:flex; align-items:center; gap:10px; width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:9px; background:#111; color:var(--muted); text-align:left; font:inherit; font-weight:700; cursor:pointer; }
+    .social-nav button.active { color:var(--white); border-color:var(--orange); background:rgba(255,107,0,.12); }
+    .social-card { border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.025); padding:18px; margin-bottom:14px; }
+    .social-card h4 { margin:0 0 14px; color:var(--white); font-size:15px; text-transform:uppercase; letter-spacing:.05em; }
+    .social-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .social-field { display:grid; gap:6px; min-width:0; }
+    .social-field.full { grid-column:1/-1; }
+    .social-field label { color:#ddd; font-size:12px; font-weight:800; }
+    .social-field input,.social-field textarea,.social-field select { width:100%; padding:10px 11px; border:1px solid var(--line); border-radius:8px; background:#0c0c0c; color:var(--white); font:inherit; box-sizing:border-box; }
+    .social-field textarea { min-height:150px; resize:vertical; line-height:1.55; }
+    .social-help { color:var(--muted); font-size:11px; line-height:1.5; }
+    .social-editor-head { display:flex; justify-content:space-between; gap:14px; align-items:flex-start; margin-bottom:16px; }
+    .social-badge { padding:5px 9px; border-radius:999px; font-size:11px; font-weight:900; white-space:nowrap; }
+    .social-badge.good { color:#86efac; background:rgba(34,197,94,.13); }
+    .social-badge.warn { color:#fdba74; background:rgba(249,115,22,.14); }
+    .social-checks { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .social-check { padding:8px 10px; border-radius:8px; background:#101010; color:#ccc; font-size:12px; }
+    .social-check.ok { color:#86efac; }
+    .social-preview { display:flex; gap:14px; align-items:center; padding:12px; border:1px solid var(--line); border-radius:10px; background:#0d0d0d; }
+    .social-preview img { width:72px; height:72px; border-radius:8px; object-fit:cover; background:#191919; }
+    .social-preview.banner img { width:180px; height:72px; }
+    .social-placeholder { width:72px; height:72px; border-radius:8px; display:grid; place-items:center; background:#191919; color:#666; font-size:25px; flex:none; }
+    .social-preview.banner .social-placeholder { width:180px; }
+    .social-link-row { display:grid; grid-template-columns:1fr 1.5fr auto; gap:8px; align-items:end; margin-bottom:9px; }
+    .social-savebar { display:flex; justify-content:flex-end; align-items:center; gap:12px; margin-top:16px; }
     .form-field select option { background: #111; }
     .form-actions { display: flex; gap: 10px; margin-top: 22px; }
     .form-actions .btn { justify-content: center; }
@@ -499,6 +526,10 @@
     @media (max-width: 768px) {
       section { padding: 24px 5vw; }
       .panel { padding: 20px; }
+      .social-center { grid-template-columns:1fr; }
+      .social-nav { position:static; grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .social-grid,.social-checks { grid-template-columns:1fr; }
+      .social-link-row { grid-template-columns:1fr; }
       .stat-grid { grid-template-columns: 1fr 1fr; }
       .menu-btn { padding: 9px 14px; font-size: 12px; }
       .menu-drop { min-width: 200px; }
@@ -1103,15 +1134,15 @@
         <!-- Document Access Panel -->
         <div id="panel-social-media" class="tab-panel">
           <div class="panel">
-            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:18px;">
-              <div>
-                <h3 style="color:var(--orange); font-size:16px; font-weight:900; text-transform:uppercase; letter-spacing:.05em; margin:0 0 6px;">Social Media Configuration</h3>
-                <p style="color:var(--muted); font-size:13px; line-height:1.6; margin:0;">Authorized editor for the internal hierarchical configuration. Field structure is locked to prevent accidental schema damage.</p>
-              </div>
-              <button type="button" class="btn btn-primary" id="socialMediaSaveBtn" onclick="saveSocialMediaConfig()">Validate &amp; Save</button>
+            <div style="margin-bottom:18px;">
+              <h3 style="color:var(--orange); font-size:16px; font-weight:900; text-transform:uppercase; letter-spacing:.05em; margin:0 0 6px;">Social Media Configuration Center</h3>
+              <p style="color:var(--muted); font-size:13px; line-height:1.6; margin:0;">Manage the public profile information stored by Lost Limb Riders. Saving here does not publish changes to an external social-media account.</p>
             </div>
             <div id="socialMediaSource" style="font-size:12px; color:var(--muted); margin-bottom:14px;"></div>
-            <div id="socialMediaEditor" style="display:grid; gap:10px;"></div>
+            <div class="social-center">
+              <nav id="socialMediaNav" class="social-nav" aria-label="Social media platforms"></nav>
+              <div id="socialMediaEditor"></div>
+            </div>
             <div id="socialMediaStatus" role="status" style="margin-top:14px; min-height:20px; font-size:13px;"></div>
           </div>
         </div>
@@ -3036,79 +3067,177 @@
 
     // --- Social media configuration ---
     let socialMediaConfig = null;
+    let selectedSocialPlatform = 'youtube';
+    let socialMediaDraft = {};
+    const socialPlatforms = [
+      ['organization', '🏢', 'Organization'], ['facebook', 'f', 'Facebook'], ['youtube', '▶', 'YouTube'],
+      ['instagram', '◎', 'Instagram'], ['linkedin', 'in', 'LinkedIn'], ['tiktok', '♪', 'TikTok'],
+      ['x-twitter', '𝕏', 'X / Twitter'], ['threads', '@', 'Threads'], ['discord', '◈', 'Discord'], ['podcast', '◉', 'Podcast'],
+    ];
+    const platformFields = {
+      facebook: [['displayName','Page Name'],['handle','Username / Handle'],['url','Page URL','url'],['pageId','Page ID'],['description','About / Description','textarea'],['bio','Bio','textarea'],['website','Website','url'],['publicContactEmail','Public Contact','email'],['profileImage','Profile Image','url'],['coverImage','Cover Image','url'],['actionButton','Action Button']],
+      instagram: [['handle','Username'],['displayName','Display Name'],['url','Profile URL','url'],['bio','Bio','textarea'],['website','Website / Link','url'],['publicContactEmail','Public Contact','email'],['profileImage','Profile Image','url']],
+      linkedin: [['displayName','Organization / Page Name'],['url','Public URL','url'],['pageId','Page Identifier'],['tagline','Tagline'],['description','About / Description','textarea'],['website','Website','url'],['organizationInfo','Organization Information','textarea'],['profileImage','Logo','url'],['coverImage','Cover Image','url'],['publicContactEmail','Public Contact','email']],
+      tiktok: [['handle','Username'],['displayName','Display Name'],['url','Profile URL','url'],['bio','Bio','textarea'],['website','Website','url'],['profileImage','Profile Image','url']],
+      'x-twitter': [['handle','Handle'],['displayName','Display Name'],['url','Profile URL','url'],['bio','Bio','textarea'],['website','Website','url'],['profileImage','Profile Image','url'],['coverImage','Header Image','url']],
+      threads: [['handle','Username'],['displayName','Display Name'],['url','Profile URL','url'],['bio','Bio','textarea'],['website','Website / Link','url'],['profileImage','Profile Image','url']],
+      discord: [['serverName','Server Name'],['handle','Public Username'],['inviteUrl','Public Invite URL','url'],['description','Server Description','textarea'],['profileImage','Server Icon','url']],
+      podcast: [['name','Podcast Name'],['description','Podcast Description','textarea'],['website','Website','url'],['publicContactEmail','Public Contact','email']],
+    };
 
-    function socialFieldLabel(key) {
-      return String(key).replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_-]+/g, ' ');
+    function socialAccount(platform) {
+      return (socialMediaConfig.accounts || []).find((account) => account.platform === platform) || {};
     }
 
-    function setSocialMediaValue(path, value) {
-      let target = socialMediaConfig;
-      for (let i = 0; i < path.length - 1; i++) target = target[path[i]];
-      target[path[path.length - 1]] = value;
+    function socialInput(field, label, type, value, options = {}) {
+      const id = 'social-' + field;
+      const input = type === 'textarea'
+        ? `<textarea id="${id}" maxlength="5000" placeholder="Not configured">${escapeHtml(value || '')}</textarea><span class="social-help" id="${id}-count">${String(value || '').length} / 5,000 characters</span>`
+        : `<input id="${id}" type="${type || 'text'}" value="${escapeHtml(value || '')}" placeholder="Not configured"${options.readonly ? ' readonly' : ''}>`;
+      return `<div class="social-field${options.full ? ' full' : ''}"><label for="${id}">${escapeHtml(label)}</label>${input}${options.help ? `<span class="social-help">${escapeHtml(options.help)}</span>` : ''}</div>`;
     }
 
-    function renderSocialMediaNode(value, key, path, depth) {
-      if (value && typeof value === 'object') {
-        const details = document.createElement('details');
-        details.open = depth < 2;
-        details.style.cssText = 'border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.025);padding:10px 12px;';
-        const summary = document.createElement('summary');
-        summary.style.cssText = 'cursor:pointer;color:var(--white);font-weight:800;text-transform:capitalize;';
-        const count = Array.isArray(value) ? ` (${value.length} items)` : '';
-        summary.textContent = socialFieldLabel(key) + count;
-        details.appendChild(summary);
-        const children = document.createElement('div');
-        children.style.cssText = 'display:grid;gap:9px;margin-top:10px;padding-left:8px;';
-        Object.entries(value).forEach(([childKey, childValue]) => {
-          const label = Array.isArray(value) && childValue && typeof childValue === 'object'
-            ? (childValue.platform || childValue.service || childValue.name || `Item ${Number(childKey) + 1}`)
-            : childKey;
-          children.appendChild(renderSocialMediaNode(childValue, label, path.concat(childKey), depth + 1));
+    function bindSocialFields(fields) {
+      socialMediaDraft = {};
+      fields.forEach(([key,,type]) => {
+        const input = document.getElementById('social-' + key);
+        if (!input || input.readOnly) return;
+        const update = () => {
+          socialMediaDraft[key] = input.value.trim() || null;
+          if (type === 'textarea') document.getElementById(input.id + '-count').textContent = `${input.value.length} / 5,000 characters`;
+          updateSocialChecklist();
+        };
+        input.addEventListener('input', update);
+        if (key === 'handle' && selectedSocialPlatform === 'youtube') input.addEventListener('blur', () => {
+          if (input.value && !input.value.startsWith('@')) input.value = '@' + input.value.replace(/^@+/, '');
+          update();
         });
-        details.appendChild(children);
-        return details;
-      }
+      });
+    }
 
-      const row = document.createElement('label');
-      row.style.cssText = 'display:grid;grid-template-columns:minmax(150px,240px) minmax(180px,1fr);gap:12px;align-items:center;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.025);';
-      const label = document.createElement('span');
-      label.textContent = socialFieldLabel(key);
-      label.style.cssText = 'font-size:12px;font-weight:800;color:var(--muted);text-transform:capitalize;';
-      row.appendChild(label);
+    function renderSocialNavigation() {
+      document.getElementById('socialMediaNav').innerHTML = socialPlatforms.map(([id, icon, label]) =>
+        `<button type="button" class="${id === selectedSocialPlatform ? 'active' : ''}" onclick="selectSocialPlatform('${id}')"><span aria-hidden="true">${icon}</span>${label}</button>`
+      ).join('');
+    }
 
-      let input;
-      if (typeof value === 'boolean') {
-        input = document.createElement('select');
-        input.innerHTML = '<option value="true">True</option><option value="false">False</option>';
-        input.value = String(value);
-        input.addEventListener('change', () => setSocialMediaValue(path, input.value === 'true'));
-      } else {
-        input = document.createElement('input');
-        input.type = typeof value === 'number' ? 'number' : 'text';
-        input.value = value === null ? '' : String(value);
-        if (value === null) input.placeholder = 'Not configured (leave blank for null)';
-        input.addEventListener('input', () => {
-          if (typeof value === 'number') {
-            const number = Number(input.value);
-            if (Number.isFinite(number)) setSocialMediaValue(path, number);
-          } else if (value === null) {
-            setSocialMediaValue(path, input.value.trim() ? input.value : null);
-          } else {
-            setSocialMediaValue(path, input.value);
-          }
-        });
+    function selectSocialPlatform(platform) {
+      selectedSocialPlatform = platform;
+      renderSocialMediaConfig();
+    }
+
+    function fieldValue(account, key) {
+      return Object.prototype.hasOwnProperty.call(socialMediaDraft, key) ? socialMediaDraft[key] : account[key];
+    }
+
+    function configurationItems(platform, account) {
+      const wanted = platform === 'youtube'
+        ? [['Channel Name','displayName'],['Handle','handle'],['Channel URL','url'],['Description','description'],['Banner','bannerImage'],['Profile Picture','profileImage'],['Contact Email','publicContactEmail'],['Links','links'],['Watermark','watermarkImage']]
+        : (platformFields[platform] || []).slice(0, 8).map(([key,label]) => [label,key]);
+      return wanted.map(([label,key]) => {
+        const value = fieldValue(account, key);
+        const present = Array.isArray(value) ? value.length > 0 : Boolean(value);
+        return `<div class="social-check ${present ? 'ok' : ''}">${present ? '✓' : '⚠'} ${escapeHtml(label)}${present ? '' : ' — Missing'}</div>`;
+      }).join('');
+    }
+
+    function updateSocialChecklist() {
+      const account = socialAccount(selectedSocialPlatform);
+      const checks = document.getElementById('socialChecklist');
+      if (checks) checks.innerHTML = configurationItems(selectedSocialPlatform, account);
+      const badge = document.getElementById('socialCompleteness');
+      if (badge && checks) {
+        const missing = checks.querySelectorAll('.social-check:not(.ok)').length;
+        badge.className = 'social-badge ' + (missing ? 'warn' : 'good');
+        badge.textContent = missing ? 'Configuration: Needs Attention' : 'Configuration: Complete';
       }
-      input.style.cssText = 'width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#111;color:var(--white);font:inherit;';
-      row.appendChild(input);
-      return row;
+    }
+
+    function renderAsset(label, key, value, dimensions, banner) {
+      return `<div class="social-preview${banner ? ' banner' : ''}">${value ? `<img src="${escapeHtml(value)}" alt="${escapeHtml(label)} preview">` : '<div class="social-placeholder">—</div>'}<div><strong>${escapeHtml(label)}</strong><div class="social-help" style="margin-top:5px;">${value ? escapeHtml(value) : 'No asset configured'}<br>Recommended: ${escapeHtml(dimensions)}. Change this asset through YouTube Studio.</div></div></div>`;
+    }
+
+    function renderYouTube(account) {
+      const fields = [['displayName','Channel Name'],['handle','Handle'],['channelId','Channel ID'],['url','Channel URL','url'],['description','Channel Description','textarea'],['publicContactEmail','Public Contact Email','email']];
+      const links = account.links || [];
+      document.getElementById('socialMediaEditor').innerHTML = `
+        <div class="social-editor-head"><div><h2 style="margin:0 0 5px;">YouTube</h2><span class="social-help">Saved in LLR Configuration · External publishing is managed in YouTube Studio</span></div><span id="socialCompleteness" class="social-badge warn"></span></div>
+        <section class="social-card"><h4>Profile</h4><div class="social-grid">${socialInput('displayName','Channel Name','text',account.displayName)}${socialInput('handle','Handle','text',account.handle,{help:'Public URL: youtube.com/' + (account.handle || '@handle')})}${socialInput('channelId','Channel ID','text',account.channelId,{readonly:true,help:'Canonical identifier; shown separately from public profile content.'})}${socialInput('url','Channel URL','url',account.url)}<div class="social-field full"><a class="btn btn-sm" href="${escapeHtml(account.url || 'https://studio.youtube.com/')}" target="_blank" rel="noopener">Open Channel</a></div></div></section>
+        <section class="social-card"><h4>Description</h4>${socialInput('description','Channel Description','textarea',account.description,{full:true})}</section>
+        <section class="social-card"><h4>Branding</h4><div style="display:grid;gap:10px;">${renderAsset('Profile Picture','profileImage',account.profileImage,'98 × 98 minimum',false)}${renderAsset('Banner Image','bannerImage',account.bannerImage,'2048 × 1152 minimum',true)}${renderAsset('Video Watermark','watermarkImage',account.watermarkImage,'150 × 150',false)}</div><a class="btn btn-sm" style="margin-top:12px;" href="https://studio.youtube.com/" target="_blank" rel="noopener">Open YouTube Studio</a></section>
+        <section class="social-card"><h4>Channel Links</h4><div id="socialLinks">${links.map((link,index) => socialLinkRow(link,index)).join('')}</div><button type="button" class="btn btn-sm" onclick="addSocialLink()">+ Add Link</button></section>
+        <section class="social-card"><h4>Business Contact</h4><div class="social-grid">${socialInput('publicContactEmail','Public Contact Email','email',account.publicContactEmail,{full:true,help:'This email may be displayed publicly on the YouTube channel for business inquiries. Internal administrative emails are never substituted automatically.'})}</div></section>
+        <section class="social-card"><h4>Configuration Checklist</h4><div id="socialChecklist" class="social-checks"></div></section>
+        <div class="social-savebar"><button type="button" class="btn btn-primary" id="socialMediaSaveBtn" onclick="saveSocialMediaConfig()">Save YouTube Configuration</button></div>`;
+      bindSocialFields(fields);
+      updateSocialChecklist();
+    }
+
+    function socialLinkRow(link, index) {
+      return `<div class="social-link-row" data-link-index="${index}">${socialInput('link-title-'+index,'Display Title','text',link.title || link.displayTitle)}${socialInput('link-url-'+index,'URL','url',link.url)}<div style="display:flex;gap:5px;"><button type="button" class="btn btn-sm" onclick="moveSocialLink(${index},-1)" aria-label="Move link up">↑</button><button type="button" class="btn btn-sm" onclick="moveSocialLink(${index},1)" aria-label="Move link down">↓</button><button type="button" class="btn btn-sm" onclick="removeSocialLink(${index})">Remove</button></div></div>`;
+    }
+
+    function collectSocialLinks() {
+      return [...document.querySelectorAll('[data-link-index]')].map((row) => ({ title: row.querySelector('[id^="social-link-title-"]').value.trim(), url: row.querySelector('[id^="social-link-url-"]').value.trim() }));
+    }
+
+    function collectVisibleSocialDraft() {
+      document.querySelectorAll('#socialMediaEditor .social-field > input, #socialMediaEditor .social-field > textarea').forEach((input) => {
+        const key = input.id.replace(/^social-/, '');
+        if (!key.startsWith('link-') && !input.readOnly) socialMediaDraft[key] = input.value.trim() || null;
+      });
+      return { ...socialAccount('youtube'), ...socialMediaDraft };
+    }
+
+    function addSocialLink() {
+      const account = collectVisibleSocialDraft();
+      const links = collectSocialLinks();
+      links.push({ title:'', url:'' });
+      renderYouTube({ ...account, links });
+    }
+
+    function removeSocialLink(index) {
+      const account = collectVisibleSocialDraft();
+      const links = collectSocialLinks();
+      links.splice(index, 1);
+      renderYouTube({ ...account, links });
+    }
+
+    function moveSocialLink(index, direction) {
+      const account = collectVisibleSocialDraft();
+      const links = collectSocialLinks();
+      const destination = index + direction;
+      if (destination < 0 || destination >= links.length) return;
+      [links[index], links[destination]] = [links[destination], links[index]];
+      renderYouTube({ ...account, links });
+    }
+
+    function renderOrganization() {
+      const organization = socialMediaConfig.organization || {};
+      const contact = organization.contact || {};
+      const publicEmail = (contact.emails || []).find((entry) => String(entry.purpose || '').toLowerCase().includes('public'));
+      const fields = [['name','Organization Name'],['website','Website','url'],['publicEmail','Public Email','email'],['phone','Public Phone'],['address','Address'],['foundingDate','Founding Date'],['description','Organization Description','textarea'],['founderCEO','Founder / CEO'],['board','Board Information','textarea']];
+      const values = { name:organization.name, website:organization.website && organization.website.value, publicEmail:publicEmail && publicEmail.value, phone:contact.phone && contact.phone.value, address:contact.address && contact.address.value, foundingDate:organization.foundingDate && organization.foundingDate.value, description:organization.description, founderCEO:socialMediaConfig.governance?.founderCEO?.value, board:socialMediaConfig.governance?.board?.value };
+      document.getElementById('socialMediaEditor').innerHTML = `<div class="social-editor-head"><div><h2 style="margin:0 0 5px;">Organization Profile</h2><span class="social-help">Shared public information available to platform profiles.</span></div></div><section class="social-card"><h4>Public Organization Information</h4><div class="social-grid">${fields.map(([key,label,type]) => socialInput(key,label,type,values[key],{full:type==='textarea'})).join('')}</div></section><div class="social-savebar"><button type="button" class="btn btn-primary" id="socialMediaSaveBtn" onclick="saveSocialMediaConfig()">Save Organization Profile</button></div>`;
+      bindSocialFields(fields);
+    }
+
+    function renderPlatform(account, platform) {
+      const definition = socialPlatforms.find(([id]) => id === platform);
+      const label = definition ? definition[2] : platform;
+      const fields = platformFields[platform] || [];
+      const roles = Array.isArray(account.roles) ? account.roles : [];
+      document.getElementById('socialMediaEditor').innerHTML = `<div class="social-editor-head"><div><h2 style="margin:0 0 5px;">${escapeHtml(label)}</h2><span class="social-help">Saved in LLR Configuration · This does not publish to ${escapeHtml(label)}</span></div><span id="socialCompleteness" class="social-badge warn"></span></div><section class="social-card"><h4>${platform === 'podcast' ? 'Podcast & Directory Profile' : 'Public Profile'}</h4><div class="social-grid">${fields.map(([key,title,type]) => socialInput(key,title,type,account[key],{full:type==='textarea'})).join('')}</div></section>${roles.length ? `<section class="social-card"><h4>Role in LLR Social Strategy</h4><ul style="color:#ccc;line-height:1.7;margin:0;padding-left:20px;">${roles.map((role) => `<li>${escapeHtml(role)}</li>`).join('')}</ul></section>` : ''}<section class="social-card"><h4>Configuration Checklist</h4><div id="socialChecklist" class="social-checks"></div></section><div class="social-savebar"><button type="button" class="btn btn-primary" id="socialMediaSaveBtn" onclick="saveSocialMediaConfig()">Save ${escapeHtml(label)} Configuration</button></div>`;
+      bindSocialFields(fields);
+      updateSocialChecklist();
     }
 
     function renderSocialMediaConfig() {
-      const editor = document.getElementById('socialMediaEditor');
-      editor.replaceChildren();
-      Object.entries(socialMediaConfig || {}).forEach(([key, value]) => {
-        editor.appendChild(renderSocialMediaNode(value, key, [key], 0));
-      });
+      socialMediaDraft = {};
+      renderSocialNavigation();
+      if (selectedSocialPlatform === 'organization') renderOrganization();
+      else if (selectedSocialPlatform === 'youtube') renderYouTube(socialAccount('youtube'));
+      else renderPlatform(socialAccount(selectedSocialPlatform), selectedSocialPlatform);
     }
 
     async function loadSocialMediaConfig() {
@@ -3139,17 +3268,22 @@
       status.style.color = 'var(--muted)';
       status.textContent = 'Validating and saving…';
       try {
+        if (selectedSocialPlatform === 'youtube') socialMediaDraft.links = collectSocialLinks();
+        const payload = selectedSocialPlatform === 'organization'
+          ? { scope: 'organization', changes: socialMediaDraft }
+          : { scope: 'platform', platform: selectedSocialPlatform, changes: socialMediaDraft };
         const res = await fetch(apiUrl('social-media-config'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ config: socialMediaConfig }),
+          body: JSON.stringify(payload),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Unable to save configuration.');
         socialMediaConfig = data.config;
         document.getElementById('socialMediaSource').textContent = 'Source: saved administrative configuration';
         status.style.color = '#22c55e';
-        status.textContent = 'Configuration validated and saved.';
+        status.textContent = 'Saved in LLR Configuration. External platform settings were not changed.';
+        renderSocialMediaConfig();
       } catch (error) {
         status.style.color = '#ef4444';
         status.textContent = error.message;

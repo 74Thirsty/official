@@ -17,7 +17,7 @@ import { getAccessibleDocuments, findDocumentByCode, getDocumentIntegrity, DOCUM
 import { expandDocument } from '../lib/document-references.js';
 import { getWorkflow, getTemplate, publicWorkflow, publicTemplate, resolveCategoryGroups, workflowSourceRevision } from '../lib/compliance-engine.js';
 import { createInstance, saveFieldValues, addEvidence, approveStage, advanceStage, createDocumentInstance, saveDocumentFieldValues, applySignature, finalizeDocument, cancelInstance, isAceInstance, summarizeInstance, detailInstance, buildInstanceExport } from '../lib/compliance-engine.js';
-import { initialSocialMediaConfig, validateSocialMediaConfig } from '../lib/social-media.js';
+import { initialSocialMediaConfig, patchSocialMediaConfig } from '../lib/social-media.js';
 
 export const maxDuration = 60;
 
@@ -306,7 +306,8 @@ export default function handler(req, res) {
     }
     if (req.method === 'POST') {
       readBody(req).then(async (payload) => {
-        const result = validateSocialMediaConfig(payload.config);
+        const entries = await getList(KEYS.socialMediaConfig);
+        const result = patchSocialMediaConfig(entries[0] || initialSocialMediaConfig(), payload);
         if (!result.ok) return sendJson(res, { error: result.error }, 422);
         await setList(KEYS.socialMediaConfig, [result.config]);
         await addAudit('social_media_config_updated', 'admin', {

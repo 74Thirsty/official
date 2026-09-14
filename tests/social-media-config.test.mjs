@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import adminHandler from '../api/admin.js';
-import { initialSocialMediaConfig, validateSocialMediaConfig } from '../lib/social-media.js';
+import { initialSocialMediaConfig, patchSocialMediaConfig, validateSocialMediaConfig } from '../lib/social-media.js';
 
 const adminPage = await readFile(new URL('../admin.html', import.meta.url), 'utf8');
 const vercelConfig = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
@@ -52,12 +52,43 @@ test('anonymous clients cannot read or write social-media configuration through 
   assert.equal(postResult.body.error, 'Admin access required.');
 });
 
-test('admin panel provides hierarchical authenticated editing without fetching the raw static file', () => {
-  assert.match(adminPage, /Social Media Configuration/);
+test('admin panel provides platform-aware authenticated editing without exposing a JSON tree', () => {
+  assert.match(adminPage, /Social Media Configuration Center/);
   assert.match(adminPage, /apiUrl\('social-media-config'\)/);
-  assert.match(adminPage, /renderSocialMediaNode/);
-  assert.match(adminPage, /Validate &amp; Save/);
+  assert.match(adminPage, /Save YouTube Configuration/);
+  assert.match(adminPage, /Channel Description/);
+  assert.match(adminPage, /Configuration Checklist/);
+  assert.match(adminPage, /Open YouTube Studio/);
+  assert.doesNotMatch(adminPage, /renderSocialMediaNode/);
+  assert.doesNotMatch(adminPage, /Validate &amp; Save/);
   assert.doesNotMatch(adminPage, /fetch\(['"]\/SOCIAL_MEDIA\.json/);
+});
+
+test('platform patches validate human-facing fields and preserve unrelated and legacy data', () => {
+  const config = initialSocialMediaConfig();
+  config.accounts[1].legacyIntegration = { retained: true };
+  const result = patchSocialMediaConfig(config, {
+    scope: 'platform',
+    platform: 'youtube',
+    changes: {
+      description: 'A channel description.',
+      links: [{ title: 'Lost Limb Riders', url: 'https://lostlimbriders.org/' }],
+    },
+  });
+  assert.equal(result.ok, true);
+  const youtube = result.config.accounts.find((account) => account.platform === 'youtube');
+  assert.equal(youtube.description, 'A channel description.');
+  assert.deepEqual(youtube.legacyIntegration, { retained: true });
+  assert.equal(result.config.accounts.find((account) => account.platform === 'facebook').pageId, '1258862137317491');
+
+  const badUrl = patchSocialMediaConfig(config, {
+    scope: 'platform', platform: 'youtube', changes: { url: 'http://example.com' },
+  });
+  assert.equal(badUrl.error, 'Profile URL must be a valid HTTPS URL.');
+  const badLink = patchSocialMediaConfig(config, {
+    scope: 'platform', platform: 'youtube', changes: { links: [{ title: 'Missing URL', url: '' }] },
+  });
+  assert.equal(badLink.error, 'Website Link #1 must have a valid HTTPS URL.');
 });
 
 test('Vercel routes direct raw social-media JSON requests away from the file', () => {
