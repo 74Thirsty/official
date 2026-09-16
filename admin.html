@@ -573,6 +573,9 @@
       .trend-label { font-size:8px; }
       .ranked-row { grid-template-columns:minmax(80px,1fr) 2fr auto; }
     }
+    .modal { display:none; position:fixed; inset:0; z-index:100; align-items:center; justify-content:center; }
+    .modal-backdrop { position:absolute; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(8px); }
+    .modal-content { position:relative; background:var(--charcoal); border:1px solid var(--line); border-radius:16px; padding:28px; width:92%; max-height:90vh; overflow-y:auto; box-shadow:var(--shadow); }
   </style>
 </head>
 <body>
@@ -707,6 +710,12 @@
           <div class="menu-drop">
             <button type="button" class="menu-item" onclick="switchTab('social-media', this)">Social Media</button>
             <button type="button" class="menu-item" onclick="switchTab('documents', this)">Document Access</button>
+          </div>
+        </div>
+        <div class="menu-group">
+          <button type="button" class="menu-btn" onclick="toggleMenu(this)">Operations <span class="menu-caret">&#9662;</span></button>
+          <div class="menu-drop">
+            <button type="button" class="menu-item" onclick="switchTab('grant-intel', this)">Grant Intelligence</button>
           </div>
         </div>
       </nav>
@@ -1224,6 +1233,110 @@
           </div>
         </div>
 
+        <!-- Grant Intelligence Panel -->
+        <div id="panel-grant-intel" class="tab-panel">
+          <div class="panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
+              <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin:0;">Grant Intelligence</h3>
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <span id="giLastSync" style="font-size:12px; color:var(--muted);"></span>
+                <button class="btn btn-primary btn-sm" onclick="giSyncNow()">Sync Grants Now</button>
+              </div>
+            </div>
+
+            <div id="giSyncStatus" style="font-size:13px; color:var(--muted); margin-bottom:12px;"></div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+              <input id="giSearch" maxlength="120" placeholder="Search title, number, agency..." style="flex:1; min-width:200px; padding:10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white);" oninput="giDebouncedLoad()">
+              <select id="giStatusFilter" style="padding:10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white);" onchange="giLoadList()">
+                <option value="">All Statuses</option>
+                <option value="new">New</option>
+                <option value="potential-match">Potential Match</option>
+                <option value="needs-review">Needs Review</option>
+                <option value="rejected">Rejected</option>
+                <option value="promoted">Promoted to ACE</option>
+              </select>
+            </div>
+
+            <div id="giStats" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;"></div>
+            <div id="giList"></div>
+            <div id="giEmpty" class="empty-state" style="display:none;">No grant opportunities found. Click "Sync Grants Now" to retrieve opportunities from Grants.gov.</div>
+          </div>
+
+          <!-- Grant Detail Modal -->
+          <div id="giDetailModal" class="modal" style="display:none;">
+            <div class="modal-backdrop" onclick="giCloseDetail()"></div>
+            <div class="modal-content" style="max-width:900px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+                <h3 id="giDetailTitle" style="font-size:18px; font-weight:700; color:var(--orange); margin:0; flex:1; padding-right:12px;"></h3>
+                <button class="btn btn-sm" onclick="giCloseDetail()" style="flex-shrink:0;">&times;</button>
+              </div>
+
+              <div id="giDetailMeta" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;"></div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div>
+                  <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:4px;">Issuing Agency</div>
+                  <div id="giDetailAgency" style="font-size:14px;"></div>
+                </div>
+                <div>
+                  <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:4px;">Opportunity Number</div>
+                  <div id="giDetailNumber" style="font-size:14px;"></div>
+                </div>
+                <div>
+                  <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:4px;">Deadline</div>
+                  <div id="giDetailDeadline" style="font-size:14px;"></div>
+                </div>
+                <div>
+                  <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:4px;">Funding</div>
+                  <div id="giDetailFunding" style="font-size:14px;"></div>
+                </div>
+                <div>
+                  <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:4px;">Cost Sharing</div>
+                  <div id="giDetailCostSharing" style="font-size:14px;"></div>
+                </div>
+                <div>
+                  <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:4px;">Assistance Listings</div>
+                  <div id="giDetailALNs" style="font-size:14px;"></div>
+                </div>
+              </div>
+
+              <div style="margin-bottom:16px;">
+                <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:4px;">Synopsis / Program Description</div>
+                <div id="giDetailSynopsis" style="font-size:14px; line-height:1.6; max-height:300px; overflow-y:auto; padding:12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.03);"></div>
+              </div>
+
+              <div style="margin-bottom:16px;">
+                <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:4px;">Eligible Applicant Types</div>
+                <div id="giDetailApplicants" style="font-size:14px;"></div>
+              </div>
+
+              <div style="margin-bottom:16px;">
+                <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:4px;">Contact Information</div>
+                <div id="giDetailContact" style="font-size:14px;"></div>
+              </div>
+
+              <div id="giDetailScreening" style="margin-bottom:16px; padding:14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.03);">
+                <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:8px;">Preliminary Screening</div>
+                <div id="giScreeningContent"></div>
+              </div>
+
+              <div style="margin-bottom:16px;">
+                <label style="font-size:12px; font-weight:700; color:var(--muted);">Admin Notes</label>
+                <textarea id="giDetailNotes" rows="3" maxlength="2000" style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); margin-top:4px;"></textarea>
+              </div>
+
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-sm" onclick="giReject()" id="giRejectBtn" style="border-color:#ef4444; color:#ef4444;">Reject</button>
+                <button class="btn btn-sm" onclick="giKeep()" id="giKeepBtn">Keep for Review</button>
+                <a id="giSourceLink" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="text-decoration:none;">View on Grants.gov</a>
+                <div style="flex:1;"></div>
+                <button class="btn btn-primary btn-sm" onclick="giPromote()" id="giPromoteBtn">Promote to ACE Grant Lifecycle</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Content Engine Panel -->
         <div id="panel-content" class="tab-panel">
           <div class="panel">
@@ -1417,6 +1530,7 @@
         if (name === 'documents') loadDocsUsers();
         if (name === 'content') { loadContentSettings(); loadStoryLibrary(); }
         if (name === 'ideas') loadIdeas();
+        if (name === 'grant-intel') giLoadList();
       }
 
       async function loadSignedStatus() {
@@ -3476,6 +3590,245 @@
       } finally {
         button.disabled = false;
       }
+    }
+
+    // --- Grant Intelligence ---
+    let giOpportunities = [];
+    let giCurrentOpp = null;
+    let giDebounceTimer = null;
+
+    function giDebouncedLoad() {
+      clearTimeout(giDebounceTimer);
+      giDebounceTimer = setTimeout(giLoadList, 300);
+    }
+
+    async function giLoadList() {
+      const search = document.getElementById('giSearch')?.value || '';
+      const status = document.getElementById('giStatusFilter')?.value || '';
+      const params = [];
+      if (search) params.push('q=' + encodeURIComponent(search));
+      if (status) params.push('status=' + encodeURIComponent(status));
+      const qs = params.length ? '&' + params.join('&') : '';
+      try {
+        const res = await fetch(apiUrl('grant-intelligence-list') + qs);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to load.');
+        giOpportunities = data.opportunities || [];
+        giRenderStats(data);
+        giRenderList(data.opportunities);
+        if (data.lastSync) {
+          document.getElementById('giLastSync').textContent = 'Last sync: ' + new Date(data.lastSync.lastRun).toLocaleString();
+        }
+      } catch (err) {
+        document.getElementById('giList').innerHTML = '<div style="color:#ef4444; font-size:13px;">' + escapeHtml(err.message) + '</div>';
+      }
+    }
+
+    function giRenderStats(data) {
+      const el = document.getElementById('giStats');
+      const all = data.totalCount || 0;
+      const counts = { new: 0, 'potential-match': 0, 'needs-review': 0, rejected: 0, promoted: 0 };
+      for (const opp of (data.opportunities || [])) {
+        if (counts[opp.status] !== undefined) counts[opp.status]++;
+      }
+      el.innerHTML = [
+        ['Total', all, 'var(--orange)'],
+        ['New', counts.new, '#3b82f6'],
+        ['Potential Match', counts['potential-match'], '#22c55e'],
+        ['Needs Review', counts['needs-review'], '#f59e0b'],
+        ['Rejected', counts.rejected, '#ef4444'],
+        ['Promoted', counts.promoted, '#8b5cf6'],
+      ].map(([label, count, color]) =>
+        '<div style="padding:8px 14px; border-radius:8px; background:var(--card); border:1px solid var(--line); text-align:center; min-width:80px;">' +
+        '<div style="font-size:20px; font-weight:700; color:' + color + ';">' + count + '</div>' +
+        '<div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">' + label + '</div></div>'
+      ).join('');
+    }
+
+    function giRenderList(opps) {
+      const el = document.getElementById('giList');
+      const empty = document.getElementById('giEmpty');
+      if (!opps || !opps.length) { el.innerHTML = ''; empty.style.display = 'block'; return; }
+      empty.style.display = 'none';
+      const statusColors = { new: '#3b82f6', 'potential-match': '#22c55e', 'needs-review': '#f59e0b', rejected: '#ef4444', promoted: '#8b5cf6' };
+      el.innerHTML = '<div style="display:grid; gap:8px;">' + opps.map((opp) => {
+        const color = statusColors[opp.status] || '#888';
+        const deadline = opp.closingDate ? new Date(opp.closingDate).toLocaleDateString() : 'Unknown';
+        const daysLeft = opp.closingDate ? Math.ceil((new Date(opp.closingDate) - new Date()) / 86400000) : null;
+        const daysStr = daysLeft != null ? (daysLeft > 0 ? daysLeft + 'd left' : 'Expired') : '';
+        return '<div class="panel" style="cursor:pointer; padding:12px 16px;" onclick="giOpenDetail(\'' + escapeHtml(opp.externalId) + '\')">' +
+          '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">' +
+          '<div style="flex:1; min-width:0;">' +
+          '<div style="font-size:14px; font-weight:600; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + escapeHtml(opp.title || 'Untitled') + '</div>' +
+          '<div style="font-size:12px; color:var(--muted); margin-top:2px;">' + escapeHtml(opp.issuingAgency || '') + (opp.opportunityNumber ? ' &middot; ' + escapeHtml(opp.opportunityNumber) : '') + '</div>' +
+          '</div>' +
+          '<div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">' +
+          (daysStr ? '<span style="font-size:11px; color:' + (daysLeft > 0 ? 'var(--muted)' : '#ef4444') + ';">' + daysStr + '</span>' : '') +
+          '<span style="display:inline-block; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; background:' + color + '22; color:' + color + ';">' + escapeHtml((opp.status || 'new').replace('-', ' ')) + '</span>' +
+          '</div></div></div>';
+      }).join('') + '</div>';
+    }
+
+    async function giSyncNow() {
+      const statusEl = document.getElementById('giSyncStatus');
+      statusEl.style.color = 'var(--muted)';
+      statusEl.textContent = 'Synchronizing with Grants.gov...';
+      try {
+        const res = await fetch(apiUrl('grant-intelligence-sync'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyword: '', oppStatuses: 'posted', rows: 50 }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Sync failed.');
+        const s = data.stats || {};
+        statusEl.style.color = '#22c55e';
+        statusEl.textContent = 'Sync complete. ' + (s.totalHits || 0) + ' opportunities found, ' + (s.newCount || 0) + ' new, ' + (s.updatedCount || 0) + ' updated.';
+        document.getElementById('giLastSync').textContent = 'Last sync: ' + new Date(data.lastSync).toLocaleString();
+        giLoadList();
+      } catch (err) {
+        statusEl.style.color = '#ef4444';
+        statusEl.textContent = err.message;
+      }
+    }
+
+    async function giOpenDetail(externalId) {
+      const opp = giOpportunities.find((o) => o.externalId === externalId);
+      if (!opp) return;
+      giCurrentOpp = opp;
+
+      document.getElementById('giDetailTitle').textContent = opp.title || 'Untitled';
+      document.getElementById('giDetailMeta').innerHTML = [
+        '<span style="padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; background:' + (opp.status === 'promoted' ? '#8b5cf6' : opp.status === 'rejected' ? '#ef4444' : opp.status === 'potential-match' ? '#22c55e' : opp.status === 'new' ? '#3b82f6' : '#f59e0b') + '22; color:' + (opp.status === 'promoted' ? '#8b5cf6' : opp.status === 'rejected' ? '#ef4444' : opp.status === 'potential-match' ? '#22c55e' : opp.status === 'new' ? '#3b82f6' : '#f59e0b') + ';">' + escapeHtml((opp.status || 'new').replace('-', ' ')) + '</span>',
+        '<span style="font-size:12px; color:var(--muted);">Provider: ' + escapeHtml(opp.provider || '') + '</span>',
+        opp.retrievedAt ? '<span style="font-size:12px; color:var(--muted);">Retrieved: ' + new Date(opp.retrievedAt).toLocaleString() + '</span>' : '',
+      ].filter(Boolean).join(' ');
+
+      document.getElementById('giDetailAgency').textContent = opp.issuingAgency || 'Unknown';
+      document.getElementById('giDetailNumber').textContent = opp.opportunityNumber || opp.providerOpportunityId || 'N/A';
+
+      const deadline = opp.closingDate ? new Date(opp.closingDate).toLocaleDateString() : 'Unknown';
+      const daysLeft = opp.closingDate ? Math.ceil((new Date(opp.closingDate) - new Date()) / 86400000) : null;
+      document.getElementById('giDetailDeadline').innerHTML = deadline + (daysLeft != null ? ' <span style="color:' + (daysLeft > 0 ? 'var(--muted)' : '#ef4444') + '; font-size:12px;">(' + (daysLeft > 0 ? daysLeft + ' days left' : 'EXPIRED') + ')</span>' : '');
+
+      const funding = [];
+      if (opp.awardFloor != null || opp.awardCeiling != null) {
+        funding.push('$' + (opp.awardFloor != null ? opp.awardFloor.toLocaleString() : '?') + ' – $' + (opp.awardCeiling != null ? opp.awardCeiling.toLocaleString() : '?'));
+      }
+      document.getElementById('giDetailFunding').textContent = funding.length ? funding.join(', ') : 'Not specified';
+
+      document.getElementById('giDetailCostSharing').textContent = opp.costSharing === true ? 'Required (see source)' : opp.costSharing === false ? 'Not identified in source data' : 'Unknown';
+
+      const alns = (opp.assistanceListings || []).map((a) => a.number + (a.title ? ' – ' + a.title : '')).join(', ');
+      document.getElementById('giDetailALNs').textContent = alns || 'None listed';
+
+      document.getElementById('giDetailSynopsis').textContent = opp.synopsis || opp.programDescription || 'No description available.';
+
+      const applicants = (opp.eligibility?.applicantTypes || []).map((t) => t.description || t.id).filter(Boolean).join(', ');
+      document.getElementById('giDetailApplicants').textContent = applicants || 'Not specified in source data';
+
+      const contact = opp.contactInfo || {};
+      const contactParts = [contact.name, contact.email, contact.phone].filter(Boolean);
+      document.getElementById('giDetailContact').textContent = contactParts.length ? contactParts.join(' | ') : 'Not available';
+
+      document.getElementById('giSourceLink').href = opp.officialSourceUrl || '#';
+      document.getElementById('giDetailNotes').value = opp.adminNotes || '';
+
+      // Screening
+      const screening = opp.screening;
+      const screeningEl = document.getElementById('giScreeningContent');
+      if (screening) {
+        let html = '<div style="margin-bottom:8px;"><strong>Status:</strong> <span style="color:' + (screening.overallStatus === 'potential-match' ? '#22c55e' : screening.overallStatus === 'rejected' ? '#ef4444' : '#f59e0b') + ';">' + escapeHtml(screening.overallStatus.replace('-', ' ')) + '</span></div>';
+        if (screening.checks && screening.checks.length) {
+          html += '<div style="margin-bottom:6px;">';
+          for (const c of screening.checks) {
+            html += '<div style="font-size:13px; color:#22c55e; margin-bottom:2px;">&#10003; ' + escapeHtml(c.reason) + '</div>';
+          }
+          html += '</div>';
+        }
+        if (screening.hardFails && screening.hardFails.length) {
+          html += '<div style="margin-bottom:6px;">';
+          for (const f of screening.hardFails) {
+            html += '<div style="font-size:13px; color:#ef4444; margin-bottom:2px;">&#10007; ' + escapeHtml(f.reason) + '</div>';
+          }
+          html += '</div>';
+        }
+        if (screening.unknowns && screening.unknowns.length) {
+          html += '<div style="margin-bottom:6px;">';
+          for (const u of screening.unknowns) {
+            html += '<div style="font-size:13px; color:#f59e0b; margin-bottom:2px;">? ' + escapeHtml(u.reason) + '</div>';
+          }
+          html += '</div>';
+        }
+        if (screening.relevances && screening.relevances.length) {
+          html += '<div style="font-size:12px; color:var(--muted); margin-top:6px;">Relevant terms: ' + screening.relevances.map((r) => escapeHtml(r)).join(', ') + '</div>';
+        }
+        screeningEl.innerHTML = html;
+      } else {
+        screeningEl.innerHTML = '<div style="font-size:13px; color:var(--muted);">No screening performed yet.</div>';
+      }
+
+      // Button visibility
+      const isPromoted = opp.status === 'promoted' || opp.aceInstanceId;
+      document.getElementById('giPromoteBtn').style.display = isPromoted ? 'none' : '';
+      document.getElementById('giRejectBtn').style.display = opp.status === 'rejected' ? 'none' : '';
+      document.getElementById('giKeepBtn').style.display = opp.status === 'needs-review' ? 'none' : '';
+
+      document.getElementById('giDetailModal').style.display = 'flex';
+    }
+
+    function giCloseDetail() {
+      document.getElementById('giDetailModal').style.display = 'none';
+      giCurrentOpp = null;
+    }
+
+    async function giReject() {
+      if (!giCurrentOpp) return;
+      const notes = document.getElementById('giDetailNotes').value;
+      try {
+        const res = await fetch(apiUrl('grant-intelligence-review'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ external_id: giCurrentOpp.externalId, decision: 'reject', notes }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed.');
+        giCloseDetail();
+        giLoadList();
+      } catch (err) { alert(err.message); }
+    }
+
+    async function giKeep() {
+      if (!giCurrentOpp) return;
+      const notes = document.getElementById('giDetailNotes').value;
+      try {
+        const res = await fetch(apiUrl('grant-intelligence-review'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ external_id: giCurrentOpp.externalId, decision: 'keep', notes }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed.');
+        giCloseDetail();
+        giLoadList();
+      } catch (err) { alert(err.message); }
+    }
+
+    async function giPromote() {
+      if (!giCurrentOpp) return;
+      if (!confirm('Promote this opportunity into the ACE Grant Lifecycle? This will create a new compliance record.')) return;
+      try {
+        const res = await fetch(apiUrl('grant-intelligence-promote'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ external_id: giCurrentOpp.externalId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Promotion failed.');
+        alert('Promoted successfully. ACE record: ' + (data.instance?.id || 'created'));
+        giCloseDetail();
+        giLoadList();
+      } catch (err) { alert(err.message); }
     }
 
     // --- Init ---

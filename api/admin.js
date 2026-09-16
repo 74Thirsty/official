@@ -18,6 +18,8 @@ import { expandDocument } from '../lib/document-references.js';
 import { getWorkflow, getTemplate, publicWorkflow, publicTemplate, resolveCategoryGroups, workflowSourceRevision } from '../lib/compliance-engine.js';
 import { createInstance, saveFieldValues, addEvidence, approveStage, advanceStage, createDocumentInstance, saveDocumentFieldValues, applySignature, finalizeDocument, cancelInstance, isAceInstance, summarizeInstance, detailInstance, buildInstanceExport } from '../lib/compliance-engine.js';
 import { initialSocialMediaConfig, patchSocialMediaConfig } from '../lib/social-media.js';
+import { searchGrants, fetchGrantDetails, mergeSearchAndDetail, runScreening, filterOpportunities, reviewOpportunity, promoteToAce } from '../lib/grants/intelligence.js';
+import { buildExternalId } from '../lib/grants/dedup.js';
 
 export const maxDuration = 60;
 
@@ -32,6 +34,13 @@ export default function handler(req, res) {
     handleCompliance(req, res, action).catch((error) => {
       console.error('compliance service failed:', error);
       sendJson(res, { error: 'Compliance service unavailable.' }, 500);
+    });
+    return;
+  }
+  if (action.startsWith('grant-intelligence-')) {
+    handleGrantIntelligence(req, res, action).catch((error) => {
+      console.error('grant intelligence service failed:', error);
+      sendJson(res, { error: 'Grant intelligence service unavailable.' }, 500);
     });
     return;
   }
@@ -718,6 +727,190 @@ function getCategoryWorkflowList() {
     }
   }
   return list;
+}
+
+async function handleGrantIntelligence(req, res, action) {
+  if (!isAdmin(req)) {
+    return sendJson(res, { error: 'Admin access required.' }, 403);
+  }
+  const fail = () => sendJson(res, { error: 'Storage error.' }, 500);
+
+  if (action === 'grant-intelligence-list' && req.method === 'GET') {
+    const opportunities = await getList(KEYS.grantOpportunities);
+    const filters = {
+      status: clean(String(getParam(req, 'status') || ''), 40),
+      provider: clean(String(getParam(req, 'provider') || ''), 40),
+      agency: clean(String(getParam(req, 'agency') || ''), 80),
+      search: clean(String(getParam(req, 'q') || ''), 120),
+      deadlineBefore: clean(String(getParam(req, 'deadline_before') || ''), 20),
+      deadlineAfter: clean(String(getParam(req, 'deadline_after') || ''), 20),
+    };
+    const filtered = filterOpportunities(opportunities, filters);
+    const syncState = await getList(KEYS.grantSyncState);
+    const lastSync = syncState[0] || null;
+    return sendJson(res, {
+      opportunities: filtered,
+      total: filtered.length,
+      totalCount: opportunities.length,
+      lastSync: lastSync ? { lastRun: lastSync.lastRun, stats: lastSync.stats, state: lastSync.state } : null,
+    });
+  }
+
+  if (action === 'grant-intelligence-detail' && req.method === 'GET') {
+    const externalId = clean(String(getParam(req, 'id') || ''), 120);
+    const opportunities = await getList(KEYS.grantOpportunities);
+    const opp = opportunities.find((o) => o.externalId === externalId);
+    if (!opp) return sendJson(res, { error: 'Opportunity not found.' }, 404);
+    return sendJson(res, { opportunity: opp });
+  }
+
+  if (action === 'grant-intelligence-fetch-details' && req.method === 'GET') {
+    const providerOppId = clean(String(getParam(req, 'provider_opportunity_id') || ''), 40);
+    if (!providerOppId) return sendJson(res, { error: 'Provider opportunity ID required.' }, 422);
+    try {
+      const detail = await fetchGrantDetails(providerOppId);
+      return sendJson(res, { detail });
+    } catch (err) {
+      return sendJson(res, { error: `Failed to fetch details: ${err.message}` }, 502);
+    }
+  }
+
+  if (action === 'grant-intelligence-sync' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const searchParams = {
+      keyword: clean(String(payload.keyword || ''), 200),
+      oppStatuses: clean(String(payload.oppStatuses || 'posted'), 60),
+      rows: Math.min(Math.max(Number(payload.rows) || 25, 1), 100),
+      startRecordNum: 0,
+    };
+    const syncState = await getList(KEYS.grantSyncState);
+    const lockToken = randomBytes(18).toString('base64url');
+    const lockKey = 'llr:lock:grant-sync';
+    if (!await acquireLock(lockKey, lockToken, 30)) {
+      return sendJson(res, { error: 'Synchronization already in progress. Retry shortly.' }, 409);
+    }
+    try {
+      const existingList = await getList(KEYS.grantOpportunities);
+      const searchResult = await searchGrants(searchParams);
+      const { syncOpportunities } = await import('../lib/grants/intelligence.js');
+      const syncStats = await syncOpportunities(searchResult.hits, existingList);
+      const updatedList = runScreening(existingList);
+      await setList(KEYS.grantOpportunities, updatedList.slice(0, LIMITS.grantOpportunities));
+      const now = new Date().toISOString();
+      await setList(KEYS.grantSyncState, [{
+        lastRun: now,
+        state: 'completed',
+        searchParams,
+        stats: {
+          totalHits: searchResult.hitCount,
+          processed: searchResult.hits.length,
+          ...syncStats,
+        },
+      }]);
+      await addAudit('grant_intelligence_sync', 'admin', {
+        totalHits: searchResult.hitCount,
+        new: syncStats.newCount,
+        updated: syncStats.updatedCount,
+      });
+      return sendJson(res, {
+        ok: true,
+        lastSync: now,
+        stats: {
+          totalHits: searchResult.hitCount,
+          processed: searchResult.hits.length,
+          ...syncStats,
+        },
+      });
+    } catch (err) {
+      const now = new Date().toISOString();
+      await setList(KEYS.grantSyncState, [{
+        lastRun: now,
+        state: 'failed',
+        error: err.message,
+        searchParams,
+      }]).catch(() => {});
+      return sendJson(res, { error: `Synchronization failed: ${err.message}. Existing grant records were not modified.` }, 502);
+    } finally {
+      await releaseLock(lockKey, lockToken);
+    }
+  }
+
+  if (action === 'grant-intelligence-review' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const externalId = clean(String(payload.external_id || ''), 120);
+    const decision = clean(String(payload.decision || ''), 20);
+    const notes = clean(String(payload.notes || ''), 2000);
+    if (!externalId || !decision) return sendJson(res, { error: 'external_id and decision are required.' }, 422);
+    if (!['reject', 'keep'].includes(decision)) return sendJson(res, { error: 'Decision must be "reject" or "keep".' }, 422);
+    const opportunities = await getList(KEYS.grantOpportunities);
+    const opp = reviewOpportunity(opportunities, externalId, decision, notes);
+    if (!opp) return sendJson(res, { error: 'Opportunity not found.' }, 404);
+    await setList(KEYS.grantOpportunities, opportunities);
+    await addAudit('grant_intelligence_review', 'admin', { externalId, decision });
+    return sendJson(res, { ok: true, opportunity: opp });
+  }
+
+  if (action === 'grant-intelligence-promote' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const externalId = clean(String(payload.external_id || ''), 120);
+    if (!externalId) return sendJson(res, { error: 'external_id is required.' }, 422);
+    const opportunities = await getList(KEYS.grantOpportunities);
+    const result = promoteToAce(opportunities, externalId);
+    if (result.error) return sendJson(res, { error: result.error }, 422);
+
+    const workflow = getWorkflow(result.workflowId);
+    if (!workflow) return sendJson(res, { error: 'Grant workflow not found.' }, 500);
+    const template = getTemplate(workflow.templateId);
+    if (!template) return sendJson(res, { error: 'Grant template unavailable.' }, 500);
+
+    const transactions = await getList(KEYS.complianceTransactions);
+    const idempotencyKey = result.idempotencyKey;
+    const existing = transactions.find((item) => item.idempotencyKey === idempotencyKey);
+    if (existing) {
+      return sendJson(res, { error: 'This opportunity has already been promoted.' }, 409);
+    }
+
+    const lockToken = randomBytes(18).toString('base64url');
+    const lockKey = 'llr:lock:grant-promote';
+    if (!await acquireLock(lockKey, lockToken, 15)) {
+      return sendJson(res, { error: 'Another promotion is in progress. Retry.' }, 409);
+    }
+    try {
+      let instance;
+      try {
+        instance = createInstance(workflow, result.creationValues, 'admin', new Set(transactions.map((item) => item.id)));
+      } catch (err) {
+        return sendJson(res, { error: `Failed to create ACE record: ${err.message}` }, 422);
+      }
+      instance.idempotencyKey = idempotencyKey;
+      transactions.unshift(instance);
+      await setList(KEYS.complianceTransactions, transactions.slice(0, LIMITS.complianceTransactions));
+
+      const oppIndex = opportunities.findIndex((o) => o.externalId === externalId);
+      if (oppIndex >= 0) {
+        opportunities[oppIndex].aceInstanceId = instance.id;
+        opportunities[oppIndex].aceStatus = 'promoted';
+        opportunities[oppIndex].status = 'promoted';
+        opportunities[oppIndex].updatedAt = new Date().toISOString();
+        await setList(KEYS.grantOpportunities, opportunities);
+      }
+
+      await addAudit('grant_intelligence_promoted', 'admin', {
+        externalId,
+        instanceId: instance.id,
+        workflowId: workflow.id,
+      });
+      return sendJson(res, {
+        ok: true,
+        instance: summarizeInstance(instance, instance.workflowDefinition, instance.templateDefinition),
+        opportunity: opportunities[oppIndex],
+      }, 201);
+    } finally {
+      await releaseLock(lockKey, lockToken);
+    }
+  }
+
+  return sendJson(res, { error: 'Unsupported action.' }, 404);
 }
 
 async function fetchDocumentSource(document) {
