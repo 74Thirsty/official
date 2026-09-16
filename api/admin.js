@@ -7,6 +7,7 @@ import { randomBytes } from 'crypto';
 import { createHmac, scryptSync, timingSafeEqual } from 'crypto';
 import { parseBrowser } from '../lib/ua.js';
 import { facebookDetectionConfigured } from '../lib/stream.js';
+import { loadSocialMediaConfig, loadSocialMediaBackup, saveSocialMediaConfig, validateSocialMediaConfig, describeSocialMediaChange, socialMediaEnvValue } from '../lib/social-media.js';
 import { computeVisitorStats } from '../lib/visitor-stats.js';
 import { aiConfigured, generateJson } from '../lib/ai.js';
 import { notifyOwner } from '../lib/notify.js';
@@ -20,6 +21,7 @@ import { createInstance, saveFieldValues, addEvidence, approveStage, advanceStag
 import { initialSocialMediaConfig, patchSocialMediaConfig } from '../lib/social-media.js';
 import { searchGrants, fetchGrantDetails, mergeSearchAndDetail, runScreening, filterOpportunities, paginateResults, computeCounts, reviewOpportunity, promoteToAce } from '../lib/grants/intelligence.js';
 import { buildExternalId } from '../lib/grants/dedup.js';
+import { buildOrgProfile, evaluateMatch, summarizeOpportunity, normalizeRequirementModel, buildFallbackRequirementModel, analyzeRequirementsWithAi, autoFillRequirements, validateApplication, createApplication, saveAnswer, markSubmitted, allFields, countWords, mapFieldToOrgFact, getOrgFact, SOURCE_TYPES, ORG_CORE_FACTS } from '../lib/grant-intel.js';
 
 export const maxDuration = 60;
 
@@ -46,6 +48,14 @@ export default function handler(req, res) {
   }
   if (!isAdmin(req)) {
     return sendJson(res, { error: 'Admin access required.' }, 403);
+  }
+
+  if (action.startsWith('social-media-')) {
+    handleSocialMedia(req, res, action).catch((error) => {
+      console.error('social media config service failed:', error);
+      sendJson(res, { error: 'Social media configuration service is unavailable.' }, 500);
+    });
+    return;
   }
 
   const fail = () => sendJson(res, { error: 'Storage error.' }, 500);
@@ -356,6 +366,12 @@ export default function handler(req, res) {
     return;
   }
 
+  // --- Grant Intelligence ---
+  if (action.startsWith('grant-')) {
+    handleGrantIntel(req, res, action).catch(fail);
+    return;
+  }
+
   // --- Documentation access user management ---
   if (action === 'docs-users') {
     getList(KEYS.docsUsers).then((users) => {
@@ -558,6 +574,59 @@ async function handleDocs(req, res, action) {
     await setList(KEYS.documentState, results);
     await addAudit('document_sources_validated', session.name, { checked: results.length, available: results.filter((item) => item.availability === 'available').length });
     return sendJson(res, { ok: true, results });
+  }
+
+  return sendJson(res, { error: 'Unsupported action.' }, 404);
+}
+
+async function handleSocialMedia(req, res, action) {
+  if (action === 'social-media-load') {
+    if (req.method !== 'GET') return sendJson(res, { error: 'Method not allowed.' }, 405);
+    const result = await loadSocialMediaConfig();
+    if (!result.ok) {
+      return sendJson(res, { ok: false, code: result.code, message: result.message, errors: result.errors || [], warnings: result.warnings || [] });
+    }
+    return sendJson(res, { ok: true, config: result.data, relative: result.relative, warnings: result.warnings || [] });
+  }
+
+  if (action === 'social-media-load-backup') {
+    if (req.method !== 'GET') return sendJson(res, { error: 'Method not allowed.' }, 405);
+    const result = await loadSocialMediaBackup();
+    if (!result.ok) {
+      return sendJson(res, { ok: false, code: result.code, message: result.message, errors: result.errors || [] });
+    }
+    return sendJson(res, { ok: true, config: result.data, relative: result.relative });
+  }
+
+  if (action === 'social-media-validate') {
+    if (req.method !== 'POST') return sendJson(res, { error: 'Method not allowed.' }, 405);
+    const payload = await readBody(req);
+    const validation = validateSocialMediaConfig(payload.config);
+    if (validation.errors.length) {
+      return sendJson(res, { ok: false, errors: validation.errors, warnings: validation.warnings }, 422);
+    }
+    return sendJson(res, { ok: true, warnings: validation.warnings });
+  }
+
+  if (action === 'social-media-save') {
+    if (req.method !== 'POST') return sendJson(res, { error: 'Method not allowed.' }, 405);
+    const payload = await readBody(req);
+    if (payload.config === undefined || payload.config === null || typeof payload.config !== 'object' || Array.isArray(payload.config)) {
+      return sendJson(res, { error: 'A configuration object is required.' }, 422);
+    }
+    const previousLoad = await loadSocialMediaConfig();
+    const saved = await saveSocialMediaConfig(payload.config, { previous: previousLoad.ok ? previousLoad.data : null });
+    if (!saved.ok) {
+      const status = saved.code === 'VALIDATION' ? 422 : (saved.code === 'WRITE_ERROR' ? 500 : 400);
+      return sendJson(res, { ok: false, code: saved.code, message: saved.message, errors: saved.errors || [], warnings: saved.warnings || [] }, status);
+    }
+    await addAudit('social_media_config_saved', 'admin', {
+      summary: saved.summary.join(' · '),
+      accounts: Array.isArray(saved.data.accounts) ? saved.data.accounts.length : 0,
+      backupCreated: saved.backupCreated,
+      configPath: socialMediaEnvValue() || '',
+    });
+    return sendJson(res, { ok: true, config: saved.data, relative: saved.relative, backupCreated: saved.backupCreated, summary: saved.summary });
   }
 
   return sendJson(res, { error: 'Unsupported action.' }, 404);
@@ -1093,6 +1162,432 @@ async function handleContentUpdateStory(req, res) {
   await setList(KEYS.stories, stories);
   await addAudit('story_updated', 'admin', { storyId: id, title: story.title, status: story.status });
   return sendJson(res, { story });
+}
+
+async function handleGrantIntel(req, res, action) {
+  // Grant Intelligence uses the same admin auth as the rest of this handler.
+  const fail = () => sendJson(res, { error: 'Grant intelligence service unavailable.' }, 500);
+
+  // --- Org knowledge (§1) ---
+  if (action === 'grant-org' && req.method === 'GET') {
+    const orgRecords = await getList(KEYS.grantOrg);
+    const record = Array.isArray(orgRecords) && orgRecords.length ? orgRecords[0] : null;
+    const profile = buildOrgProfile(record);
+    return sendJson(res, { profile, coreFacts: ORG_CORE_FACTS });
+  }
+
+  if (action === 'grant-org-save' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const existing = await getList(KEYS.grantOrg);
+    const record = (Array.isArray(existing) && existing.length ? existing[0] : { facts: {} });
+    const allowed = ['financial_year_end', 'duns', 'uei', 'state_registration', 'annual_budget', 'operating_expenses', 'current_board_size', 'staff_count', 'volunteer_count', 'website'];
+    for (const key of allowed) {
+      if (payload[key] !== undefined) {
+        record.facts[key] = {
+          label: key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+          value: String(payload[key]).trim(),
+          source: 'Administrator-confirmed grant knowledge',
+          confirmedBy: payload.confirmedBy || 'admin',
+          confirmedAt: new Date().toISOString(),
+        };
+      }
+    }
+    record.updatedAt = new Date().toISOString();
+    await setList(KEYS.grantOrg, [record]);
+    await addAudit('grant_org_updated', 'admin', { keys: Object.keys(record.facts) });
+    return sendJson(res, { ok: true, profile: buildOrgProfile(record) });
+  }
+
+  // --- Opportunity discovery (§13 flow: 50 potential matches → actual list) ---
+  if (action === 'grant-opp-search' && req.method === 'GET') {
+    const keywords = getParam(req, 'keywords') || '';
+    const categories = getParam(req, 'categories') || '';
+    const { searchGrantsGov } = await import('../lib/grant-intel.js');
+    try {
+      const result = await searchGrantsGov({
+        keywords,
+        categories: categories ? categories.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
+      });
+      // Enrich with match scores against LLR profile.
+      const orgRecords = await getList(KEYS.grantOrg);
+      const profile = buildOrgProfile(Array.isArray(orgRecords) && orgRecords.length ? orgRecords[0] : null);
+      const enriched = result.hits.map((hit) => {
+        const match = evaluateMatch(hit, profile);
+        return { ...hit, match };
+      });
+      // Sort by match score descending.
+      enriched.sort((a, b) => (b.match?.score || 0) - (a.match?.score || 0));
+      return sendJson(res, { hits: enriched, numFound: result.numFound, query: { keywords, categories } });
+    } catch (error) {
+      return sendJson(res, { error: `Grants.gov search failed: ${error.message}` }, 502);
+    }
+  }
+
+  if (action === 'grant-opp-fetch' && req.method === 'GET') {
+    const oppId = getParam(req, 'id');
+    if (!oppId) return sendJson(res, { error: 'Opportunity ID is required.' }, 422);
+    const { fetchGrantsGovDetail } = await import('../lib/grant-intel.js');
+    try {
+      const detail = await fetchGrantsGovDetail(oppId);
+      return sendJson(res, { opportunity: detail });
+    } catch (error) {
+      return sendJson(res, { error: `Grants.gov detail failed: ${error.message}` }, 502);
+    }
+  }
+
+  // --- Opportunity CRUD ---
+  if (action === 'grant-opp-add' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const title = clean(String(payload.title || ''), 300);
+    if (!title) return sendJson(res, { error: 'Title is required.' }, 422);
+    const opportunities = await getList(KEYS.grantOpportunities);
+    const now = new Date().toISOString();
+    const opportunity = {
+      id: `gopp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      source: payload.source === 'grants-gov' ? 'grants-gov' : 'manual',
+      sourceId: String(payload.sourceId || '').slice(0, 100),
+      title,
+      funder: clean(String(payload.funder || ''), 200),
+      url: clean(String(payload.url || ''), 500),
+      deadline: String(payload.deadline || '').slice(0, 10),
+      openDate: String(payload.openDate || '').slice(0, 10),
+      amountMin: payload.amountMin !== undefined ? Number(payload.amountMin) || null : null,
+      amountMax: payload.amountMax !== undefined ? Number(payload.amountMax) || null : null,
+      totalFunding: payload.totalFunding !== undefined ? Number(payload.totalFunding) || null : null,
+      categories: Array.isArray(payload.categories) ? payload.categories.map((c) => String(c).slice(0, 60)) : [],
+      description: clean(String(payload.description || ''), 6000),
+      eligibility: clean(String(payload.eligibility || ''), 2000),
+      applicantTypes: clean(String(payload.applicantTypes || ''), 600),
+      instructionsText: clean(String(payload.instructionsText || ''), 20000),
+      attachments: Array.isArray(payload.attachments) ? payload.attachments.map((a) => ({ label: clean(String(a.label || ''), 200), url: clean(String(a.url || ''), 500) })) : [],
+      requirementModel: null,
+      status: 'discovered',
+      match: null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    opportunities.unshift(opportunity);
+    await setList(KEYS.grantOpportunities, opportunities.slice(0, LIMITS.grantOpportunities));
+    await addAudit('grant_opp_added', 'admin', { id: opportunity.id, title, source: opportunity.source });
+    return sendJson(res, { opportunity: summarizeOpportunity(opportunity) }, 201);
+  }
+
+  if (action === 'grant-opp-update' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const id = clean(String(payload.id || ''), 80);
+    if (!id) return sendJson(res, { error: 'Opportunity ID is required.' }, 422);
+    const opportunities = await getList(KEYS.grantOpportunities);
+    const index = opportunities.findIndex((o) => o.id === id);
+    if (index < 0) return sendJson(res, { error: 'Opportunity not found.' }, 404);
+    const opp = opportunities[index];
+    const editable = ['title', 'funder', 'url', 'deadline', 'openDate', 'amountMin', 'amountMax', 'totalFunding', 'categories', 'description', 'eligibility', 'applicantTypes', 'instructionsText', 'status'];
+    for (const key of editable) {
+      if (payload[key] !== undefined) {
+        if (key === 'amountMin' || key === 'amountMax' || key === 'totalFunding') {
+          opp[key] = Number(payload[key]) || null;
+        } else if (key === 'categories') {
+          opp[key] = Array.isArray(payload[key]) ? payload[key].map((c) => String(c).slice(0, 60)) : opp[key];
+        } else {
+          opp[key] = clean(String(payload[key]), key === 'instructionsText' ? 20000 : key === 'description' ? 6000 : 500);
+        }
+      }
+    }
+    if (payload.attachments !== undefined) {
+      opp.attachments = Array.isArray(payload.attachments) ? payload.attachments.map((a) => ({ label: clean(String(a.label || ''), 200), url: clean(String(a.url || ''), 500) })) : [];
+    }
+    opp.updatedAt = new Date().toISOString();
+    opportunities[index] = opp;
+    await setList(KEYS.grantOpportunities, opportunities);
+    await addAudit('grant_opp_updated', 'admin', { id, fields: Object.keys(payload).filter((k) => k !== 'id') });
+    return sendJson(res, { opportunity: summarizeOpportunity(opp) });
+  }
+
+  if (action === 'grant-opp-delete' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const id = clean(String(payload.id || ''), 80);
+    if (!id) return sendJson(res, { error: 'Opportunity ID is required.' }, 422);
+    const opportunities = await getList(KEYS.grantOpportunities);
+    const index = opportunities.findIndex((o) => o.id === id);
+    if (index < 0) return sendJson(res, { error: 'Opportunity not found.' }, 404);
+    const [removed] = opportunities.splice(index, 1);
+    await setList(KEYS.grantOpportunities, opportunities);
+    await addAudit('grant_opp_deleted', 'admin', { id, title: removed.title });
+    return sendJson(res, { ok: true, id });
+  }
+
+  if (action === 'grant-opp-list' && req.method === 'GET') {
+    const opportunities = await getList(KEYS.grantOpportunities);
+    const orgRecords = await getList(KEYS.grantOrg);
+    const profile = buildOrgProfile(Array.isArray(orgRecords) && orgRecords.length ? orgRecords[0] : null);
+    // Re-compute match scores against current LLR profile on every list call.
+    const enriched = opportunities.map((opp) => {
+      const match = opp.match && opp.match.score !== undefined ? opp.match : evaluateMatch(opp, profile);
+      return { ...summarizeOpportunity(opp), match };
+    });
+    // Sort by match score descending, then deadline ascending.
+    enriched.sort((a, b) => {
+      const scoreDiff = (b.match?.score || 0) - (a.match?.score || 0);
+      if (scoreDiff !== 0) return scoreDiff;
+      if (a.deadline && b.deadline) return a.deadline.localeCompare(b.deadline);
+      return 0;
+    });
+    return sendJson(res, { opportunities: enriched, total: enriched.length });
+  }
+
+  if (action === 'grant-opp-get' && req.method === 'GET') {
+    const id = clean(String(getParam(req, 'id') || ''), 80);
+    if (!id) return sendJson(res, { error: 'Opportunity ID is required.' }, 422);
+    const opportunities = await getList(KEYS.grantOpportunities);
+    const opp = opportunities.find((o) => o.id === id);
+    if (!opp) return sendJson(res, { error: 'Opportunity not found.' }, 404);
+    const orgRecords = await getList(KEYS.grantOrg);
+    const profile = buildOrgProfile(Array.isArray(orgRecords) && orgRecords.length ? orgRecords[0] : null);
+    const match = evaluateMatch(opp, profile);
+    return sendJson(res, { opportunity: { ...opp, match } });
+  }
+
+  // --- Requirement analysis (§2 — actual grant requirements, not one generic form) ---
+  if (action === 'grant-opp-analyze' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const id = clean(String(payload.id || ''), 80);
+    if (!id) return sendJson(res, { error: 'Opportunity ID is required.' }, 422);
+    const opportunities = await getList(KEYS.grantOpportunities);
+    const index = opportunities.findIndex((o) => o.id === id);
+    if (index < 0) return sendJson(res, { error: 'Opportunity not found.' }, 404);
+    const opp = opportunities[index];
+    const instructions = String(payload.instructions || opp.instructionsText || '').slice(0, 20000);
+    if (!instructions && opp.source !== 'grants-gov') {
+      return sendJson(res, { error: 'Application instructions are required for analysis. Paste them or add them to the opportunity first.' }, 422);
+    }
+    let model = null;
+    if (aiConfigured()) {
+      model = await analyzeRequirementsWithAi({ instructions, opportunity: opp });
+    }
+    if (!model) {
+      model = buildFallbackRequirementModel(opp);
+    }
+    opp.requirementModel = model;
+    opp.updatedAt = new Date().toISOString();
+    opportunities[index] = opp;
+    await setList(KEYS.grantOpportunities, opportunities);
+    await addAudit('grant_opp_analyzed', 'admin', { id, source: model.source, sections: model.sections.length });
+    return sendJson(res, { requirementModel: model, source: model.source });
+  }
+
+  // --- Application lifecycle (§3, §5, §6, §11, §12) ---
+  if (action === 'grant-app-create' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const oppId = clean(String(payload.opportunityId || ''), 80);
+    if (!oppId) return sendJson(res, { error: 'Opportunity ID is required.' }, 422);
+    const opportunities = await getList(KEYS.grantOpportunities);
+    const opp = opportunities.find((o) => o.id === oppId);
+    if (!opp) return sendJson(res, { error: 'Opportunity not found.' }, 404);
+
+    // Ensure we have a requirement model.
+    let requirementModel = opp.requirementModel;
+    if (!requirementModel) {
+      if (opp.source === 'grants-gov' && opp.sourceId) {
+        try {
+          const { fetchGrantsGovDetail } = await import('../lib/grant-intel.js');
+          const detail = await fetchGrantsGovDetail(opp.sourceId);
+          opp.description = opp.description || detail.description;
+          opp.eligibility = opp.eligibility || detail.eligibility;
+          opp.applicantTypes = opp.applicantTypes || detail.applicantTypes;
+          if (!opp.attachments?.length && detail.attachments?.length) opp.attachments = detail.attachments;
+        } catch {}
+      }
+      requirementModel = buildFallbackRequirementModel(opp);
+      opp.requirementModel = requirementModel;
+      opp.updatedAt = new Date().toISOString();
+      const oppIndex = opportunities.findIndex((o) => o.id === oppId);
+      if (oppIndex >= 0) {
+        opportunities[oppIndex] = opp;
+        await setList(KEYS.grantOpportunities, opportunities);
+      }
+    }
+
+    const orgRecords = await getList(KEYS.grantOrg);
+    const profile = buildOrgProfile(Array.isArray(orgRecords) && orgRecords.length ? orgRecords[0] : null);
+    const existingApps = await getList(KEYS.grantApplications);
+    const existingIds = new Set(existingApps.map((a) => a.id));
+    const application = createApplication({ opportunity: opp, requirementModel, profile, actor: 'admin', existingIds });
+
+    // Create the ACE pursue-grant workflow instance linked to this opportunity.
+    let aceInstanceId = null;
+    try {
+      const transactions = await getList(KEYS.complianceTransactions);
+      const aceIds = new Set(transactions.map((t) => t.id));
+      const workflow = getWorkflow('pursue-grant');
+      const template = getTemplate('GRANT_MASTER_TEMPLATE');
+      if (workflow && template) {
+        const aceValues = {
+          grant_name: opp.title,
+          funder: opp.funder,
+          funding_program: opp.funder,
+          opportunity_url: opp.url,
+          date_identified: opp.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+          application_deadline: opp.deadline || '',
+        };
+        const instance = createInstance(workflow, aceValues, 'admin', aceIds);
+        instance._linkedOpportunityId = oppId;
+        instance._linkedApplicationId = application.id;
+        transactions.unshift(instance);
+        await setList(KEYS.complianceTransactions, transactions.slice(0, LIMITS.complianceTransactions));
+        aceInstanceId = instance.id;
+        application.aceInstanceId = aceInstanceId;
+        await addAudit('compliance_instance_created', 'admin', { instanceId: instance.id, workflowId: 'pursue-grant', linkedTo: oppId });
+      }
+    } catch {}
+
+    existingApps.unshift(application);
+    await setList(KEYS.grantApplications, existingApps.slice(0, LIMITS.grantApplications));
+
+    // Update opportunity status.
+    opp.status = 'application-in-preparation';
+    opp.updatedAt = new Date().toISOString();
+    const oppIdx = opportunities.findIndex((o) => o.id === oppId);
+    if (oppIdx >= 0) {
+      opportunities[oppIdx] = opp;
+      await setList(KEYS.grantOpportunities, opportunities);
+    }
+
+    await addAudit('grant_app_created', 'admin', { id: application.id, oppId, aceInstanceId });
+    return sendJson(res, { application: { ...application, id: application.id, status: application.status, aceInstanceId } }, 201);
+  }
+
+  if (action === 'grant-app-get' && req.method === 'GET') {
+    const id = clean(String(getParam(req, 'id') || ''), 80);
+    if (!id) return sendJson(res, { error: 'Application ID is required.' }, 422);
+    const apps = await getList(KEYS.grantApplications);
+    const app = apps.find((a) => a.id === id);
+    if (!app) return sendJson(res, { error: 'Application not found.' }, 404);
+    return sendJson(res, { application: app });
+  }
+
+  if (action === 'grant-app-answer' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const appId = clean(String(payload.id || ''), 80);
+    const questionId = clean(String(payload.questionId || ''), 80);
+    if (!appId || !questionId) return sendJson(res, { error: 'Application ID and question ID are required.' }, 422);
+    const apps = await getList(KEYS.grantApplications);
+    const index = apps.findIndex((a) => a.id === appId);
+    if (index < 0) return sendJson(res, { error: 'Application not found.' }, 404);
+    const app = apps[index];
+    if (app.locked) return sendJson(res, { error: 'This application is submitted and locked.' }, 409);
+    const updated = saveAnswer(app, questionId, {
+      value: payload.value,
+      sourceType: 'administrator-entered',
+      notes: payload.notes,
+    }, 'admin');
+    apps[index] = updated;
+    await setList(KEYS.grantApplications, apps);
+    await addAudit('grant_app_answer_saved', 'admin', { appId, questionId });
+    return sendJson(res, { ok: true, answer: updated.answers[questionId] });
+  }
+
+  if (action === 'grant-app-autofill' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const appId = clean(String(payload.id || ''), 80);
+    if (!appId) return sendJson(res, { error: 'Application ID is required.' }, 422);
+    const apps = await getList(KEYS.grantApplications);
+    const index = apps.findIndex((a) => a.id === appId);
+    if (index < 0) return sendJson(res, { error: 'Application not found.' }, 404);
+    const app = apps[index];
+    if (app.locked) return sendJson(res, { error: 'This application is submitted and locked.' }, 409);
+    const orgRecords = await getList(KEYS.grantOrg);
+    const profile = buildOrgProfile(Array.isArray(orgRecords) && orgRecords.length ? orgRecords[0] : null);
+    const freshAnswers = autoFillRequirements(app.requirementSnapshot, profile);
+    // Merge: preserve administrator-entered values, update only auto-populated and action-required.
+    for (const [key, fresh] of Object.entries(freshAnswers)) {
+      const existing = app.answers[key];
+      if (existing && existing.sourceType === 'administrator-entered' && existing.value) {
+        continue; // Don't overwrite human input.
+      }
+      app.answers[key] = { ...fresh, updatedAt: new Date().toISOString(), updatedBy: 'admin' };
+    }
+    app.updatedAt = new Date().toISOString();
+    app.audit.push({ at: app.updatedAt, actor: 'admin', event: 'autofill_refreshed', detail: `Refreshed from org knowledge` });
+    apps[index] = app;
+    await setList(KEYS.grantApplications, apps);
+    await addAudit('grant_app_autofill', 'admin', { appId });
+    return sendJson(res, { ok: true, answers: app.answers });
+  }
+
+  if (action === 'grant-app-validate' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const appId = clean(String(payload.id || ''), 80);
+    if (!appId) return sendJson(res, { error: 'Application ID is required.' }, 422);
+    const apps = await getList(KEYS.grantApplications);
+    const index = apps.findIndex((a) => a.id === appId);
+    if (index < 0) return sendJson(res, { error: 'Application not found.' }, 404);
+    const app = apps[index];
+    if (app.locked) return sendJson(res, { error: 'This application is submitted and locked.' }, 409);
+    const orgRecords = await getList(KEYS.grantOrg);
+    const profile = buildOrgProfile(Array.isArray(orgRecords) && orgRecords.length ? orgRecords[0] : null);
+    validateApplication(app, profile);
+    apps[index] = app;
+    await setList(KEYS.grantApplications, apps);
+    await addAudit('grant_app_validated', 'admin', { appId, status: app.validation?.status, errors: app.validation?.errors?.length || 0, warnings: app.validation?.warnings?.length || 0 });
+    return sendJson(res, { validation: app.validation });
+  }
+
+  if (action === 'grant-app-submit' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const appId = clean(String(payload.id || ''), 80);
+    if (!appId) return sendJson(res, { error: 'Application ID is required.' }, 422);
+    const apps = await getList(KEYS.grantApplications);
+    const index = apps.findIndex((a) => a.id === appId);
+    if (index < 0) return sendJson(res, { error: 'Application not found.' }, 404);
+    const app = apps[index];
+    if (app.locked) return sendJson(res, { error: 'This application is already submitted.' }, 409);
+    try {
+      const { application: submitted, snapshot } = markSubmitted(app, {
+        date: payload.date,
+        method: payload.method,
+        reference: payload.reference,
+        version: payload.version,
+        portal: payload.portal,
+        notes: payload.notes,
+        followUpDate: payload.followUpDate,
+        confirmHumanSubmission: payload.confirmHumanSubmission === true,
+      }, 'admin');
+      apps[index] = submitted;
+      await setList(KEYS.grantApplications, apps);
+      const subs = await getList(KEYS.grantSubmissions);
+      subs.unshift(snapshot);
+      await setList(KEYS.grantSubmissions, subs.slice(0, LIMITS.grantSubmissions));
+      await addAudit('grant_app_submitted', 'admin', { appId, snapshotId: snapshot.id, date: snapshot.submission.date });
+      return sendJson(res, { ok: true, application: { id: submitted.id, status: submitted.status, submissionSnapshotId: submitted.submissionSnapshotId } });
+    } catch (error) {
+      return sendJson(res, { error: error.message }, 422);
+    }
+  }
+
+  // --- Submissions (§12 — immutable submitted-version records) ---
+  if (action === 'grant-subs-list' && req.method === 'GET') {
+    const subs = await getList(KEYS.grantSubmissions);
+    const summary = subs.map((s) => ({
+      id: s.id,
+      applicationId: s.applicationId,
+      opportunityId: s.opportunityId,
+      title: s.title,
+      submittedAt: s.submittedAt,
+      submittedBy: s.submittedBy,
+      submission: s.submission,
+    }));
+    return sendJson(res, { submissions: summary, total: summary.length });
+  }
+
+  if (action === 'grant-subs-get' && req.method === 'GET') {
+    const id = clean(String(getParam(req, 'id') || ''), 80);
+    if (!id) return sendJson(res, { error: 'Submission ID is required.' }, 422);
+    const subs = await getList(KEYS.grantSubmissions);
+    const sub = subs.find((s) => s.id === id);
+    if (!sub) return sendJson(res, { error: 'Submission not found.' }, 404);
+    return sendJson(res, { submission: sub });
+  }
+
+  return sendJson(res, { error: 'Unsupported action.' }, 404);
 }
 
 function defaultContentSettings() {

@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grant Intelligence | Lost Limb Riders</title>
+  <style>
+    :root {
+      --orange: #E85D26;
+      --black: #121212;
+      --charcoal: #1E1E1E;
+      --card: #242424;
+      --white: #F4F4F4;
+      --muted: #A0A0A0;
+      --line: #333;
+      --shadow: 0 4px 16px rgba(0,0,0,0.35);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--black); color: var(--white); line-height: 1.6; }
+    a { color: var(--orange); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .btn { display: inline-block; padding: 10px 22px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: all .15s; }
+    .btn-primary { background: var(--orange); color: #fff; }
+    .btn-primary:hover { background: #c94e1e; text-decoration: none; }
+    .btn-secondary { background: var(--card); color: var(--white); border: 1px solid var(--line); }
+    .btn-secondary:hover { background: #333; text-decoration: none; }
+    .btn-sm { padding: 6px 14px; font-size: 12px; }
+    .btn-danger { background: #9b2c2c; color: #fff; }
+    .pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+    .pill-green { background: #22543d; color: #9ae6b4; }
+    .pill-orange { background: #6b3a10; color: #fbd38d; }
+    .pill-red { background: #6b2c2c; color: #feb2b2; }
+    .pill-blue { background: #1a365d; color: #90cdf4; }
+    .pill-gray { background: #333; color: var(--muted); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 24px; margin-bottom: 16px; box-shadow: var(--shadow); }
+    .source-auto { border-left: 3px solid #48bb78; }
+    .source-draft { border-left: 3px solid #ecc94b; }
+    .source-admin { border-left: 3px solid #4299e1; }
+    .source-required { border-left: 3px solid #fc8181; background: #2a1a1a; }
+    .source-error { border-left: 3px solid #e53e3e; background: #2a1212; }
+    .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 2px 8px; border-radius: 4px; }
+    .badge-auto { background: #22543d; color: #9ae6b4; }
+    .badge-draft { background: #5a4a10; color: #fefcbf; }
+    .badge-admin { background: #1a365d; color: #bee3f8; }
+    .badge-required { background: #742a2a; color: #fed7d7; }
+    input, textarea, select { width: 100%; padding: 10px 14px; background: var(--black); border: 1px solid var(--line); border-radius: 8px; color: var(--white); font-size: 14px; font-family: inherit; }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--orange); }
+    textarea { min-height: 80px; resize: vertical; }
+    label { display: block; font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+    .form-row { margin-bottom: 16px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 680px) { .form-grid { grid-template-columns: 1fr; } }
+    nav { position: sticky; top: 0; z-index: 100; background: var(--charcoal); border-bottom: 1px solid var(--line); padding: 12px 0; }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .brand { font-size: 16px; font-weight: 900; color: var(--orange); }
+    .nav-links { display: flex; gap: 16px; align-items: center; }
+    .nav-links a { font-size: 13px; color: var(--muted); }
+    .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .metric { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; text-align: center; cursor: pointer; transition: border-color .15s; }
+    .metric:hover { border-color: var(--orange); }
+    .metric-value { font-size: 28px; font-weight: 900; color: var(--orange); }
+    .metric-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-top: 4px; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .opp-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+    .opp-row:last-child { border-bottom: none; }
+    .opp-title { font-weight: 700; font-size: 15px; }
+    .opp-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .match-bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+    .match-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+    .validation-errors { background: #2a1212; border: 1px solid #9b2c2c; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .validation-warnings { background: #2a2a12; border: 1px solid #9b7c2c; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .validation-ok { background: #122a12; border: 1px solid #2c9b4c; border-radius: 10px; padding: 16px; margin-bottom: 16px; font-weight: 700; }
+    .field-item { margin-bottom: 14px; }
+    .field-label { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+    .field-label .required-star { color: #fc8181; }
+    .field-note { font-size: 11px; color: var(--muted); margin-top: 4px; font-style: italic; }
+    .action-required-banner { background: #742a2a; color: #fed7d7; padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; margin-bottom: 16px; }
+    .ready-banner { background: #22543d; color: #9ae6b4; padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; margin-bottom: 16px; }
+    .review-section { margin-bottom: 20px; }
+    .review-section h3 { font-size: 16px; color: var(--orange); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .04em; }
+    .review-item { padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .review-item:last-child { border-bottom: none; }
+    .review-item-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .review-item-value { font-size: 14px; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; background: var(--card); color: var(--muted); border: 1px solid var(--line); }
+    .tab.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--muted); border-top-color: var(--orange); border-radius: 50%; animation: spin .6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .opp-detail-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+    @media (max-width: 768px) { .opp-detail-grid { grid-template-columns: 1fr; } }
+    .detail-box { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .detail-box h4 { color: var(--orange); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+    .detail-box p { font-size: 14px; color: var(--white); line-height: 1.6; }
+    .snapshot-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 12px; }
+    #authGate { text-align: center; padding: 80px 20px; }
+    #authGate h2 { color: var(--orange); margin-bottom: 12px; }
+    #authGate p { color: var(--muted); margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="index.html" class="brand">Lost Limb Riders</a>
+      <div class="nav-links">
+        <a href="mission.html">Mission</a>
+        <a href="events.html">Events</a>
+        <a href="media.html">Media</a>
+        <a href="community.html">Community</a>
+        <a href="documentation.html">Docs</a>
+        <a href="compliance.html">Compliance</a>
+        <a href="admin.html">Admin</a>
+        <span id="navLogout" style="display:none;cursor:pointer;color:var(--muted);font-size:13px;">Logout</span>
+      </div>
+    </div>
+  </nav>
+
+  <main style="padding: 40px 0 80px;">
+    <div class="wrap">
+      <header style="margin-bottom: 30px;">
+        <p style="font-size:11px;color:var(--orange);text-transform:uppercase;letter-spacing:.1em;font-weight:700;">Grant Intelligence</p>
+        <h1 style="font-size:clamp(28px,4vw,40px);font-weight:900;margin:8px 0;">Discover, Match, Prepare, Submit</h1>
+        <p style="color:var(--muted);font-size:16px;">Find grant opportunities, prepare applications from authorized organizational records, and track submissions.</p>
+      </header>
+
+      <!-- Auth Gate -->
+      <div id="authGate">
+        <h2>Sign In Required</h2>
+        <p>Grant Intelligence requires Document Library authentication.</p>
+        <a class="btn btn-primary" href="documentation.html">Sign In via Document Library</a>
+      </div>
+
+      <!-- Main App -->
+      <div id="appContainer" style="display:none;">
+        <!-- Dashboard -->
+        <div id="secDashboard" class="section active">
+          <div class="metric-grid" id="metricsGrid"></div>
+          <div class="tabs" id="mainTabs">
+            <div class="tab active" data-tab="discovery">Discovery</div>
+            <div class="tab" data-tab="opportunities">Opportunities</div>
+            <div class="tab" data-tab="applications">Applications</div>
+            <div class="tab" data-tab="submissions">Submissions</div>
+            <div class="tab" data-tab="org">Org Knowledge</div>
+          </div>
+          <!-- Discovery sub-section -->
+          <div id="subDiscovery" class="tab-content">
+            <div class="card">
+              <h3 style="color:var(--orange);font-size:18px;margin-bottom:16px;">Search Grants.gov</h3>
+              <div class="form-grid">
+                <div class="form-row">
+                  <label>Keywords</label>
+                  <input id="searchKeywords" placeholder="e.g. prosthetic, amputee, disability, peer support">
+                </div>
+                <div class="form-row">
+                  <label>Funding Categories</label>
+                  <input id="searchCategories" placeholder="e.g. HL (Health), ED (Education)">
+                </div>
+              </div>
+              <button class="btn btn-primary" id="btnSearch">Search</button>
+              <div id="searchResults" style="margin-top:16px;"></div>
+            </div>
+            <div class="card">
+              <h3 style="color:var(--orange);font-size:18px;margin-bottom:16px;">Add Opportunity Manually</h3>
+              <div class="form-grid">
+                <div class="form-row"><label>Title *</label><input id="addTitle" maxlength="300"></div>
+                <div class="form-row"><label>Funder</label><input id="addFunder" maxlength="200"></div>
+                <div class="form-row"><label>URL</label><input id="addUrl" maxlength="500"></div>
+                <div class="form-row"><label>Deadline</label><input id="addDeadline" type="date"></div>
+                <div class="form-row"><label>Min Amount</label><input id="addAmountMin" type="number"></div>
+                <div class="form-row"><label>Max Amount</label><input id="addAmountMax" type="number"></div>
+              </div>
+              <div class="form-row"><label>Description</label><textarea id="addDescription" maxlength="6000"></textarea></div>
+              <div class="form-row"><label>Eligibility</label><textarea id="addEligibility" maxlength="2000"></textarea></div>
+              <div class="form-row"><label>Application Instructions (paste the funder's actual requirements)</label><textarea id="addInstructions" maxlength="20000" rows="8"></textarea></div>
+              <button class="btn btn-primary" id="btnAddOpp">Add Opportunity</button>
+            </div>
+          </div>
+          <!-- Opportunities sub-section -->
+          <div id="subOpportunities" class="tab-content" style="display:none;">
+            <div id="oppListContainer"></div>
+          </div>
+          <!-- Applications sub-section -->
+          <div id="subApplications" class="tab-content" style="display:none;">
+            <div id="appListContainer"></div>
+          </div>
+          <!-- Submissions sub-section -->
+          <div id="subSubmissions" class="tab-content" style="display:none;">
+            <div id="subsListContainer"></div>
+          </div>
+          <!-- Org Knowledge sub-section -->
+          <div id="subOrg" class="tab-content" style="display:none;">
+            <div class="card" id="orgProfileCard"></div>
+          </div>
+        </div>
+
+        <!-- Opportunity Detail -->
+        <div id="secOpportunity" class="section">
+          <button class="btn btn-secondary btn-sm" id="btnBackOpp" style="margin-bottom:16px;">&larr; Back to Opportunities</button>
+          <div id="oppDetailContainer"></div>
+        </div>
+
+        <!-- Application Workspace -->
+        <div id="secApplication" class="section">
+          <button class="btn btn-secondary btn-sm" id="btnBackApp" style="margin-bottom:16px;">&larr; Back to Applications</button>
+          <div id="appWorkspaceContainer"></div>
+        </div>
+
+        <!-- Final Review -->
+        <div id="secReview" class="section">
+          <button class="btn btn-secondary btn-sm" id="btnBackReview" style="margin-bottom:16px;">&larr; Back to Application</button>
+          <div id="reviewContainer"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+  (function() {
+    const API = '/api/admin';
+    let session = null;
+    let currentOpp = null;
+    let currentApp = null;
+
+    function api(action, params, body) {
+      const url = new URL(API, location.origin);
+      url.searchParams.set('action', action);
+      if (session?.token) url.searchParams.set('key', session.token);
+      if (params) Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null) url.searchParams.set(k, v); });
+      const opts = { headers: { 'Content-Type': 'application/json' } };
+      if (body) { opts.method = 'POST'; opts.body = JSON.stringify(body); }
+      return fetch(url, opts).then(async (r) => { const d = await r.json().catch(() => ({})); if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`); return d; });
+    }
+
+    function $(id) { return document.getElementById(id); }
+    function show(id) { document.querySelectorAll('.section').forEach((s) => s.classList.remove('active')); $(id)?.classList.add('active'); }
+    function showTab(id) { document.querySelectorAll('.tab-content').forEach((s) => s.style.display = 'none'); $(id).style.display = 'block'; document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === id.replace('sub', '').toLowerCase())); }
+    function pill(text, cls) { return `<span class="pill ${cls}">${text}</span>`; }
+    function sourceBadge(type) {
+      const map = { 'auto-populated': ['Auto-filled', 'badge-auto'], 'generated-draft': ['Draft', 'badge-draft'], 'administrator-entered': ['Entered', 'badge-admin'], 'action-required': ['Action Required', 'badge-required'], 'validation-error': ['Error', 'badge-required'] };
+      const [label, cls] = map[type] || ['Unknown', 'badge-required'];
+      return `<span class="badge ${cls}">${label}</span>`;
+    }
+    function matchColor(score) { return score >= 6 ? '#48bb78' : score >= 3 ? '#ecc94b' : '#fc8181'; }
+    function matchLevel(score) { return score >= 6 ? 'Strong Match' : score >= 3 ? 'Possible Match' : 'Weak Match'; }
+    function formatDate(d) { return d ? new Date(d).toLocaleDateString() : ''; }
+    function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    // Auth check
+    function checkAuth() {
+      try { session = JSON.parse(sessionStorage.getItem('llr-docs-session')); } catch { session = null; }
+      if (!session?.token) { $('authGate').style.display = ''; $('appContainer').style.display = 'none'; return; }
+      $('authGate').style.display = 'none'; $('appContainer').style.display = '';
+      $('navLogout').style.display = '';
+      loadDashboard();
+    }
+
+    $('navLogout')?.addEventListener('click', () => { sessionStorage.removeItem('llr-docs-session'); location.reload(); });
+
+    // Dashboard
+    async function loadDashboard() {
+      try {
+        const [orgData, oppData, appData, subData] = await Promise.all([
+          api('grant-org').catch(() => ({ profile: { facts: {} } })),
+          api('grant-opp-list').catch(() => ({ opportunities: [] })),
+          api('grant-opp-list').catch(() => ({ opportunities: [] })),
+          api('grant-subs-list').catch(() => ({ submissions: [] })),
+        ]);
+        const opps = oppData.opportunities || [];
+        const subs = subData.submissions || [];
+        const matches = opps.filter((o) => (o.match?.score || 0) >= 3);
+        const inPrep = opps.filter((o) => o.status === 'application-in-preparation');
+        $('metricsGrid').innerHTML = [
+          { v: opps.length, l: 'Opportunities' },
+          { v: matches.length, l: 'Potential Matches' },
+          { v: inPrep.length, l: 'In Preparation' },
+          { v: subs.length, l: 'Submitted' },
+        ].map((m) => `<div class="metric"><div class="metric-value">${m.v}</div><div class="metric-label">${m.l}</div></div>`).join('');
+      } catch {}
+    }
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const map = { discovery: 'subDiscovery', opportunities: 'subOpportunities', applications: 'subApplications', submissions: 'subSubmissions', org: 'subOrg' };
+        showTab(map[tab.dataset.tab] || 'subDiscovery');
+        if (tab.dataset.tab === 'opportunities') loadOppList();
+        if (tab.dataset.tab === 'applications') loadAppList();
+        if (tab.dataset.tab === 'submissions') loadSubsList();
+        if (tab.dataset.tab === 'org') loadOrgProfile();
+      });
+    });
+
+    // Discovery — search
+    $('btnSearch')?.addEventListener('click', async () => {
+      const kw = $('searchKeywords').value.trim();
+      if (!kw) return;
+      $('searchResults').innerHTML = '<p style="color:var(--muted);"><span class="spinner"></span> Searching Grants.gov...</p>';
+      try {
+        const data = await api('grant-opp-search', { keywords: kw, categories: $('searchCategories').value.trim() });
+        const hits = data.hits || [];
+        if (!hits.length) { $('searchResults').innerHTML = '<p style="color:var(--muted);">No opportunities found.</p>'; return; }
+        $('searchResults').innerHTML = `<p style="color:var(--muted);margin-bottom:12px;">${data.numFound} results — showing ${hits.length} (sorted by match score)</p>` + hits.slice(0, 50).map((h) => `
+          <div class="card" style="padding:14px 18px;">
+            <div class="flex-between">
+              <div>
+                <div class="opp-title">${esc(h.title)}</div>
+                <div class="opp-meta">${esc(h.funder)} · ${h.closeDate ? 'Due ' + h.closeDate : 'No deadline'} · ${h.amountMax ? '$' + h.amountMax.toLocaleString() : 'Amount varies'}</div>
+                <div class="match-bar"><div class="match-fill" style="width:${Math.min(100, (h.match?.score || 0) * 8)}%;background:${matchColor(h.match?.score || 0)};"></div></div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px;">${matchLevel(h.match?.score || 0)} — ${esc((h.match?.matchedKeywords || []).slice(0, 5).join(', '))}</div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-secondary btn-sm" onclick="viewOppFromSearch('${esc(h.sourceId)}',${JSON.stringify(h).replace(/'/g, "\\'").replace(/"/g, '&quot;')})">View</button>
+                <button class="btn btn-primary btn-sm" onclick="saveOppFromSearch(${JSON.stringify(h).replace(/'/g, "\\'").replace(/"/g, '&quot;')})">Save</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) { $('searchResults').innerHTML = `<p style="color:#fc8181;">Search failed: ${esc(e.message)}</p>`; }
+    });
+
+    // Discovery — add manual
+    $('btnAddOpp')?.addEventListener('click', async () => {
+      const title = $('addTitle').value.trim();
+      if (!title) return alert('Title is required.');
+      try {
+        const data = await api('grant-opp-add', null, {
+          title, funder: $('addFunder').value, url: $('addUrl').value, deadline: $('addDeadline').value,
+          amountMin: $('addAmountMin').value || null, amountMax: $('addAmountMax').value || null,
+          description: $('addDescription').value, eligibility: $('addEligibility').value, instructionsText: $('addInstructions').value,
+          source: 'manual',
+        });
+        alert('Opportunity saved.');
+        ['addTitle', 'addFunder', 'addUrl', 'addDeadline', 'addAmountMin', 'addAmountMax', 'addDescription', 'addEligibility', 'addInstructions'].forEach((id) => $(id).value = '');
+        loadDashboard();
+      } catch (e) { alert(e.message); }
+    });
+
+    // Opportunities list
+    async function loadOppList() {
+      $('oppListContainer').innerHTML = '<p style="color:var(--muted);"><span class="spinner"></span> Loading...</p>';
+      try {
+        const data = await api('grant-opp-list');
+        const opps = data.opportunities || [];
+        if (!opps.length) { $('oppListContainer').innerHTML = '<div class="empty-state">No opportunities saved. Use Discovery to search or add manually.</div>'; return; }
+        $('oppListContainer').innerHTML = opps.map((o) => `
+          <div class="card" style="padding:14px 18px;">
+            <div class="flex-between">
+              <div style="flex:1;">
+                <div class="flex-between">
+                  <div class="opp-title">${esc(o.title)}</div>
+                  ${pill(o.status || 'discovered', 'pill-gray')}
+                </div>
+                <div class="opp-meta">${esc(o.funder)} · ${o.deadline ? 'Due ' + o.deadline : ''} · ${o.amount?.max ? '$' + o.amount.max.toLocaleString() : ''} · ${pill(o.source, 'pill-blue')}</div>
+                <div class="match-bar"><div class="match-fill" style="width:${Math.min(100, (o.match?.score || 0) * 8)}%;background:${matchColor(o.match?.score || 0)};"></div></div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px;">${matchLevel(o.match?.score || 0)} — ${(o.match?.summary || []).join(' ')}</div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-secondary btn-sm" onclick="openOpp('${o.id}')">Open</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) { $('oppListContainer').innerHTML = `<p style="color:#fc8181;">Failed: ${esc(e.message)}</p>`; }
+    }
+
+    // Opportunity detail
+    window.openOpp = async function(id) {
+      show('secOpportunity');
+      $('oppDetailContainer').innerHTML = '<p style="color:var(--muted);"><span class="spinner"></span> Loading...</p>';
+      try {
+        const data = await api('grant-opp-get', { id });
+        currentOpp = data.opportunity;
+        renderOppDetail();
+      } catch (e) { $('oppDetailContainer').innerHTML = `<p style="color:#fc8181;">${esc(e.message)}</p>`; }
+    };
+
+    function renderOppDetail() {
+      const o = currentOpp;
+      if (!o) return;
+      const m = o.match || {};
+      $('oppDetailContainer').innerHTML = `
+        <div class="opp-detail-grid">
+          <div>
+            <div class="detail-box"><h4>Opportunity</h4><p style="font-size:20px;font-weight:900;color:var(--white);">${esc(o.title)}</p></div>
+            <div class="detail-box"><h4>Funder</h4><p>${esc(o.funder || 'Unknown')}</p></div>
+            ${o.url ? `<div class="detail-box"><h4>Source</h4><p><a href="${esc(o.url)}" target="_blank">${esc(o.url)}</a></p></div>` : ''}
+            <div class="detail-box"><h4>Description</h4><p style="white-space:pre-wrap;">${esc(o.description || 'No description available.')}</p></div>
+            ${o.eligibility ? `<div class="detail-box"><h4>Eligibility</h4><p style="white-space:pre-wrap;">${esc(o.eligibility)}</p></div>` : ''}
+          </div>
+          <div>
+            <div class="detail-box"><h4>Match Score</h4>
+              <div style="font-size:32px;font-weight:900;color:${matchColor(m.score || 0)};">${m.score || 0}</div>
+              <div style="font-size:14px;color:var(--muted);">${matchLevel(m.score || 0)}</div>
+              <div class="match-bar" style="margin:10px 0;"><div class="match-fill" style="width:${Math.min(100, (m.score || 0) * 8)}%;background:${matchColor(m.score || 0)};"></div></div>
+              <div style="font-size:12px;color:var(--muted);">${(m.matchedKeywords || []).join(', ')}</div>
+            </div>
+            <div class="detail-box"><h4>Details</h4>
+              <p><strong>Deadline:</strong> ${o.deadline || 'Unknown'}</p>
+              <p><strong>Amount:</strong> ${o.amount?.min ? '$' + o.amount.min.toLocaleString() : '?'} – ${o.amount?.max ? '$' + o.amount.max.toLocaleString() : '?'}</p>
+              <p><strong>Status:</strong> ${pill(o.status || 'discovered', 'pill-gray')}</p>
+              <p><strong>Source:</strong> ${pill(o.source, 'pill-blue')}</p>
+            </div>
+            <div class="detail-box"><h4>Eligibility Assessment</h4>
+              <p>${pill(m.eligible || 'unknown', m.eligible === 'eligible' ? 'pill-green' : m.eligible === 'not-eligible' ? 'pill-red' : 'pill-orange')}</p>
+              ${(m.summary || []).map((s) => `<p style="font-size:13px;color:var(--muted);margin-top:6px;">${esc(s)}</p>`).join('')}
+            </div>
+            <div class="detail-box">
+              <button class="btn btn-primary" style="width:100%;" onclick="beginWorkflow()">BEGIN GRANT WORKFLOW</button>
+              <p style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;">Creates a Grant File and begins the ACE Grant Lifecycle workflow.</p>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    window.beginWorkflow = async function() {
+      if (!currentOpp) return;
+      try {
+        $('oppDetailContainer').innerHTML += '<p style="color:var(--muted);margin-top:12px;"><span class="spinner"></span> Creating Grant File and workflow instance...</p>';
+        const data = await api('grant-app-create', null, { opportunityId: currentOpp.id });
+        currentApp = data.application;
+        openApplication(currentApp.id);
+      } catch (e) { alert('Failed to begin workflow: ' + e.message); }
+    };
+
+    // Applications list
+    async function loadAppList() {
+      $('appListContainer').innerHTML = '<p style="color:var(--muted);"><span class="spinner"></span> Loading...</p>';
+      try {
+        const allOpps = await api('grant-opp-list');
+        const opps = (allOpps.opportunities || []).filter((o) => o.status !== 'discovered');
+        if (!opps.length) { $('appListContainer').innerHTML = '<div class="empty-state">No applications in progress. Open an opportunity and select BEGIN GRANT WORKFLOW.</div>'; return; }
+        $('appListContainer').innerHTML = opps.map((o) => `
+          <div class="card" style="padding:14px 18px;">
+            <div class="flex-between">
+              <div>
+                <div class="opp-title">${esc(o.title)}</div>
+                <div class="opp-meta">${esc(o.funder)} · ${pill(o.status, 'pill-orange')}</div>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="openOpp('${o.id}')">Open</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) { $('appListContainer').innerHTML = `<p style="color:#fc8181;">${esc(e.message)}</p>`; }
+    }
+
+    // Application workspace
+    window.openApplication = async function(appId) {
+      if (!appId) return;
+      show('secApplication');
+      $('appWorkspaceContainer').innerHTML = '<p style="color:var(--muted);"><span class="spinner"></span> Loading application...</p>';
+      try {
+        const data = await api('grant-app-get', { id: appId });
+        currentApp = data.application;
+        renderAppWorkspace();
+      } catch (e) { $('appWorkspaceContainer').innerHTML = `<p style="color:#fc8181;">${esc(e.message)}</p>`; }
+    };
+
+    function renderAppWorkspace() {
+      const app = currentApp;
+      if (!app) return;
+      const sections = app.requirementSnapshot?.sections || [];
+      const answers = app.answers || {};
+      const validation = app.validation;
+      let html = `
+        <div class="flex-between" style="margin-bottom:20px;">
+          <div>
+            <h2 style="font-size:22px;font-weight:900;">${esc(app.title)}</h2>
+            <p style="color:var(--muted);font-size:13px;">Status: ${pill(app.status, app.status === 'submitted' ? 'pill-green' : 'pill-orange')} · ${Object.keys(answers).filter((k) => answers[k].value).length} / ${Object.keys(answers).length} fields answered</p>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="autoFillApp()">Auto-Fill from Org Knowledge</button>
+            <button class="btn btn-primary btn-sm" onclick="validateApp()">Run Final Validation</button>
+            ${app.status !== 'submitted' ? `<button class="btn btn-secondary btn-sm" onclick="openReview()">Review Application</button>` : ''}
+          </div>
+        </div>`;
+
+      if (app.locked) {
+        html += `<div class="ready-banner">SUBMITTED — Snapshot ${esc(app.submissionSnapshotId || '')} · ${esc(app.submission?.date || '')}</div>`;
+      } else if (validation) {
+        if (validation.ready) {
+          html += `<div class="ready-banner">${esc(validation.status)}</div>`;
+        } else {
+          html += `<div class="action-required-banner">${esc(validation.status)} — ${validation.errors.length} error(s), ${validation.warnings.length} warning(s)</div>`;
+        }
+      }
+
+      for (const section of sections) {
+        html += `<div class="card"><h3 style="color:var(--orange);font-size:16px;margin-bottom:14px;">${esc(section.title)}</h3>`;
+        for (const field of (section.fields || [])) {
+          const ans = answers[field.id] || { value: '', sourceType: 'action-required' };
+          const sourceClass = { 'auto-populated': 'source-auto', 'generated-draft': 'source-draft', 'administrator-entered': 'source-admin', 'action-required': 'source-required', 'validation-error': 'source-error' }[ans.sourceType] || 'source-required';
+          html += `<div class="field-item ${sourceClass}" style="padding:10px 14px;border-radius:8px;margin-bottom:10px;">
+            <div class="field-label">${sourceBadge(ans.sourceType)} ${esc(field.label)} ${field.required ? '<span class="required-star">*</span>' : ''}</div>`;
+          if (app.locked) {
+            html += `<div class="review-item-value" style="white-space:pre-wrap;">${esc(ans.value) || '<em style="color:var(--muted);">Empty</em>'}</div>`;
+          } else {
+            if (field.kind === 'textarea') {
+              html += `<textarea data-qid="${esc(field.id)}" maxlength="${field.maxChars || 6000}" style="min-height:80px;">${esc(ans.value)}</textarea>`;
+            } else if (field.kind === 'number') {
+              html += `<input type="number" data-qid="${esc(field.id)}" value="${esc(ans.value)}">`;
+            } else if (field.kind === 'date') {
+              html += `<input type="date" data-qid="${esc(field.id)}" value="${esc(ans.value)}">`;
+            } else {
+              html += `<input type="text" data-qid="${esc(field.id)}" value="${esc(ans.value)}" maxlength="${field.maxChars || 200}">`;
+            }
+            if (field.maxChars || field.maxWords) {
+              html += `<div class="field-note">${field.maxChars ? field.maxChars + ' char limit' : ''} ${field.maxWords ? field.maxWords + ' word limit' : ''} · ${ans.value.length} / ${field.maxChars || '∞'}</div>`;
+            }
+            if (field.help) html += `<div class="field-note">${esc(field.help)}</div>`;
+            if (ans.notes) html += `<div class="field-note">${esc(ans.notes)}</div>`;
+          }
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+
+      // Attachments, certifications, signatures
+      const att = app.requirementSnapshot?.attachments || [];
+      const certs = app.requirementSnapshot?.certifications || [];
+      const sigs = app.requirementSnapshot?.signatures || [];
+      if (att.length || certs.length || sigs.length) {
+        html += '<div class="card"><h3 style="color:var(--orange);font-size:16px;margin-bottom:14px;">Attachments, Certifications & Signatures</h3>';
+        for (const a of att) {
+          html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);">
+            <span style="font-size:14px;">${a.required ? '📎' : '📄'} ${esc(a.label)}</span>
+            ${pill(app.attachmentStatus?.[a.id] || 'missing', app.attachmentStatus?.[a.id] === 'present' ? 'pill-green' : 'pill-red')}
+          </div>`;
+        }
+        for (const c of certs) {
+          html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);">
+            <span style="font-size:14px;">✅ ${esc(c.label)}</span>
+            ${pill(app.certificationsAcknowledged?.[c.id] ? 'Acknowledged' : 'Not acknowledged', app.certificationsAcknowledged?.[c.id] ? 'pill-green' : 'pill-red')}
+          </div>`;
+        }
+        for (const s of sigs) {
+          html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);">
+            <span style="font-size:14px;">✍️ ${esc(s.label)} (${esc(s.role)})</span>
+            ${pill(app.signaturesIdentified?.[s.id] || 'Not identified', app.signaturesIdentified?.[s.id] ? 'pill-green' : 'pill-red')}
+          </div>`;
+        }
+        html += '</div>';
+      }
+
+      $('appWorkspaceContainer').innerHTML = html;
+
+      // Bind auto-save on input changes
+      if (!app.locked) {
+        $('appWorkspaceContainer').querySelectorAll('textarea[data-qid], input[data-qid]').forEach((el) => {
+          el.addEventListener('change', () => saveFieldAnswer(el.dataset.qid, el.value));
+        });
+      }
+    }
+
+    async function saveFieldAnswer(qid, value) {
+      if (!currentApp) return;
+      try {
+        const data = await api('grant-app-answer', null, { id: currentApp.id, questionId: qid, value });
+        currentApp.answers[qid] = data.answer;
+      } catch (e) { console.error('Save failed:', e); }
+    }
+
+    window.autoFillApp = async function() {
+      if (!currentApp) return;
+      try {
+        const data = await api('grant-app-autofill', null, { id: currentApp.id });
+        currentApp.answers = data.answers;
+        renderAppWorkspace();
+      } catch (e) { alert(e.message); }
+    };
+
+    window.validateApp = async function() {
+      if (!currentApp) return;
+      try {
+        const data = await api('grant-app-validate', null, { id: currentApp.id });
+        currentApp.validation = data.validation;
+        currentApp.status = data.validation.ready ? 'human-review-required' : 'in-preparation';
+        renderAppWorkspace();
+      } catch (e) { alert(e.message); }
+    };
+
+    // Final Review
+    window.openReview = async function() {
+      if (!currentApp) return;
+      show('secReview');
+      renderReview();
+    };
+
+    function renderReview() {
+      const app = currentApp;
+      if (!app) return;
+      const sections = app.requirementSnapshot?.sections || [];
+      const answers = app.answers || {};
+      const validation = app.validation;
+      let html = `<h2 style="font-size:22px;font-weight:900;margin-bottom:20px;">Final Review — ${esc(app.title)}</h2>`;
+
+      if (validation?.ready) {
+        html += `<div class="ready-banner">READY FOR FINAL HUMAN REVIEW</div>`;
+      } else if (validation) {
+        html += `<div class="action-required-banner">${esc(validation.status)} — ${validation.errors.length} error(s)</div>`;
+      }
+
+      html += `<div class="detail-box"><h4>Opportunity</h4>
+        <p><strong>Funder:</strong> ${esc(app.title)}</p>
+        <p><strong>Deadline:</strong> ${esc(app.requirementSnapshot?.submission?.deadline || 'Unknown')}</p>
+        <p><strong>Submission Method:</strong> ${esc(app.requirementSnapshot?.submission?.method || 'Unknown')}</p>
+      </div>`;
+
+      for (const section of sections) {
+        html += `<div class="card"><h3 style="color:var(--orange);font-size:16px;margin-bottom:14px;">${esc(section.title)}</h3>`;
+        for (const field of (section.fields || [])) {
+          const ans = answers[field.id] || { value: '', sourceType: 'action-required' };
+          html += `<div class="review-item">
+            <div class="review-item-label">${sourceBadge(ans.sourceType)} ${esc(field.label)}</div>
+            <div class="review-item-value" style="white-space:pre-wrap;">${esc(ans.value) || '<em style="color:var(--muted);">Missing</em>'}</div>
+          </div>`;
+        }
+        html += '</div>';
+      }
+
+      if (validation?.errors?.length) {
+        html += '<div class="validation-errors"><h4 style="margin-bottom:8px;">Errors</h4>';
+        for (const err of validation.errors) html += `<p style="font-size:13px;">• ${esc(err.label || err.field)}: ${esc(err.message)}</p>`;
+        html += '</div>';
+      }
+      if (validation?.warnings?.length) {
+        html += '<div class="validation-warnings"><h4 style="margin-bottom:8px;">Warnings</h4>';
+        for (const warn of validation.warnings) html += `<p style="font-size:13px;">• ${esc(warn.label || warn.field || '')}: ${esc(warn.message)}</p>`;
+        html += '</div>';
+      }
+
+      if (app.status !== 'submitted') {
+        html += `<div class="card" style="text-align:center;">
+          <h3 style="color:var(--orange);margin-bottom:12px;">Ready to Submit?</h3>
+          <p style="color:var(--muted);margin-bottom:16px;">Download, print, or export the application package. Then submit externally and return to record the submission.</p>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="exportAppJSON()">Export JSON</button>
+            <button class="btn btn-secondary" onclick="printApp()">Print Application</button>
+            <button class="btn btn-primary" onclick="showSubmitForm()">Mark as Submitted</button>
+          </div>
+        </div>
+        <div id="submitForm" style="display:none;" class="card">
+          <h3 style="color:var(--orange);margin-bottom:12px;">Record Submission</h3>
+          <div class="form-grid">
+            <div class="form-row"><label>Submission Date</label><input type="date" id="subDate" value="${new Date().toISOString().slice(0,10)}"></div>
+            <div class="form-row"><label>Method</label><select id="subMethod"><option>online</option><option>email</option><option>mail</option><option>portal</option><option>other</option></select></div>
+            <div class="form-row"><label>Confirmation / Reference #</label><input id="subRef" maxlength="200"></div>
+            <div class="form-row"><label>Portal URL</label><input id="subPortal" maxlength="400"></div>
+          </div>
+          <div class="form-row"><label>Notes</label><textarea id="subNotes" maxlength="1500"></textarea></div>
+          <div class="form-row"><label>Follow-up Date</label><input type="date" id="subFollowUp"></div>
+          <div style="display:flex;gap:10px;margin-top:12px;">
+            <button class="btn btn-primary" onclick="confirmSubmit()">Confirm Submission (Human Action)</button>
+            <button class="btn btn-secondary" onclick="$('submitForm').style.display='none'">Cancel</button>
+          </div>
+        </div>`;
+      }
+
+      $('reviewContainer').innerHTML = html;
+    }
+
+    window.showSubmitForm = function() { $('submitForm').style.display = ''; };
+
+    window.confirmSubmit = async function() {
+      if (!currentApp) return;
+      if (!confirm('Confirm that you have personally submitted this application to the funder. This creates an immutable snapshot.')) return;
+      try {
+        const data = await api('grant-app-submit', null, {
+          id: currentApp.id,
+          date: $('subDate').value,
+          method: $('subMethod').value,
+          reference: $('subRef').value,
+          portal: $('subPortal').value,
+          notes: $('subNotes').value,
+          followUpDate: $('subFollowUp').value,
+          confirmHumanSubmission: true,
+        });
+        currentApp.status = 'submitted';
+        currentApp.locked = true;
+        currentApp.submissionSnapshotId = data.application.submissionSnapshotId;
+        alert('Submission recorded. Snapshot created.');
+        renderReview();
+      } catch (e) { alert(e.message); }
+    };
+
+    window.exportAppJSON = function() {
+      if (!currentApp) return;
+      const blob = new Blob([JSON.stringify(currentApp, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = `grant-application-${currentApp.id}.json`; a.click();
+    };
+
+    window.printApp = function() { window.print(); };
+
+    // Submissions list
+    async function loadSubsList() {
+      $('subsListContainer').innerHTML = '<p style="color:var(--muted);"><span class="spinner"></span> Loading...</p>';
+      try {
+        const data = await api('grant-subs-list');
+        const subs = data.submissions || [];
+        if (!subs.length) { $('subsListContainer').innerHTML = '<div class="empty-state">No submissions recorded yet.</div>'; return; }
+        $('subsListContainer').innerHTML = subs.map((s) => `
+          <div class="snapshot-card">
+            <div class="flex-between">
+              <div>
+                <div class="opp-title">${esc(s.title)}</div>
+                <div class="opp-meta">Submitted ${esc(s.submission?.date || '')} · ${esc(s.submission?.method || '')} · Ref: ${esc(s.submission?.reference || 'None')}</div>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="viewSnapshot('${s.id}')">View Snapshot</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) { $('subsListContainer').innerHTML = `<p style="color:#fc8181;">${esc(e.message)}</p>`; }
+    }
+
+    window.viewSnapshot = async function(id) {
+      try {
+        const data = await api('grant-subs-get', { id });
+        const blob = new Blob([JSON.stringify(data.submission, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = `grant-submission-${id}.json`; a.click();
+      } catch (e) { alert(e.message); }
+    };
+
+    // Org knowledge
+    async function loadOrgProfile() {
+      try {
+        const data = await api('grant-org');
+        const profile = data.profile || {};
+        const facts = profile.facts || {};
+        let html = '<div class="card"><h3 style="color:var(--orange);font-size:18px;margin-bottom:16px;">Organizational Knowledge Base</h3>';
+        html += '<p style="color:var(--muted);font-size:13px;margin-bottom:16px;">These are the authoritative organizational records used for auto-populating grant applications. Values marked "Auto-filled" are from canonical sources. Administrator-confirmed values can be updated below.</p>';
+        for (const [key, fact] of Object.entries(facts)) {
+          html += `<div class="form-row"><label>${esc(fact.label)}</label><input value="${esc(fact.value)}" disabled style="opacity:0.7;"><div class="field-note">Source: ${esc(fact.source)}</div></div>`;
+        }
+        html += '</div>';
+        $('orgProfileCard').innerHTML = html;
+      } catch (e) { $('orgProfileCard').innerHTML = `<p style="color:#fc8181;">${esc(e.message)}</p>`; }
+    }
+
+    // Navigation buttons
+    $('btnBackOpp')?.addEventListener('click', () => { show('secDashboard'); showTab('subOpportunities'); loadOppList(); });
+    $('btnBackApp')?.addEventListener('click', () => { show('secDashboard'); showTab('subApplications'); loadAppList(); });
+    $('btnBackReview')?.addEventListener('click', () => { show('secApplication'); renderAppWorkspace(); });
+
+    // Init
+    checkAuth();
+  })();
+  </script>
+</body>
+</html>
