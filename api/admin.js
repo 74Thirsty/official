@@ -18,7 +18,7 @@ import { expandDocument } from '../lib/document-references.js';
 import { getWorkflow, getTemplate, publicWorkflow, publicTemplate, resolveCategoryGroups, workflowSourceRevision } from '../lib/compliance-engine.js';
 import { createInstance, saveFieldValues, addEvidence, approveStage, advanceStage, createDocumentInstance, saveDocumentFieldValues, applySignature, finalizeDocument, cancelInstance, isAceInstance, summarizeInstance, detailInstance, buildInstanceExport } from '../lib/compliance-engine.js';
 import { initialSocialMediaConfig, patchSocialMediaConfig } from '../lib/social-media.js';
-import { searchGrants, fetchGrantDetails, mergeSearchAndDetail, runScreening, filterOpportunities, reviewOpportunity, promoteToAce } from '../lib/grants/intelligence.js';
+import { searchGrants, fetchGrantDetails, mergeSearchAndDetail, runScreening, filterOpportunities, paginateResults, computeCounts, reviewOpportunity, promoteToAce } from '../lib/grants/intelligence.js';
 import { buildExternalId } from '../lib/grants/dedup.js';
 
 export const maxDuration = 60;
@@ -737,6 +737,7 @@ async function handleGrantIntelligence(req, res, action) {
 
   if (action === 'grant-intelligence-list' && req.method === 'GET') {
     const opportunities = await getList(KEYS.grantOpportunities);
+    const counts = computeCounts(opportunities);
     const filters = {
       status: clean(String(getParam(req, 'status') || ''), 40),
       provider: clean(String(getParam(req, 'provider') || ''), 40),
@@ -744,14 +745,22 @@ async function handleGrantIntelligence(req, res, action) {
       search: clean(String(getParam(req, 'q') || ''), 120),
       deadlineBefore: clean(String(getParam(req, 'deadline_before') || ''), 20),
       deadlineAfter: clean(String(getParam(req, 'deadline_after') || ''), 20),
+      deadlineSoon: clean(String(getParam(req, 'deadline_soon') || ''), 5),
+      costShare: clean(String(getParam(req, 'cost_share') || ''), 20),
+      fundingCategory: clean(String(getParam(req, 'funding_category') || ''), 60),
+      fundingInstrument: clean(String(getParam(req, 'funding_instrument') || ''), 60),
+      sort: clean(String(getParam(req, 'sort') || ''), 30),
     };
     const filtered = filterOpportunities(opportunities, filters);
+    const page = Number(getParam(req, 'page')) || 1;
+    const pageSize = Number(getParam(req, 'page_size')) || 25;
+    const paginated = paginateResults(filtered, page, pageSize);
     const syncState = await getList(KEYS.grantSyncState);
     const lastSync = syncState[0] || null;
     return sendJson(res, {
-      opportunities: filtered,
-      total: filtered.length,
-      totalCount: opportunities.length,
+      opportunities: paginated.items,
+      counts,
+      pagination: { page: paginated.page, pageSize: paginated.pageSize, total: paginated.total, totalPages: paginated.totalPages },
       lastSync: lastSync ? { lastRun: lastSync.lastRun, stats: lastSync.stats, state: lastSync.state } : null,
     });
   }

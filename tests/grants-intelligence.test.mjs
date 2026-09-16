@@ -7,7 +7,7 @@ import { normalizeSearchHit, normalizeDetailResponse, mergeNormalized } from '..
 import { buildExternalId, findExisting, upsertOpportunity } from '../lib/grants/dedup.js';
 import { screenOpportunity } from '../lib/grants/screening.js';
 import { GrantsGovProvider } from '../lib/grants/grants-gov.js';
-import { mergeSearchAndDetail, filterOpportunities, buildSearchParams } from '../lib/grants/intelligence.js';
+import { mergeSearchAndDetail, filterOpportunities, buildSearchParams, computeCounts, paginateResults } from '../lib/grants/intelligence.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -396,6 +396,113 @@ test('filterOpportunities sorts by closing date', () => {
   assert.equal(result[2].closingDate, null);
 });
 
+test('filterOpportunities sorts by title when sort=title', () => {
+  const opps = [
+    { title: 'Zebra Grant', closingDate: '2026-06-01', status: 'new' },
+    { title: 'Alpha Fund', closingDate: '2026-06-01', status: 'new' },
+    { title: 'Middle Award', closingDate: '2026-06-01', status: 'new' },
+  ];
+  const result = filterOpportunities(opps, { sort: 'title' });
+  assert.equal(result[0].title, 'Alpha Fund');
+  assert.equal(result[1].title, 'Middle Award');
+  assert.equal(result[2].title, 'Zebra Grant');
+});
+
+test('filterOpportunities sorts by award ceiling desc', () => {
+  const opps = [
+    { title: 'A', awardCeiling: 10000, status: 'new' },
+    { title: 'B', awardCeiling: 50000, status: 'new' },
+    { title: 'C', awardCeiling: 25000, status: 'new' },
+  ];
+  const result = filterOpportunities(opps, { sort: 'amount-desc' });
+  assert.equal(result[0].awardCeiling, 50000);
+  assert.equal(result[1].awardCeiling, 25000);
+  assert.equal(result[2].awardCeiling, 10000);
+});
+
+test('filterOpportunities filters by deadlineSoon', () => {
+  const today = new Date();
+  const in10Days = new Date(today.getTime() + 10 * 86400000).toISOString().slice(0, 10);
+  const in60Days = new Date(today.getTime() + 60 * 86400000).toISOString().slice(0, 10);
+  const opps = [
+    { title: 'Soon', closingDate: in10Days, status: 'new' },
+    { title: 'Later', closingDate: in60Days, status: 'new' },
+  ];
+  const result = filterOpportunities(opps, { deadlineSoon: '30' });
+  assert.equal(result.length, 1);
+  assert.equal(result[0].title, 'Soon');
+});
+
+test('filterOpportunities filters by costShare', () => {
+  const opps = [
+    { title: 'Required', costSharing: true, status: 'new' },
+    { title: 'None', costSharing: false, status: 'new' },
+    { title: 'Unknown', costSharing: null, status: 'new' },
+  ];
+  assert.equal(filterOpportunities(opps, { costShare: 'required' }).length, 1);
+  assert.equal(filterOpportunities(opps, { costShare: 'required' })[0].title, 'Required');
+  assert.equal(filterOpportunities(opps, { costShare: 'none' }).length, 1);
+  assert.equal(filterOpportunities(opps, { costShare: 'none' })[0].title, 'None');
+  assert.equal(filterOpportunities(opps, { costShare: 'unknown' }).length, 1);
+  assert.equal(filterOpportunities(opps, { costShare: 'unknown' })[0].title, 'Unknown');
+});
+
+test('computeCounts counts all statuses correctly', () => {
+  const opps = [
+    { status: 'new', closingDate: '2026-06-01' },
+    { status: 'potential-match', closingDate: '2026-06-01' },
+    { status: 'rejected', closingDate: '2026-06-01' },
+    { status: 'promoted', closingDate: '2026-06-01', aceInstanceId: 'abc' },
+    { status: 'new', closingDate: null },
+  ];
+  const counts = computeCounts(opps);
+  assert.equal(counts.all, 5);
+  assert.equal(counts.new, 2);
+  assert.equal(counts['potential-match'], 1);
+  assert.equal(counts.rejected, 1);
+  assert.equal(counts.promoted, 1);
+  assert.equal(counts['needs-review'], 0);
+});
+
+test('paginateResults returns correct page slice', () => {
+  const list = Array.from({ length: 50 }, (_, i) => ({ id: i }));
+  const page1 = paginateResults(list, 1, 10);
+  assert.equal(page1.items.length, 10);
+  assert.equal(page1.page, 1);
+  assert.equal(page1.pageSize, 10);
+  assert.equal(page1.total, 50);
+  assert.equal(page1.totalPages, 5);
+  assert.equal(page1.items[0].id, 0);
+  assert.equal(page1.items[9].id, 9);
+
+  const page5 = paginateResults(list, 5, 10);
+  assert.equal(page5.items.length, 10);
+  assert.equal(page5.items[0].id, 40);
+
+  const page6 = paginateResults(list, 6, 10);
+  assert.equal(page6.items.length, 10);
+  assert.equal(page6.page, 5);
+  assert.equal(page6.items[0].id, 40);
+});
+
+test('paginateResults clamps page to valid range', () => {
+  const list = Array.from({ length: 5 }, (_, i) => ({ id: i }));
+  const result = paginateResults(list, -1, 10);
+  assert.equal(result.page, 1);
+  assert.equal(result.items.length, 5);
+
+  const result2 = paginateResults(list, 999, 10);
+  assert.equal(result2.page, 1);
+  assert.equal(result2.items.length, 5);
+});
+
+test('paginateResults clamps page size to max 100', () => {
+  const list = Array.from({ length: 200 }, (_, i) => ({ id: i }));
+  const result = paginateResults(list, 1, 200);
+  assert.equal(result.pageSize, 100);
+  assert.equal(result.totalPages, 2);
+});
+
 // --- Admin HTML Tests ---
 
 test('admin.html contains Grant Intelligence tab', () => {
@@ -419,4 +526,27 @@ test('admin.html Grant Intelligence panel has required UI elements', () => {
   assert.ok(html.includes('id="giPromoteBtn"'), 'promote button');
   assert.ok(html.includes('id="giRejectBtn"'), 'reject button');
   assert.ok(html.includes('id="giKeepBtn"'), 'keep button');
+  assert.ok(html.includes('id="giDeadlineFilter"'), 'deadline filter');
+  assert.ok(html.includes('id="giSortFilter"'), 'sort filter');
+  assert.ok(html.includes('id="giLoading"'), 'loading indicator');
+  assert.ok(html.includes('id="giPagination"'), 'pagination container');
+});
+
+test('admin.html Grant Intelligence JS has clickable stat card and pagination handlers', () => {
+  const html = readFileSync(join(root, 'admin.html'), 'utf8');
+  assert.ok(html.includes('giFilterByStatus'), 'stat card click handler');
+  assert.ok(html.includes('giGoPage'), 'pagination page change handler');
+  assert.ok(html.includes('giChangePageSize'), 'page size change handler');
+  assert.ok(html.includes('giResetPageAndLoad'), 'reset page and reload handler');
+  assert.ok(html.includes('giRenderPagination'), 'pagination render function');
+  assert.ok(html.includes('computeCounts') || html.includes('counts.all'), 'counts from server');
+});
+
+test('admin.html Grant Intelligence detail view has screening gate table', () => {
+  const html = readFileSync(join(root, 'admin.html'), 'utf8');
+  assert.ok(html.includes('Gate'), 'screening gate table header');
+  assert.ok(html.includes('Applicant Type'), 'applicant type gate');
+  assert.ok(html.includes('Deadline'), 'deadline gate');
+  assert.ok(html.includes('Geography'), 'geography gate');
+  assert.ok(html.includes('Mission Keywords'), 'mission keywords gate');
 });

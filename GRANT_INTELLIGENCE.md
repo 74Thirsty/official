@@ -147,7 +147,7 @@ All actions on `/api/admin?action=...`:
 
 | Action | Method | Description |
 |--------|--------|-------------|
-| `grant-intelligence-list` | GET | List opportunities with filters |
+| `grant-intelligence-list` | GET | List opportunities with filters, pagination, sorting |
 | `grant-intelligence-detail` | GET | Get single opportunity by external ID |
 | `grant-intelligence-fetch-details` | GET | Fetch full details from provider |
 | `grant-intelligence-sync` | POST | Synchronize with Grants.gov |
@@ -155,6 +155,29 @@ All actions on `/api/admin?action=...`:
 | `grant-intelligence-promote` | POST | Promote into ACE Grant Lifecycle |
 
 All require admin authentication.
+
+### List Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `status` | string | Comma-separated statuses: `new`, `potential-match`, `needs-review`, `rejected`, `promoted` |
+| `q` | string | Search title, number, agency, ALN, synopsis |
+| `deadline_soon` | number | Deadline within N days: `7`, `30`, `60`, `90` |
+| `sort` | string | Sort order: `relevance` (default), `deadline-asc`, `deadline-desc`, `amount-desc`, `amount-asc`, `title`, `agency`, `newest`, `updated` |
+| `page` | number | Page number (default: 1) |
+| `page_size` | number | Results per page (default: 25, max: 100) |
+| `agency` | string | Filter by agency name substring |
+| `cost_share` | string | Filter: `required`, `none`, `unknown` |
+
+### List Response
+
+```json
+{
+  "opportunities": [...],
+  "counts": { "all": 900, "new": 50, "potential-match": 42, "needs-review": 10, "rejected": 3, "promoted": 2, "closingSoon": 8 },
+  "pagination": { "page": 1, "pageSize": 25, "total": 42, "totalPages": 2 },
+  "lastSync": { "lastRun": "...", "stats": {...}, "state": "..." }
+}
 
 ## Synchronization
 

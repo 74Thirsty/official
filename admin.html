@@ -1246,9 +1246,9 @@
 
             <div id="giSyncStatus" style="font-size:13px; color:var(--muted); margin-bottom:12px;"></div>
 
-            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
-              <input id="giSearch" maxlength="120" placeholder="Search title, number, agency..." style="flex:1; min-width:200px; padding:10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white);" oninput="giDebouncedLoad()">
-              <select id="giStatusFilter" style="padding:10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white);" onchange="giLoadList()">
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+              <input id="giSearch" maxlength="120" placeholder="Search title, number, agency, ALN..." style="flex:1; min-width:200px; padding:10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white);" oninput="giDebouncedLoad()">
+              <select id="giStatusFilter" style="padding:10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white);" onchange="giResetPageAndLoad()">
                 <option value="">All Statuses</option>
                 <option value="new">New</option>
                 <option value="potential-match">Potential Match</option>
@@ -1256,10 +1256,30 @@
                 <option value="rejected">Rejected</option>
                 <option value="promoted">Promoted to ACE</option>
               </select>
+              <select id="giDeadlineFilter" style="padding:10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white);" onchange="giResetPageAndLoad()">
+                <option value="">Any Deadline</option>
+                <option value="7">Closing within 7 days</option>
+                <option value="30">Closing within 30 days</option>
+                <option value="60">Closing within 60 days</option>
+                <option value="90">Closing within 90 days</option>
+              </select>
+              <select id="giSortFilter" style="padding:10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white);" onchange="giResetPageAndLoad()">
+                <option value="relevance">Best Match</option>
+                <option value="deadline-asc">Deadline — Soonest</option>
+                <option value="deadline-desc">Deadline — Latest</option>
+                <option value="amount-desc">Award — Highest</option>
+                <option value="amount-asc">Award — Lowest</option>
+                <option value="title">Title A–Z</option>
+                <option value="agency">Agency A–Z</option>
+                <option value="newest">Recently Discovered</option>
+                <option value="updated">Recently Updated</option>
+              </select>
             </div>
 
-            <div id="giStats" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;"></div>
+            <div id="giStats" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;"></div>
+            <div id="giLoading" style="display:none; padding:20px; text-align:center; color:var(--muted); font-size:13px;">Loading grant opportunities...</div>
             <div id="giList"></div>
+            <div id="giPagination" style="display:none; justify-content:space-between; align-items:center; padding:12px 0; flex-wrap:wrap; gap:8px;"></div>
             <div id="giEmpty" class="empty-state" style="display:none;">No grant opportunities found. Click "Sync Grants Now" to retrieve opportunities from Grants.gov.</div>
           </div>
 
@@ -3596,77 +3616,194 @@
     let giOpportunities = [];
     let giCurrentOpp = null;
     let giDebounceTimer = null;
+    let giCurrentPage = 1;
+    let giPageSize = 25;
 
     function giDebouncedLoad() {
       clearTimeout(giDebounceTimer);
       giDebounceTimer = setTimeout(giLoadList, 300);
     }
 
-    async function giLoadList() {
+    function giResetPageAndLoad() {
+      giCurrentPage = 1;
+      giLoadList();
+    }
+
+    function giBuildParams() {
       const search = document.getElementById('giSearch')?.value || '';
       const status = document.getElementById('giStatusFilter')?.value || '';
+      const deadlineSoon = document.getElementById('giDeadlineFilter')?.value || '';
+      const sort = document.getElementById('giSortFilter')?.value || '';
       const params = [];
       if (search) params.push('q=' + encodeURIComponent(search));
       if (status) params.push('status=' + encodeURIComponent(status));
-      const qs = params.length ? '&' + params.join('&') : '';
+      if (deadlineSoon) params.push('deadline_soon=' + deadlineSoon);
+      if (sort) params.push('sort=' + sort);
+      params.push('page=' + giCurrentPage);
+      params.push('page_size=' + giPageSize);
+      return params;
+    }
+
+    async function giLoadList() {
+      const el = document.getElementById('giList');
+      const loadingEl = document.getElementById('giLoading');
+      const emptyEl = document.getElementById('giEmpty');
+      emptyEl.style.display = 'none';
+      el.innerHTML = '';
+      loadingEl.style.display = 'block';
+
+      const params = giBuildParams();
+      const qs = params.length ? '?' + params.join('&') : '';
       try {
         const res = await fetch(apiUrl('grant-intelligence-list') + qs);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to load.');
         giOpportunities = data.opportunities || [];
-        giRenderStats(data);
-        giRenderList(data.opportunities);
+        loadingEl.style.display = 'none';
+        giRenderStats(data.counts || {});
+        giRenderList(giOpportunities, data.pagination || {});
+        giRenderPagination(data.pagination || {}, data.counts || {});
         if (data.lastSync) {
           document.getElementById('giLastSync').textContent = 'Last sync: ' + new Date(data.lastSync.lastRun).toLocaleString();
         }
       } catch (err) {
-        document.getElementById('giList').innerHTML = '<div style="color:#ef4444; font-size:13px;">' + escapeHtml(err.message) + '</div>';
+        loadingEl.style.display = 'none';
+        el.innerHTML = '<div style="color:#ef4444; font-size:13px; padding:12px;">' + escapeHtml(err.message) + '</div>';
       }
     }
 
-    function giRenderStats(data) {
+    function giRenderStats(counts) {
       const el = document.getElementById('giStats');
-      const all = data.totalCount || 0;
-      const counts = { new: 0, 'potential-match': 0, 'needs-review': 0, rejected: 0, promoted: 0 };
-      for (const opp of (data.opportunities || [])) {
-        if (counts[opp.status] !== undefined) counts[opp.status]++;
-      }
-      el.innerHTML = [
-        ['Total', all, 'var(--orange)'],
-        ['New', counts.new, '#3b82f6'],
-        ['Potential Match', counts['potential-match'], '#22c55e'],
-        ['Needs Review', counts['needs-review'], '#f59e0b'],
-        ['Rejected', counts.rejected, '#ef4444'],
-        ['Promoted', counts.promoted, '#8b5cf6'],
-      ].map(([label, count, color]) =>
-        '<div style="padding:8px 14px; border-radius:8px; background:var(--card); border:1px solid var(--line); text-align:center; min-width:80px;">' +
-        '<div style="font-size:20px; font-weight:700; color:' + color + ';">' + count + '</div>' +
-        '<div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">' + label + '</div></div>'
-      ).join('');
+      const all = counts.all || 0;
+      const cards = [
+        ['All', all, 'var(--orange)', ''],
+        ['New', counts.new || 0, '#3b82f6', 'new'],
+        ['Potential Match', counts['potential-match'] || 0, '#22c55e', 'potential-match'],
+        ['Needs Review', counts['needs-review'] || 0, '#f59e0b', 'needs-review'],
+        ['Rejected', counts.rejected || 0, '#ef4444', 'rejected'],
+        ['Promoted', counts.promoted || 0, '#8b5cf6', 'promoted'],
+        ['Closing Soon', counts.closingSoon || 0, '#fb923c', ''],
+      ];
+      const currentStatus = document.getElementById('giStatusFilter')?.value || '';
+      el.innerHTML = cards.map(([label, count, color, statusVal]) => {
+        const isActive = statusVal === currentStatus || (!statusVal && !currentStatus);
+        const border = isActive ? 'border:2px solid ' + color + ';' : 'border:2px solid transparent;';
+        const bg = isActive ? color + '11;' : 'transparent;';
+        return '<div class="gi-stat-card" style="cursor:pointer; padding:10px 14px; border-radius:8px; background:' + bg + ' border:1px solid var(--line); ' + border + ' text-align:center; min-width:70px; transition:all .15s;" ' +
+          'onmouseenter="this.style.borderColor=\'' + color + '\'" ' +
+          'onmouseleave="this.style.borderColor=\'' + (isActive ? color : 'transparent') + '\'" ' +
+          'onclick="giFilterByStatus(\'' + statusVal + '\')">' +
+          '<div style="font-size:20px; font-weight:700; color:' + color + ';">' + count + '</div>' +
+          '<div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;">' + label + '</div></div>';
+      }).join('');
     }
 
-    function giRenderList(opps) {
+    function giFilterByStatus(statusVal) {
+      document.getElementById('giStatusFilter').value = statusVal || '';
+      giResetPageAndLoad();
+    }
+
+    function giRenderList(opps, pagination) {
       const el = document.getElementById('giList');
       const empty = document.getElementById('giEmpty');
       if (!opps || !opps.length) { el.innerHTML = ''; empty.style.display = 'block'; return; }
       empty.style.display = 'none';
+
       const statusColors = { new: '#3b82f6', 'potential-match': '#22c55e', 'needs-review': '#f59e0b', rejected: '#ef4444', promoted: '#8b5cf6' };
-      el.innerHTML = '<div style="display:grid; gap:8px;">' + opps.map((opp) => {
+      const now = new Date();
+
+      el.innerHTML = '<div style="display:grid; gap:6px;">' + opps.map((opp) => {
         const color = statusColors[opp.status] || '#888';
-        const deadline = opp.closingDate ? new Date(opp.closingDate).toLocaleDateString() : 'Unknown';
-        const daysLeft = opp.closingDate ? Math.ceil((new Date(opp.closingDate) - new Date()) / 86400000) : null;
-        const daysStr = daysLeft != null ? (daysLeft > 0 ? daysLeft + 'd left' : 'Expired') : '';
-        return '<div class="panel" style="cursor:pointer; padding:12px 16px;" onclick="giOpenDetail(\'' + escapeHtml(opp.externalId) + '\')">' +
+        const deadline = opp.closingDate ? new Date(opp.closingDate) : null;
+        const deadlineStr = deadline ? deadline.toLocaleDateString() : 'Unknown';
+        const daysLeft = deadline ? Math.ceil((deadline - now) / 86400000) : null;
+
+        let deadlineBadge = '';
+        if (daysLeft != null) {
+          if (daysLeft < 0) {
+            deadlineBadge = '<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:#ef444422; color:#ef4444; font-weight:600;">EXPIRED</span>';
+          } else if (daysLeft === 0) {
+            deadlineBadge = '<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:#ef444422; color:#ef4444; font-weight:700;">CLOSES TODAY</span>';
+          } else if (daysLeft <= 3) {
+            deadlineBadge = '<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:#ef444422; color:#ef4444; font-weight:600;">' + daysLeft + ' DAY' + (daysLeft > 1 ? 'S' : '') + ' LEFT</span>';
+          } else if (daysLeft <= 14) {
+            deadlineBadge = '<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:#fb923c22; color:#fb923c; font-weight:600;">' + daysLeft + ' DAYS LEFT</span>';
+          } else {
+            deadlineBadge = '<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,.05); color:var(--muted);">' + daysLeft + 'd</span>';
+          }
+        }
+
+        const fundingStr = (opp.awardFloor != null || opp.awardCeiling != null)
+          ? '$' + (opp.awardFloor != null ? opp.awardFloor.toLocaleString() : '?') + '–$' + (opp.awardCeiling != null ? opp.awardCeiling.toLocaleString() : '?')
+          : '';
+        const costShare = opp.costSharing === true ? 'Cost Share Required' : opp.costSharing === false ? '' : '';
+        const applicants = (opp.eligibility?.applicantTypes || []).map((t) => t.description || t.id).filter(Boolean).slice(0, 2).join(', ');
+
+        let screeningSummary = '';
+        if (opp.screening) {
+          const s = opp.screening;
+          const hardCount = (s.hardFails || []).length;
+          const unkCount = (s.unknowns || []).length;
+          const relCount = (s.relevances || []).length;
+          const parts = [];
+          if (hardCount) parts.push('<span style="color:#ef4444;">' + hardCount + ' fail' + (hardCount > 1 ? 's' : '') + '</span>');
+          if (unkCount) parts.push('<span style="color:#f59e0b;">' + unkCount + ' unknown' + (unkCount > 1 ? 's' : '') + '</span>');
+          if (relCount) parts.push('<span style="color:#22c55e;">' + relCount + ' match' + (relCount > 1 ? 'es' : '') + '</span>');
+          if (parts.length) screeningSummary = parts.join(' · ');
+          else if (s.hardFails && s.hardFails.length === 0 && s.unknowns && s.unknowns.length === 0) screeningSummary = '<span style="color:#22c55e;">&#10003; Passes screening</span>';
+        }
+
+        const aceLink = opp.aceInstanceId ? '<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:#8b5cf622; color:#8b5cf6;">ACE ' + escapeHtml(opp.aceInstanceId.slice(0, 8)) + '</span>' : '';
+
+        return '<div class="panel" style="cursor:pointer; padding:10px 14px; border-left:3px solid ' + color + ';" onclick="giOpenDetail(\'' + escapeHtml(opp.externalId) + '\')">' +
           '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">' +
           '<div style="flex:1; min-width:0;">' +
-          '<div style="font-size:14px; font-weight:600; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + escapeHtml(opp.title || 'Untitled') + '</div>' +
-          '<div style="font-size:12px; color:var(--muted); margin-top:2px;">' + escapeHtml(opp.issuingAgency || '') + (opp.opportunityNumber ? ' &middot; ' + escapeHtml(opp.opportunityNumber) : '') + '</div>' +
+            '<div style="font-size:13px; font-weight:600; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + escapeHtml(opp.title || 'Untitled') + '</div>' +
+            '<div style="font-size:11px; color:var(--muted); margin-top:2px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">' +
+              '<span>' + escapeHtml(opp.issuingAgency || '') + '</span>' +
+              (opp.opportunityNumber ? '<span>&middot;</span><span style="font-family:monospace;">' + escapeHtml(opp.opportunityNumber) + '</span>' : '') +
+              (fundingStr ? '<span>&middot;</span><span style="color:#22c55e;">' + fundingStr + '</span>' : '') +
+              (costShare ? '<span>&middot;</span><span style="color:#fb923c;">' + costShare + '</span>' : '') +
+              (applicants ? '<span>&middot;</span><span title="Applicant types: ' + escapeHtml(applicants) + '">' + escapeHtml(applicants) + '</span>' : '') +
+            '</div>' +
+            (screeningSummary ? '<div style="font-size:11px; margin-top:3px;">' + screeningSummary + '</div>' : '') +
           '</div>' +
-          '<div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">' +
-          (daysStr ? '<span style="font-size:11px; color:' + (daysLeft > 0 ? 'var(--muted)' : '#ef4444') + ';">' + daysStr + '</span>' : '') +
-          '<span style="display:inline-block; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; background:' + color + '22; color:' + color + ';">' + escapeHtml((opp.status || 'new').replace('-', ' ')) + '</span>' +
+          '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">' +
+            deadlineBadge +
+            '<span style="display:inline-block; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; background:' + color + '22; color:' + color + ';">' + escapeHtml((opp.status || 'new').replace('-', ' ')) + '</span>' +
+            aceLink +
           '</div></div></div>';
       }).join('') + '</div>';
+    }
+
+    function giRenderPagination(pagination, counts) {
+      const el = document.getElementById('giPagination');
+      const { page = 1, pageSize = 25, total = 0, totalPages = 1 } = pagination;
+      if (total <= pageSize) { el.style.display = 'none'; return; }
+      el.style.display = 'flex';
+      const start = (page - 1) * pageSize + 1;
+      const end = Math.min(page * pageSize, total);
+      el.innerHTML =
+        '<span style="font-size:12px; color:var(--muted);">Showing ' + start + '–' + end + ' of ' + total + ' opportunities' + (counts.all && counts.all !== total ? ' (filtered from ' + counts.all + ')' : '') + '</span>' +
+        '<div style="display:flex; gap:4px; align-items:center;">' +
+          '<button class="btn btn-sm" onclick="giGoPage(' + (page - 1) + ')"' + (page <= 1 ? ' disabled style="opacity:.4;pointer-events:none;"' : '') + '>&#9664; Prev</button>' +
+          '<span style="font-size:12px; color:var(--muted); padding:0 8px;">Page ' + page + ' / ' + totalPages + '</span>' +
+          '<button class="btn btn-sm" onclick="giGoPage(' + (page + 1) + ')"' + (page >= totalPages ? ' disabled style="opacity:.4;pointer-events:none;"' : '') + '>Next &#9654;</button>' +
+          '<select onchange="giChangePageSize(this.value)" style="margin-left:8px; padding:4px 6px; border:1px solid var(--line); border-radius:4px; background:rgba(255,255,255,.05); color:var(--white); font-size:11px;">' +
+            [10, 25, 50, 100].map((s) => '<option value="' + s + '"' + (s === pageSize ? ' selected' : '') + '>' + s + '/page</option>').join('') +
+          '</select>' +
+        '</div>';
+    }
+
+    function giGoPage(page) {
+      giCurrentPage = page;
+      giLoadList();
+    }
+
+    function giChangePageSize(size) {
+      giPageSize = Number(size) || 25;
+      giCurrentPage = 1;
+      giLoadList();
     }
 
     async function giSyncNow() {
@@ -3694,73 +3831,101 @@
 
     async function giOpenDetail(externalId) {
       const opp = giOpportunities.find((o) => o.externalId === externalId);
-      if (!opp) return;
-      giCurrentOpp = opp;
+      if (!opp) {
+        try {
+          const res = await fetch(apiUrl('grant-intelligence-detail') + '&id=' + encodeURIComponent(externalId));
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Not found.');
+          giCurrentOpp = data.opportunity;
+        } catch (err) { alert(err.message); return; }
+      } else {
+        giCurrentOpp = opp;
+      }
+      const o = giCurrentOpp;
+      if (!o) return;
 
-      document.getElementById('giDetailTitle').textContent = opp.title || 'Untitled';
+      document.getElementById('giDetailTitle').textContent = o.title || 'Untitled';
       document.getElementById('giDetailMeta').innerHTML = [
-        '<span style="padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; background:' + (opp.status === 'promoted' ? '#8b5cf6' : opp.status === 'rejected' ? '#ef4444' : opp.status === 'potential-match' ? '#22c55e' : opp.status === 'new' ? '#3b82f6' : '#f59e0b') + '22; color:' + (opp.status === 'promoted' ? '#8b5cf6' : opp.status === 'rejected' ? '#ef4444' : opp.status === 'potential-match' ? '#22c55e' : opp.status === 'new' ? '#3b82f6' : '#f59e0b') + ';">' + escapeHtml((opp.status || 'new').replace('-', ' ')) + '</span>',
-        '<span style="font-size:12px; color:var(--muted);">Provider: ' + escapeHtml(opp.provider || '') + '</span>',
-        opp.retrievedAt ? '<span style="font-size:12px; color:var(--muted);">Retrieved: ' + new Date(opp.retrievedAt).toLocaleString() + '</span>' : '',
+        '<span style="padding:3px 8px; border-radius:6px; font-size:11px; font-weight:600; background:' + (o.status === 'promoted' ? '#8b5cf6' : o.status === 'rejected' ? '#ef4444' : o.status === 'potential-match' ? '#22c55e' : o.status === 'new' ? '#3b82f6' : '#f59e0b') + '22; color:' + (o.status === 'promoted' ? '#8b5cf6' : o.status === 'rejected' ? '#ef4444' : o.status === 'potential-match' ? '#22c55e' : o.status === 'new' ? '#3b82f6' : '#f59e0b') + ';">' + escapeHtml((o.status || 'new').replace('-', ' ')) + '</span>',
+        '<span style="font-size:12px; color:var(--muted);">Provider: ' + escapeHtml(o.provider || '') + '</span>',
+        o.retrievedAt ? '<span style="font-size:12px; color:var(--muted);">Retrieved: ' + new Date(o.retrievedAt).toLocaleString() + '</span>' : '',
+        o.aceInstanceId ? '<span style="font-size:12px; color:#8b5cf6; font-weight:600;">ACE: ' + escapeHtml(o.aceInstanceId) + '</span>' : '',
       ].filter(Boolean).join(' ');
 
-      document.getElementById('giDetailAgency').textContent = opp.issuingAgency || 'Unknown';
-      document.getElementById('giDetailNumber').textContent = opp.opportunityNumber || opp.providerOpportunityId || 'N/A';
+      document.getElementById('giDetailAgency').textContent = o.issuingAgency || 'Unknown';
+      document.getElementById('giDetailNumber').textContent = o.opportunityNumber || o.providerOpportunityId || 'N/A';
 
-      const deadline = opp.closingDate ? new Date(opp.closingDate).toLocaleDateString() : 'Unknown';
-      const daysLeft = opp.closingDate ? Math.ceil((new Date(opp.closingDate) - new Date()) / 86400000) : null;
-      document.getElementById('giDetailDeadline').innerHTML = deadline + (daysLeft != null ? ' <span style="color:' + (daysLeft > 0 ? 'var(--muted)' : '#ef4444') + '; font-size:12px;">(' + (daysLeft > 0 ? daysLeft + ' days left' : 'EXPIRED') + ')</span>' : '');
+      const deadline = o.closingDate ? new Date(o.closingDate).toLocaleDateString() : 'Unknown';
+      const daysLeft = o.closingDate ? Math.ceil((new Date(o.closingDate) - new Date()) / 86400000) : null;
+      let deadlineExtra = '';
+      if (daysLeft != null) {
+        if (daysLeft < 0) deadlineExtra = ' <span style="color:#ef4444; font-size:12px; font-weight:600;">EXPIRED</span>';
+        else if (daysLeft === 0) deadlineExtra = ' <span style="color:#ef4444; font-size:12px; font-weight:700;">CLOSES TODAY</span>';
+        else if (daysLeft <= 3) deadlineExtra = ' <span style="color:#ef4444; font-size:12px; font-weight:600;">' + daysLeft + ' DAY' + (daysLeft > 1 ? 'S' : '') + ' LEFT</span>';
+        else deadlineExtra = ' <span style="color:var(--muted); font-size:12px;">(' + daysLeft + ' days left)</span>';
+      }
+      document.getElementById('giDetailDeadline').innerHTML = deadline + deadlineExtra;
 
       const funding = [];
-      if (opp.awardFloor != null || opp.awardCeiling != null) {
-        funding.push('$' + (opp.awardFloor != null ? opp.awardFloor.toLocaleString() : '?') + ' – $' + (opp.awardCeiling != null ? opp.awardCeiling.toLocaleString() : '?'));
+      if (o.awardFloor != null || o.awardCeiling != null) {
+        funding.push('$' + (o.awardFloor != null ? o.awardFloor.toLocaleString() : '?') + ' – $' + (o.awardCeiling != null ? o.awardCeiling.toLocaleString() : '?'));
       }
       document.getElementById('giDetailFunding').textContent = funding.length ? funding.join(', ') : 'Not specified';
 
-      document.getElementById('giDetailCostSharing').textContent = opp.costSharing === true ? 'Required (see source)' : opp.costSharing === false ? 'Not identified in source data' : 'Unknown';
+      document.getElementById('giDetailCostSharing').textContent = o.costSharing === true ? 'Required (see source)' : o.costSharing === false ? 'Not identified in source data' : 'Unknown';
 
-      const alns = (opp.assistanceListings || []).map((a) => a.number + (a.title ? ' – ' + a.title : '')).join(', ');
+      const alns = (o.assistanceListings || []).map((a) => a.number + (a.title ? ' – ' + a.title : '')).join(', ');
       document.getElementById('giDetailALNs').textContent = alns || 'None listed';
 
-      document.getElementById('giDetailSynopsis').textContent = opp.synopsis || opp.programDescription || 'No description available.';
+      document.getElementById('giDetailSynopsis').textContent = o.synopsis || o.programDescription || 'No description available.';
 
-      const applicants = (opp.eligibility?.applicantTypes || []).map((t) => t.description || t.id).filter(Boolean).join(', ');
+      const applicants = (o.eligibility?.applicantTypes || []).map((t) => t.description || t.id).filter(Boolean).join(', ');
       document.getElementById('giDetailApplicants').textContent = applicants || 'Not specified in source data';
 
-      const contact = opp.contactInfo || {};
+      const contact = o.contactInfo || {};
       const contactParts = [contact.name, contact.email, contact.phone].filter(Boolean);
       document.getElementById('giDetailContact').textContent = contactParts.length ? contactParts.join(' | ') : 'Not available';
 
-      document.getElementById('giSourceLink').href = opp.officialSourceUrl || '#';
-      document.getElementById('giDetailNotes').value = opp.adminNotes || '';
+      document.getElementById('giSourceLink').href = o.officialSourceUrl || '#';
+      document.getElementById('giDetailNotes').value = o.adminNotes || '';
 
-      // Screening
-      const screening = opp.screening;
+      const screening = o.screening;
       const screeningEl = document.getElementById('giScreeningContent');
       if (screening) {
-        let html = '<div style="margin-bottom:8px;"><strong>Status:</strong> <span style="color:' + (screening.overallStatus === 'potential-match' ? '#22c55e' : screening.overallStatus === 'rejected' ? '#ef4444' : '#f59e0b') + ';">' + escapeHtml(screening.overallStatus.replace('-', ' ')) + '</span></div>';
-        if (screening.checks && screening.checks.length) {
-          html += '<div style="margin-bottom:6px;">';
-          for (const c of screening.checks) {
-            html += '<div style="font-size:13px; color:#22c55e; margin-bottom:2px;">&#10003; ' + escapeHtml(c.reason) + '</div>';
+        const gateColors = { pass: '#22c55e', fail: '#ef4444', unknown: '#f59e0b', warn: '#fb923c' };
+        const gateLabels = { pass: 'PASS', fail: 'FAIL', unknown: '?', warn: 'WARN' };
+        let html = '<div style="margin-bottom:10px;"><strong>Status:</strong> <span style="color:' + (gateColors[screening.overallStatus] || '#888') + ';">' + escapeHtml((screening.overallStatus || '').replace('-', ' ')) + '</span></div>';
+
+        const gates = [
+          { label: 'Applicant Type', gates: (screening.checks || []).filter((c) => /applicant/i.test(c.reason)), unknowns: (screening.unknowns || []).filter((u) => /applicant/i.test(u.reason)), fails: (screening.hardFails || []).filter((f) => /applicant/i.test(f.reason)) },
+          { label: 'Deadline', gates: (screening.checks || []).filter((c) => /deadline/i.test(c.reason)), unknowns: (screening.unknowns || []).filter((u) => /deadline/i.test(u.reason)), fails: (screening.hardFails || []).filter((f) => /deadline/i.test(f.reason)) },
+          { label: 'Geography', gates: (screening.checks || []).filter((c) => /geograph|state/i.test(c.reason)), unknowns: (screening.unknowns || []).filter((u) => /geograph|state/i.test(u.reason)), fails: (screening.hardFails || []).filter((f) => /geograph|state/i.test(f.reason)) },
+          { label: 'Mission Keywords', gates: (screening.relevances || []).map((r) => ({ reason: r })), unknowns: [], fails: [] },
+        ];
+
+        const hasData = gates.some((g) => g.gates.length || g.unknowns.length || g.fails.length);
+        if (hasData) {
+          html += '<table style="width:100%; border-collapse:collapse; font-size:12px;">' +
+            '<tr style="text-align:left; border-bottom:1px solid var(--line);"><th style="padding:4px 6px; color:var(--muted);">Gate</th><th style="padding:4px 6px; color:var(--muted);">Result</th><th style="padding:4px 6px; color:var(--muted);">Detail</th></tr>';
+          for (const g of gates) {
+            let result, detail, color;
+            if (g.fails.length) { result = gateLabels.fail; detail = g.fails.map((f) => f.reason).join('; '); color = gateColors.fail; }
+            else if (g.unknowns.length) { result = gateLabels.unknown; detail = g.unknowns.map((u) => u.reason).join('; '); color = gateColors.unknown; }
+            else if (g.gates.length) { result = gateLabels.pass; detail = g.gates.map((c) => c.reason).join('; '); color = gateColors.pass; }
+            else { result = '—'; detail = 'Not evaluated'; color = 'var(--muted)'; }
+            html += '<tr style="border-bottom:1px solid var(--line);"><td style="padding:5px 6px; color:var(--white);">' + g.label + '</td><td style="padding:5px 6px; font-weight:600; color:' + color + ';">' + result + '</td><td style="padding:5px 6px; color:var(--muted); max-width:400px; word-break:break-word;">' + escapeHtml(detail) + '</td></tr>';
           }
-          html += '</div>';
+          html += '</table>';
+        } else {
+          const allItems = [
+            ...(screening.checks || []).map((c) => '<div style="color:#22c55e; margin-bottom:2px;">&#10003; ' + escapeHtml(c.reason) + '</div>'),
+            ...(screening.hardFails || []).map((f) => '<div style="color:#ef4444; margin-bottom:2px;">&#10007; ' + escapeHtml(f.reason) + '</div>'),
+            ...(screening.unknowns || []).map((u) => '<div style="color:#f59e0b; margin-bottom:2px;">? ' + escapeHtml(u.reason) + '</div>'),
+          ];
+          if (allItems.length) html += allItems.join('');
         }
-        if (screening.hardFails && screening.hardFails.length) {
-          html += '<div style="margin-bottom:6px;">';
-          for (const f of screening.hardFails) {
-            html += '<div style="font-size:13px; color:#ef4444; margin-bottom:2px;">&#10007; ' + escapeHtml(f.reason) + '</div>';
-          }
-          html += '</div>';
-        }
-        if (screening.unknowns && screening.unknowns.length) {
-          html += '<div style="margin-bottom:6px;">';
-          for (const u of screening.unknowns) {
-            html += '<div style="font-size:13px; color:#f59e0b; margin-bottom:2px;">? ' + escapeHtml(u.reason) + '</div>';
-          }
-          html += '</div>';
-        }
-        if (screening.relevances && screening.relevances.length) {
+
+        if (screening.relevances && screening.relevances.length && !hasData) {
           html += '<div style="font-size:12px; color:var(--muted); margin-top:6px;">Relevant terms: ' + screening.relevances.map((r) => escapeHtml(r)).join(', ') + '</div>';
         }
         screeningEl.innerHTML = html;
@@ -3768,11 +3933,10 @@
         screeningEl.innerHTML = '<div style="font-size:13px; color:var(--muted);">No screening performed yet.</div>';
       }
 
-      // Button visibility
-      const isPromoted = opp.status === 'promoted' || opp.aceInstanceId;
+      const isPromoted = o.status === 'promoted' || o.aceInstanceId;
       document.getElementById('giPromoteBtn').style.display = isPromoted ? 'none' : '';
-      document.getElementById('giRejectBtn').style.display = opp.status === 'rejected' ? 'none' : '';
-      document.getElementById('giKeepBtn').style.display = opp.status === 'needs-review' ? 'none' : '';
+      document.getElementById('giRejectBtn').style.display = o.status === 'rejected' ? 'none' : '';
+      document.getElementById('giKeepBtn').style.display = o.status === 'needs-review' ? 'none' : '';
 
       document.getElementById('giDetailModal').style.display = 'flex';
     }
