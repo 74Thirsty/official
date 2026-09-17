@@ -3653,7 +3653,7 @@
       loadingEl.style.display = 'block';
 
       const params = giBuildParams();
-      const qs = params.length ? '?' + params.join('&') : '';
+      const qs = params.length ? '&' + params.join('&') : '';
       try {
         const res = await fetch(apiUrl('grant-intelligence-list') + qs);
         const data = await res.json();

@@ -540,6 +540,7 @@ test('admin.html Grant Intelligence JS has clickable stat card and pagination ha
   assert.ok(html.includes('giResetPageAndLoad'), 'reset page and reload handler');
   assert.ok(html.includes('giRenderPagination'), 'pagination render function');
   assert.ok(html.includes('computeCounts') || html.includes('counts.all'), 'counts from server');
+  assert.ok(html.includes("const qs = params.length ? '&' + params.join('&') : '';"), 'filters preserve the admin key query parameter');
 });
 
 test('admin.html Grant Intelligence detail view has screening gate table', () => {
