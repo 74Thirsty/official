@@ -7,7 +7,6 @@ import { randomBytes } from 'crypto';
 import { createHmac, scryptSync, timingSafeEqual } from 'crypto';
 import { parseBrowser } from '../lib/ua.js';
 import { facebookDetectionConfigured } from '../lib/stream.js';
-import { loadSocialMediaConfig, loadSocialMediaBackup, saveSocialMediaConfig, validateSocialMediaConfig, describeSocialMediaChange, socialMediaEnvValue } from '../lib/social-media.js';
 import { computeVisitorStats } from '../lib/visitor-stats.js';
 import { aiConfigured, generateJson } from '../lib/ai.js';
 import { notifyOwner } from '../lib/notify.js';
@@ -48,14 +47,6 @@ export default function handler(req, res) {
   }
   if (!isAdmin(req)) {
     return sendJson(res, { error: 'Admin access required.' }, 403);
-  }
-
-  if (action.startsWith('social-media-')) {
-    handleSocialMedia(req, res, action).catch((error) => {
-      console.error('social media config service failed:', error);
-      sendJson(res, { error: 'Social media configuration service is unavailable.' }, 500);
-    });
-    return;
   }
 
   const fail = () => sendJson(res, { error: 'Storage error.' }, 500);
@@ -574,59 +565,6 @@ async function handleDocs(req, res, action) {
     await setList(KEYS.documentState, results);
     await addAudit('document_sources_validated', session.name, { checked: results.length, available: results.filter((item) => item.availability === 'available').length });
     return sendJson(res, { ok: true, results });
-  }
-
-  return sendJson(res, { error: 'Unsupported action.' }, 404);
-}
-
-async function handleSocialMedia(req, res, action) {
-  if (action === 'social-media-load') {
-    if (req.method !== 'GET') return sendJson(res, { error: 'Method not allowed.' }, 405);
-    const result = await loadSocialMediaConfig();
-    if (!result.ok) {
-      return sendJson(res, { ok: false, code: result.code, message: result.message, errors: result.errors || [], warnings: result.warnings || [] });
-    }
-    return sendJson(res, { ok: true, config: result.data, relative: result.relative, warnings: result.warnings || [] });
-  }
-
-  if (action === 'social-media-load-backup') {
-    if (req.method !== 'GET') return sendJson(res, { error: 'Method not allowed.' }, 405);
-    const result = await loadSocialMediaBackup();
-    if (!result.ok) {
-      return sendJson(res, { ok: false, code: result.code, message: result.message, errors: result.errors || [] });
-    }
-    return sendJson(res, { ok: true, config: result.data, relative: result.relative });
-  }
-
-  if (action === 'social-media-validate') {
-    if (req.method !== 'POST') return sendJson(res, { error: 'Method not allowed.' }, 405);
-    const payload = await readBody(req);
-    const validation = validateSocialMediaConfig(payload.config);
-    if (validation.errors.length) {
-      return sendJson(res, { ok: false, errors: validation.errors, warnings: validation.warnings }, 422);
-    }
-    return sendJson(res, { ok: true, warnings: validation.warnings });
-  }
-
-  if (action === 'social-media-save') {
-    if (req.method !== 'POST') return sendJson(res, { error: 'Method not allowed.' }, 405);
-    const payload = await readBody(req);
-    if (payload.config === undefined || payload.config === null || typeof payload.config !== 'object' || Array.isArray(payload.config)) {
-      return sendJson(res, { error: 'A configuration object is required.' }, 422);
-    }
-    const previousLoad = await loadSocialMediaConfig();
-    const saved = await saveSocialMediaConfig(payload.config, { previous: previousLoad.ok ? previousLoad.data : null });
-    if (!saved.ok) {
-      const status = saved.code === 'VALIDATION' ? 422 : (saved.code === 'WRITE_ERROR' ? 500 : 400);
-      return sendJson(res, { ok: false, code: saved.code, message: saved.message, errors: saved.errors || [], warnings: saved.warnings || [] }, status);
-    }
-    await addAudit('social_media_config_saved', 'admin', {
-      summary: saved.summary.join(' · '),
-      accounts: Array.isArray(saved.data.accounts) ? saved.data.accounts.length : 0,
-      backupCreated: saved.backupCreated,
-      configPath: socialMediaEnvValue() || '',
-    });
-    return sendJson(res, { ok: true, config: saved.data, relative: saved.relative, backupCreated: saved.backupCreated, summary: saved.summary });
   }
 
   return sendJson(res, { error: 'Unsupported action.' }, 404);
