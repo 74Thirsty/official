@@ -7,7 +7,7 @@ import { normalizeSearchHit, normalizeDetailResponse, mergeNormalized } from '..
 import { buildExternalId, findExisting, upsertOpportunity } from '../lib/grants/dedup.js';
 import { screenOpportunity } from '../lib/grants/screening.js';
 import { GrantsGovProvider } from '../lib/grants/grants-gov.js';
-import { mergeSearchAndDetail, filterOpportunities, buildSearchParams, computeCounts, paginateResults } from '../lib/grants/intelligence.js';
+import { mergeSearchAndDetail, filterOpportunities, buildSearchParams, computeCounts, paginateResults, syncOpportunities } from '../lib/grants/intelligence.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -501,6 +501,41 @@ test('paginateResults clamps page size to max 100', () => {
   const result = paginateResults(list, 1, 200);
   assert.equal(result.pageSize, 100);
   assert.equal(result.totalPages, 2);
+});
+
+test('syncOpportunities persists normalized new and updated records', async () => {
+  const existing = [{
+    externalId: 'grants-gov:100',
+    provider: 'grants-gov',
+    providerOpportunityId: '100',
+    title: 'Old title',
+    status: 'needs-review',
+    adminNotes: 'Keep this note',
+  }];
+  const hits = [
+    {
+      provider: 'grants-gov',
+      providerOpportunityId: '100',
+      title: 'Updated title',
+      closingDate: '2030-12-31',
+    },
+    {
+      provider: 'grants-gov',
+      providerOpportunityId: '200',
+      title: 'New opportunity',
+      closingDate: '2030-12-31',
+    },
+  ];
+
+  const stats = await syncOpportunities(hits, existing);
+
+  assert.equal(stats.updatedCount, 1);
+  assert.equal(stats.newCount, 1);
+  assert.equal(existing.length, 2);
+  assert.equal(existing[0].title, 'Updated title');
+  assert.equal(existing[0].adminNotes, 'Keep this note');
+  assert.equal(existing[1].externalId, 'grants-gov:200');
+  assert.equal(existing[1].title, 'New opportunity');
 });
 
 // --- Admin HTML Tests ---
