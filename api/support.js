@@ -1,3 +1,11 @@
+/**
+ * @file        support.js
+ * @description Support/donations endpoint
+ * @project     Lost Limb Riders (lostlimbriders.org)
+ * @author      C. Hirschauer
+ * @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+ * @license     Proprietary. No unauthorized reproduction or distribution.
+ */
 import { sendJson, sendEmpty, readBody, clean, escapeHtml, getParam } from '../lib/http.js';
 
 const RECIPIENT = 'john.thompson@lostlimbriders.org';

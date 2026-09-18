@@ -1,3 +1,11 @@
+<!--
+  @file        admin.html
+  @description Admin dashboard — stats, subscriber profiles, visitor log, newsletter compose/preview
+  @project     Lost Limb Riders (lostlimbriders.org)
+  @author      C. Hirschauer
+  @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+  @license     Proprietary. No unauthorized reproduction or distribution.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -692,6 +700,7 @@
           <button type="button" class="menu-btn" onclick="toggleMenu(this)">Content <span class="menu-caret">&#9662;</span></button>
           <div class="menu-drop">
             <button type="button" class="menu-item" onclick="switchTab('events', this)">Events</button>
+            <button type="button" class="menu-item" onclick="switchTab('merch', this)">Official Apparel</button>
             <button type="button" class="menu-item" onclick="switchTab('sponsors', this)">Sponsors</button>
             <button type="button" class="menu-item" onclick="switchTab('content', this)">Content Engine</button>
             <button type="button" class="menu-item" onclick="switchTab('ideas', this)">Event Ideas</button>
@@ -1036,6 +1045,139 @@
               </table>
             </div>
             <div id="evEmpty" class="empty-state" style="display:none;">No events yet.</div>
+          </div>
+        </div>
+
+        <!-- Merch Panel -->
+        <div id="panel-merch" class="tab-panel">
+          <div class="panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; flex-wrap:wrap;">
+              <h3 style="color:var(--orange); font-size:14px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin:0;">Official Apparel</h3>
+              <button class="btn btn-sm btn-primary" style="white-space:nowrap;" onclick="openMerchForm()">+ Add Item</button>
+            </div>
+
+            <!-- Analytics Summary -->
+            <div id="merchAnalytics" style="display:none; margin-bottom:20px;">
+              <div style="font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:10px;">Performance Analytics</div>
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:16px;">
+                <div style="padding:14px; border:1px solid var(--line); border-radius:10px; background:var(--charcoal); text-align:center;">
+                  <div id="merchTotalClicks" style="font-size:28px; font-weight:900; color:var(--orange);">0</div>
+                  <div style="color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-top:4px;">Total Clicks</div>
+                </div>
+                <div style="padding:14px; border:1px solid var(--line); border-radius:10px; background:var(--charcoal); text-align:center;">
+                  <div id="merchEstRevenue" style="font-size:28px; font-weight:900; color:#22c55e;">$0</div>
+                  <div style="color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-top:4px;">Est. Revenue (clicks &times; price)</div>
+                </div>
+                <div style="padding:14px; border:1px solid var(--line); border-radius:10px; background:var(--charcoal); text-align:center;">
+                  <div id="merchProjectedRevenue" style="font-size:28px; font-weight:900; color:#3b82f6;">$0</div>
+                  <div style="color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-top:4px;">Projected (clicks &times; price &times; conversion)</div>
+                </div>
+                <div style="padding:14px; border:1px solid var(--line); border-radius:10px; background:var(--charcoal); text-align:center;">
+                  <div id="merchActiveCount" style="font-size:28px; font-weight:900; color:var(--white);">0</div>
+                  <div style="color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-top:4px;">Active Items</div>
+                </div>
+              </div>
+              <!-- Conversion rate setting -->
+              <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:12px 16px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.03); margin-bottom:16px;">
+                <label style="color:var(--muted); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; white-space:nowrap;">Conversion Rate %</label>
+                <input id="merchConversionRate" type="number" min="0" max="100" step="0.1" value="3" style="width:80px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.05); color:var(--white); font-size:14px; text-align:center;">
+                <span style="color:var(--muted); font-size:12px;">Used for projected revenue calculation</span>
+              </div>
+              <!-- Top items by clicks -->
+              <div style="padding:12px 16px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.03);">
+                <div style="font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:8px;">Top Items by Clicks</div>
+                <div id="merchTopItems"></div>
+              </div>
+            </div>
+
+            <!-- Add/Edit Form -->
+            <div id="merchFormWrap" style="display:none; border:1px solid rgba(255,106,0,.35); border-radius:10px; padding:18px; margin-bottom:18px; background:rgba(255,106,0,.04);">
+              <input type="hidden" id="mchEditId" value="">
+              <div class="form-row">
+                <div class="form-field">
+                  <label>Item Name *</label>
+                  <input id="mchName" maxlength="120" placeholder="e.g. LLR Embroidered Patch">
+                </div>
+                <div class="form-field">
+                  <label>Category</label>
+                  <select id="mchCategory">
+                    <option value="Apparel">Apparel</option>
+                    <option value="Accessories">Accessories</option>
+                    <option value="Patches & Pins">Patches & Pins</option>
+                    <option value="Headwear">Headwear</option>
+                    <option value="Stickers & Decals">Stickers & Decals</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-field" style="margin-bottom:14px;">
+                <label>Description</label>
+                <textarea id="mchDesc" maxlength="500" placeholder="Brief description of the item..."></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label>Price ($)</label>
+                  <input id="mchPrice" maxlength="20" placeholder="e.g. 24.99">
+                </div>
+                <div class="form-field">
+                  <label>Tag</label>
+                  <select id="mchTag">
+                    <option value="">None</option>
+                    <option value="new">New</option>
+                    <option value="bestseller">Best Seller</option>
+                    <option value="limited">Limited</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label>Image URL</label>
+                  <input id="mchImageUrl" maxlength="500" placeholder="https://...">
+                </div>
+                <div class="form-field">
+                  <label>PayPal Payment URL *</label>
+                  <input id="mchPaypalUrl" maxlength="500" placeholder="https://paypal.me/...">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label>Display Order (lower = first)</label>
+                  <input id="mchOrder" type="number" min="0" max="9999" value="0">
+                </div>
+                <div class="form-field">
+                  <label>Status</label>
+                  <select id="mchActive">
+                    <option value="true">Active — shown on shop page</option>
+                    <option value="false">Inactive — hidden</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary" onclick="saveMerch()">Save Item</button>
+                <button class="btn btn-secondary" onclick="cancelMerchForm()">Cancel</button>
+              </div>
+              <div id="mchSaveStatus" style="margin-top:12px; font-size:13px; min-height:18px;"></div>
+            </div>
+
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Clicks</th>
+                    <th>Est. Revenue</th>
+                    <th>Tag</th>
+                    <th>Status</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="mchBody"></tbody>
+              </table>
+            </div>
+            <div id="mchEmpty" class="empty-state" style="display:none;">No apparel items yet. Click &ldquo;+ Add Item&rdquo; to create the first one.</div>
           </div>
         </div>
 
@@ -1540,6 +1682,7 @@
           streamCheckTimer = setInterval(checkStreamLive, 60000);
         }
         if (name === 'events') loadEvents();
+        if (name === 'merch') loadMerchAdmin();
         if (name === 'sponsors') loadSponsorsAdmin();
         if (name === 'newsletter') loadSignedStatus();
         if (name === 'gallery') { loadGalleryPending(); loadGalleryApproved(); }
@@ -1969,8 +2112,8 @@
        if (data.stream && data.stream.live) {
          const viewers = parseInt(data.stream.viewers, 10) || 0;
          let html = '<span style="color:#22c55e;">&#9679; LIVE NOW on ' + escapeHtml(data.stream.platform === 'youtube' ? 'YouTube' : 'Facebook') + '</span>';
-         if (viewers > 0) html += ' <span style="color:var(--muted);">\u2022 ' + viewers + ' watching</span>';
-         if (data.stream.liveUrl) html += ' \u2022 <a href="' + escapeHtml(data.stream.liveUrl) + '" target="_blank" rel="noopener" style="color:#fca5a5;">open broadcast</a>';
+         if (viewers > 0) html += ' <span style="color:var(--muted);">• ' + viewers + ' watching</span>';
+         if (data.stream.liveUrl) html += ' • <a href="' + escapeHtml(data.stream.liveUrl) + '" target="_blank" rel="noopener" style="color:#fca5a5;">open broadcast</a>';
          line.innerHTML = html;
          return;
        }
@@ -1989,7 +2132,7 @@
 
      async function refreshStreamStatus() {
        const line = document.getElementById('fbStatusLine');
-       if (line) line.textContent = 'Checking Facebook and YouTube\u2026';
+       if (line) line.textContent = 'Checking Facebook and YouTube…';
        await checkStreamLive();
      }
 
@@ -2023,11 +2166,11 @@
        }
        list.innerHTML = schedule.map(item => {
          const recurring = item.recurring !== false ? ' (recurring)' : '';
-         const privateBadge = item.visibility === 'private' ? ' \u2022 <span style="color:#fca5a5;">private</span>' : '';
+         const privateBadge = item.visibility === 'private' ? ' • <span style="color:#fca5a5;">private</span>' : '';
          return '<div style="display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.03);">' +
            '<div style="flex:1; min-width:0;">' +
              '<div style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:2px;">' + escapeHtml(item.title || '') + privateBadge + '</div>' +
-             '<div style="font-size:12px; color:var(--muted);">' + escapeHtml(item.day || '') + ' ' + escapeHtml(item.time || '') + (item.date ? ' \u2022 ' + escapeHtml(item.date) : '') + recurring + '</div>' +
+             '<div style="font-size:12px; color:var(--muted);">' + escapeHtml(item.day || '') + ' ' + escapeHtml(item.time || '') + (item.date ? ' • ' + escapeHtml(item.date) : '') + recurring + '</div>' +
            '</div>' +
            '<div style="display:flex; gap:8px; margin-left:12px; flex-shrink:0;">' +
              '<button class="btn btn-sm" onclick="editScheduleItem(\'' + item.id + '\')" style="background:transparent;color:var(--muted);border-color:rgba(255,255,255,.2);">Edit</button>' +
@@ -2290,6 +2433,168 @@
 
       // --- Sponsor Wall ---
       let allSponsors = [];
+      /* ── MERCH ── */
+      function merchApiUrl(action) {
+        return '/api/admin?action=' + action + '&key=' + encodeURIComponent(adminKey);
+      }
+
+      async function loadMerchAdmin() {
+        try {
+          const res = await fetch(merchApiUrl('merch-admin-list'));
+          if (!res.ok) return;
+          const data = await res.json();
+          const items = data.items || [];
+          const body = document.getElementById('mchBody');
+          const empty = document.getElementById('mchEmpty');
+          const analytics = document.getElementById('merchAnalytics');
+
+          if (!items.length) {
+            body.innerHTML = '';
+            empty.style.display = 'block';
+            analytics.style.display = 'none';
+            return;
+          }
+          empty.style.display = 'none';
+          analytics.style.display = 'block';
+
+          /* Analytics */
+          const totalClicks = items.reduce((sum, i) => sum + (i.clicks || 0), 0);
+          let estRevenue = 0;
+          items.forEach(i => { const p = parseFloat(i.price); if (!isNaN(p)) estRevenue += (i.clicks || 0) * p; });
+          const convRate = parseFloat(document.getElementById('merchConversionRate').value) || 3;
+          const projectedRevenue = estRevenue * (convRate / 100);
+          const activeCount = items.filter(i => i.active !== false).length;
+
+          document.getElementById('merchTotalClicks').textContent = totalClicks;
+          document.getElementById('merchEstRevenue').textContent = '$' + estRevenue.toFixed(2);
+          document.getElementById('merchProjectedRevenue').textContent = '$' + projectedRevenue.toFixed(2);
+          document.getElementById('merchActiveCount').textContent = activeCount;
+
+          const topItems = items.filter(i => (i.clicks || 0) > 0).sort((a, b) => (b.clicks || 0) - (a.clicks || 0)).slice(0, 5);
+          const topEl = document.getElementById('merchTopItems');
+          if (topItems.length) {
+            topEl.innerHTML = topItems.map(i => {
+              const p = parseFloat(i.price) || 0;
+              const rev = ((i.clicks || 0) * p).toFixed(2);
+              return '<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.06); font-size:13px;">' +
+                '<span style="color:var(--white); font-weight:700;">' + escapeHtml(i.name) + '</span>' +
+                '<span style="color:var(--muted);">' + (i.clicks || 0) + ' clicks &middot; $' + rev + ' est.</span>' +
+              '</div>';
+            }).join('');
+          } else {
+            topEl.innerHTML = '<div style="color:var(--muted); font-size:13px; padding:8px 0;">No clicks recorded yet.</div>';
+          }
+
+          /* Table */
+          body.innerHTML = items.map(i => {
+            const p = parseFloat(i.price) || 0;
+            const rev = ((i.clicks || 0) * p).toFixed(2);
+            const tagBadge = i.tag ? '<span class="badge" style="background:rgba(255,106,0,.12);color:var(--orange);">' + escapeHtml(i.tag) + '</span>' : '—';
+            const statusBadge = i.active !== false
+              ? '<span class="badge badge-clean">Active</span>'
+              : '<span class="badge badge-proxy">Inactive</span>';
+            return '<tr>' +
+              '<td>' + (i.order || 0) + '</td>' +
+              '<td style="color:var(--white); font-weight:700;">' + escapeHtml(i.name) + '</td>' +
+              '<td>' + escapeHtml(i.category || 'Apparel') + '</td>' +
+              '<td>' + (i.price ? '$' + escapeHtml(String(i.price)) : '—') + '</td>' +
+              '<td>' + (i.clicks || 0) + '</td>' +
+              '<td>$' + rev + '</td>' +
+              '<td>' + tagBadge + '</td>' +
+              '<td>' + statusBadge + '</td>' +
+              '<td style="text-align:right;"><button class="btn btn-sm" style="margin-right:6px;" onclick="openMerchForm(\'' + i.id + '\')">Edit</button><button class="btn btn-sm btn-danger" onclick="deleteMerch(\'' + i.id + '\')">Delete</button></td>' +
+            '</tr>';
+          }).join('');
+        } catch {}
+      }
+
+      document.getElementById('merchConversionRate').addEventListener('change', loadMerchAdmin);
+
+      function openMerchForm(editId) {
+        const wrap = document.getElementById('merchFormWrap');
+        const status = document.getElementById('mchSaveStatus');
+        status.textContent = '';
+        if (editId) {
+          fetch(merchApiUrl('merch-admin-list')).then(r => r.json()).then(data => {
+            const item = (data.items || []).find(i => i.id === editId);
+            if (!item) return;
+            document.getElementById('mchEditId').value = item.id;
+            document.getElementById('mchName').value = item.name || '';
+            document.getElementById('mchCategory').value = item.category || 'Apparel';
+            document.getElementById('mchDesc').value = item.description || '';
+            document.getElementById('mchPrice').value = item.price || '';
+            document.getElementById('mchTag').value = item.tag || '';
+            document.getElementById('mchImageUrl').value = item.imageUrl || '';
+            document.getElementById('mchPaypalUrl').value = item.paypalUrl || '';
+            document.getElementById('mchOrder').value = item.order || 0;
+            document.getElementById('mchActive').value = item.active !== false ? 'true' : 'false';
+            wrap.style.display = 'block';
+          });
+        } else {
+          document.getElementById('mchEditId').value = '';
+          document.getElementById('mchName').value = '';
+          document.getElementById('mchCategory').value = 'Apparel';
+          document.getElementById('mchDesc').value = '';
+          document.getElementById('mchPrice').value = '';
+          document.getElementById('mchTag').value = '';
+          document.getElementById('mchImageUrl').value = '';
+          document.getElementById('mchPaypalUrl').value = '';
+          document.getElementById('mchOrder').value = '0';
+          document.getElementById('mchActive').value = 'true';
+          wrap.style.display = 'block';
+        }
+      }
+
+      function cancelMerchForm() {
+        document.getElementById('merchFormWrap').style.display = 'none';
+        document.getElementById('mchSaveStatus').textContent = '';
+      }
+
+      async function saveMerch() {
+        const status = document.getElementById('mchSaveStatus');
+        const editId = document.getElementById('mchEditId').value;
+        const payload = {
+          name: document.getElementById('mchName').value.trim(),
+          description: document.getElementById('mchDesc').value.trim(),
+          category: document.getElementById('mchCategory').value,
+          price: document.getElementById('mchPrice').value.trim(),
+          tag: document.getElementById('mchTag').value,
+          imageUrl: document.getElementById('mchImageUrl').value.trim(),
+          paypalUrl: document.getElementById('mchPaypalUrl').value.trim(),
+          order: parseInt(document.getElementById('mchOrder').value, 10) || 0,
+          active: document.getElementById('mchActive').value === 'true',
+        };
+        if (!payload.name) { status.textContent = 'Item name is required.'; status.style.color = '#ef4444'; return; }
+        status.textContent = 'Saving...'; status.style.color = 'var(--muted)';
+        const action = editId ? 'merch-update' : 'merch-add';
+        if (editId) payload.id = editId;
+        try {
+          const res = await fetch(merchApiUrl(action), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Save failed.');
+          status.textContent = 'Saved.'; status.style.color = '#22c55e';
+          cancelMerchForm();
+          loadMerchAdmin();
+        } catch (err) { status.textContent = err.message; status.style.color = '#ef4444'; }
+      }
+
+      async function deleteMerch(id) {
+        if (!confirm('Delete this item?')) return;
+        try {
+          const res = await fetch(merchApiUrl('merch-delete'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id }),
+          });
+          if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Delete failed.'); }
+          loadMerchAdmin();
+        } catch (err) { alert(err.message); }
+      }
+
       let allSponsorLevels = [];
       let pendingLogoData = '';
       let sponsorLogoDirty = false;

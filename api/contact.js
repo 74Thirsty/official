@@ -1,3 +1,11 @@
+/**
+ * @file        contact.js
+ * @description Contact form endpoint — sends message via Resend
+ * @project     Lost Limb Riders (lostlimbriders.org)
+ * @author      C. Hirschauer
+ * @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+ * @license     Proprietary. No unauthorized reproduction or distribution.
+ */
 import { sendJson, sendEmpty, readBody, clean, escapeHtml } from '../lib/http.js';
 
 const RECIPIENT = 'john.thompson@lostlimbriders.org';
@@ -66,7 +74,12 @@ export default function handler(req, res) {
       `<p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>`
     ].join('\n');
 
-    const text = `Name: ${name}\nEmail: ${email}\nPhone: ${phone || 'not provided'}\nSubject: ${subject}\n\n${message}`;
+    const text = `Name: ${name}
+Email: ${email}
+Phone: ${phone || 'not provided'}
+Subject: ${subject}
+
+${message}`;
 
     const emailPayload = {
       from,

@@ -1,3 +1,11 @@
+/**
+ * @file        admin.js
+ * @description Admin API — stats, subscriber list, visitor log, newsletter HTML builder, stream management
+ * @project     Lost Limb Riders (lostlimbriders.org)
+ * @author      C. Hirschauer
+ * @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+ * @license     Proprietary. No unauthorized reproduction or distribution.
+ */
 import { getList, setList, getDate, setDate, acquireLock, releaseLock, KEYS, LIMITS } from '../lib/storage.js';
 import { sendJson, sendEmpty, readBody, isAdmin, clean, getParam } from '../lib/http.js';
 import { buildNewsletter, getUpcomingEvents, getUpcomingStreams, buildWelcomeEmail, buildUnsubscribeUrl, signedCopyAvailable } from '../lib/newsletter.js';
@@ -45,6 +53,67 @@ export default function handler(req, res) {
     });
     return;
   }
+
+  /* ── Public actions (no auth) ── */
+
+  if (action === 'merch-list') {
+    getList(KEYS.merch).then((items) => {
+      sendJson(res, { items: items.filter((i) => i.active !== false) });
+    }).catch(() => sendJson(res, { error: 'Storage error.' }, 500));
+    return;
+  }
+
+  if (action === 'merch-click' && req.method === 'POST') {
+    readBody(req).then(async (payload) => {
+      const id = clean(String(payload.id || ''), 40);
+      if (!id) return sendJson(res, { error: 'Item ID is required.' }, 422);
+      const items = await getList(KEYS.merch);
+      const item = items.find((i) => i.id === id);
+      if (!item) return sendJson(res, { error: 'Item not found.' }, 404);
+      item.clicks = (item.clicks || 0) + 1;
+      item.lastClickedAt = new Date().toISOString();
+      await setList(KEYS.merch, items);
+      return sendJson(res, { ok: true });
+    }).catch(() => sendJson(res, { error: 'Storage error.' }, 500));
+    return;
+  }
+
+  if (action === 'track-event' && req.method === 'POST') {
+    readBody(req).then(async (payload) => {
+      const eventType = clean(String(payload.event || ''), 40);
+      const eventTarget = clean(String(payload.target || ''), 200);
+      const eventMeta = payload.meta || {};
+      if (!eventType) return sendJson(res, { error: 'Event type is required.' }, 422);
+      const key = 'llr:interaction-events';
+      const events = await getList(key);
+      events.unshift({
+        type: eventType,
+        target: eventTarget,
+        meta: eventMeta,
+        timestamp: new Date().toISOString(),
+        page: clean(String(payload.page || ''), 300),
+      });
+      await setList(key, events.slice(0, LIMITS.interactionEvents || 5000));
+      return sendJson(res, { ok: true });
+    }).catch(() => sendJson(res, { error: 'Storage error.' }, 500));
+    return;
+  }
+
+  if (action === 'paypal-config') {
+    const value = String(process.env.PAYPAL_DONATION_URL || '').trim();
+    let configured = false;
+    let donationUrl = '';
+    try {
+      const url = new URL(value);
+      const host = url.hostname.toLowerCase();
+      if (url.protocol === 'https:' && (host === 'paypal.com' || host.endsWith('.paypal.com') || host === 'paypal.me' || host.endsWith('.paypal.me'))) {
+        configured = true;
+        donationUrl = url.href;
+      }
+    } catch { /* invalid url */ }
+    return sendJson(res, { configured, donationUrl });
+  }
+
   if (!isAdmin(req)) {
     return sendJson(res, { error: 'Admin access required.' }, 403);
   }
@@ -52,11 +121,17 @@ export default function handler(req, res) {
   const fail = () => sendJson(res, { error: 'Storage error.' }, 500);
 
   if (action === 'stats') {
-    Promise.all([getList(KEYS.visitors), getList(KEYS.subscribers)]).then(([visitors, subscribers]) => {
+    Promise.all([getList(KEYS.visitors), getList(KEYS.subscribers), getList(KEYS.interactionEvents)]).then(([visitors, subscribers, interactionEvents]) => {
+      const interactionCounts = {};
+      for (const e of interactionEvents) {
+        interactionCounts[e.type] = (interactionCounts[e.type] || 0) + 1;
+      }
       sendJson(res, {
         ...computeVisitorStats(visitors, new Date(), subscribers),
         subscribers: subscribers.length,
         signedCopyReady: signedCopyAvailable(),
+        interactions: interactionCounts,
+        totalInteractions: interactionEvents.length,
       });
     }).catch(fail);
     return;
@@ -83,19 +158,21 @@ export default function handler(req, res) {
   }
 
   if (action === 'send-newsletter' && req.method === 'POST') {
-    Promise.all([readBody(req), getList(KEYS.events), getList(KEYS.stream), getList(KEYS.stories)]).then(async ([payload, events, streamArr, stories]) => {
+    Promise.all([readBody(req), getList(KEYS.events), getList(KEYS.stream), getList(KEYS.stories), getList(KEYS.merch)]).then(async ([payload, events, streamArr, stories, merch]) => {
       const upcoming = getUpcomingEvents(events);
       const streamSchedule = (streamArr && streamArr[0] && streamArr[0].schedule) || [];
       const storyForNewsletter = stories.find(s => s.status === 'approved') || null;
+      const topMerch = merch.filter(i => i.active !== false).sort((a, b) => (b.clicks || 0) - (a.clicks || 0)).slice(0, 2);
       const { html, eventCount, streamCount } = buildNewsletter(
         String(payload.message || '').trim(),
         upcoming,
         getUpcomingStreams(streamSchedule),
         'Rider',
         '',
-        storyForNewsletter
+        storyForNewsletter,
+        topMerch
       );
-      sendJson(res, { html, eventCount, streamCount, storyIncluded: Boolean(storyForNewsletter) });
+      sendJson(res, { html, eventCount, streamCount, storyIncluded: Boolean(storyForNewsletter), merchIncluded: topMerch.length });
     }).catch(fail);
     return;
   }
@@ -120,7 +197,9 @@ export default function handler(req, res) {
       const storyIdx = allStories.findIndex(s => s.status === 'approved');
       const storyForNewsletter = storyIdx !== -1 ? allStories[storyIdx] : null;
       const storyId = storyForNewsletter?.id || null;
-      const { dateRange } = buildNewsletter(userMessage, upcoming, streamList, 'Rider', '', storyForNewsletter);
+      const allMerch = await getList(KEYS.merch);
+      const topMerch = allMerch.filter(i => i.active !== false).sort((a, b) => (b.clicks || 0) - (a.clicks || 0)).slice(0, 2);
+      const { dateRange } = buildNewsletter(userMessage, upcoming, streamList, 'Rider', '', storyForNewsletter, topMerch);
       const subject = `Lost Limb Riders — Events ${dateRange}`;
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -137,7 +216,7 @@ export default function handler(req, res) {
           continue;
         }
         const name = String(sub.name || 'Rider').replace(/[<>]/g, '').trim() || 'Rider';
-        const { html } = buildNewsletter(userMessage, upcoming, streamList, name, buildUnsubscribeUrl(sub.unsubToken || ''), storyForNewsletter);
+        const { html } = buildNewsletter(userMessage, upcoming, streamList, name, buildUnsubscribeUrl(sub.unsubToken || ''), storyForNewsletter, topMerch);
         const result = await sendEmail(to, subject, html);
         if (result.ok) {
           sent++;
@@ -1523,6 +1602,85 @@ async function handleGrantIntel(req, res, action) {
     const sub = subs.find((s) => s.id === id);
     if (!sub) return sendJson(res, { error: 'Submission not found.' }, 404);
     return sendJson(res, { submission: sub });
+  }
+
+  /* ── Merch management ── */
+  if (action === 'merch-admin-list' && req.method === 'GET') {
+    const items = await getList(KEYS.merch);
+    return sendJson(res, { items, total: items.length });
+  }
+
+  if (action === 'interaction-stats' && req.method === 'GET') {
+    const events = await getList(KEYS.interactionEvents);
+    const counts = {};
+    const byTarget = {};
+    for (const e of events) {
+      counts[e.type] = (counts[e.type] || 0) + 1;
+      const key = e.type + ':' + e.target;
+      byTarget[key] = (byTarget[key] || 0) + 1;
+    }
+    return sendJson(res, { counts, byTarget, total: events.length });
+  }
+
+  if (action === 'merch-add' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const name = clean(String(payload.name || ''), 120);
+    if (!name) return sendJson(res, { error: 'Item name is required.' }, 422);
+    const items = await getList(KEYS.merch);
+    const item = {
+      id: 'merch_' + randomBytes(8).toString('hex'),
+      name,
+      description: clean(String(payload.description || ''), 500),
+      category: clean(String(payload.category || 'Apparel'), 60),
+      price: clean(String(payload.price || ''), 20),
+      imageUrl: clean(String(payload.imageUrl || ''), 500),
+      paypalUrl: clean(String(payload.paypalUrl || ''), 500),
+      tag: clean(String(payload.tag || ''), 20),
+      active: payload.active !== false,
+      order: Number(payload.order) || 0,
+      createdAt: new Date().toISOString(),
+    };
+    items.push(item);
+    await setList(KEYS.merch, items);
+    await addAudit('merch_add', 'admin', { id: item.id, name });
+    return sendJson(res, { ok: true, item }, 201);
+  }
+
+  if (action === 'merch-update' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const id = clean(String(payload.id || ''), 40);
+    if (!id) return sendJson(res, { error: 'Item ID is required.' }, 422);
+    const items = await getList(KEYS.merch);
+    const index = items.findIndex((i) => i.id === id);
+    if (index < 0) return sendJson(res, { error: 'Item not found.' }, 404);
+    const item = items[index];
+    if (payload.name !== undefined) item.name = clean(String(payload.name), 120) || item.name;
+    if (payload.description !== undefined) item.description = clean(String(payload.description), 500);
+    if (payload.category !== undefined) item.category = clean(String(payload.category), 60) || item.category;
+    if (payload.price !== undefined) item.price = clean(String(payload.price), 20);
+    if (payload.imageUrl !== undefined) item.imageUrl = clean(String(payload.imageUrl), 500);
+    if (payload.paypalUrl !== undefined) item.paypalUrl = clean(String(payload.paypalUrl), 500);
+    if (payload.tag !== undefined) item.tag = clean(String(payload.tag), 20);
+    if (payload.active !== undefined) item.active = Boolean(payload.active);
+    if (payload.order !== undefined) item.order = Number(payload.order) || 0;
+    item.updatedAt = new Date().toISOString();
+    items[index] = item;
+    await setList(KEYS.merch, items);
+    await addAudit('merch_update', 'admin', { id, name: item.name });
+    return sendJson(res, { ok: true, item });
+  }
+
+  if (action === 'merch-delete' && req.method === 'POST') {
+    const payload = await readBody(req);
+    const id = clean(String(payload.id || ''), 40);
+    if (!id) return sendJson(res, { error: 'Item ID is required.' }, 422);
+    const items = await getList(KEYS.merch);
+    const index = items.findIndex((i) => i.id === id);
+    if (index < 0) return sendJson(res, { error: 'Item not found.' }, 404);
+    const removed = items.splice(index, 1)[0];
+    await setList(KEYS.merch, items);
+    await addAudit('merch_delete', 'admin', { id, name: removed.name });
+    return sendJson(res, { ok: true });
   }
 
   return sendJson(res, { error: 'Unsupported action.' }, 404);

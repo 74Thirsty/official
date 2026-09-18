@@ -1,3 +1,11 @@
+/**
+ * @file        ebook.js
+ * @description E-book download endpoint — tokenized one-time links
+ * @project     Lost Limb Riders (lostlimbriders.org)
+ * @author      C. Hirschauer
+ * @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+ * @license     Proprietary. No unauthorized reproduction or distribution.
+ */
 import { getList, setList, KEYS } from '../lib/storage.js';
 import { readFile } from 'node:fs/promises';
 import { sendJson, sendEmpty, getParam } from '../lib/http.js';

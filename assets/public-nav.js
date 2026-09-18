@@ -1,3 +1,11 @@
+/**
+ * @file        public-nav.js
+ * @description Shared navigation — dropdown menus, mobile hamburger, nav state
+ * @project     Lost Limb Riders (lostlimbriders.org)
+ * @author      C. Hirschauer
+ * @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+ * @license     Proprietary. No unauthorized reproduction or distribution.
+ */
 (function () {
   const nav = document.querySelector('nav[aria-label="Primary navigation"]');
   if (!nav) return;
@@ -22,6 +30,7 @@
       <div class="llr-nav-group"><button class="llr-nav-group-button" type="button" aria-expanded="false">Programs <span class="llr-nav-caret" aria-hidden="true"></span></button><div class="llr-nav-menu"><a href="peer-support.html">Peer Support</a><a href="mission.html#funds">Family Support Initiative</a><a href="healthcare-partnerships.html">Hospital &amp; Prosthetic Outreach</a><a href="mission.html#funds">View All Programs</a></div></div>
       <div class="llr-nav-group"><button class="llr-nav-group-button" type="button" aria-expanded="false">Get Involved <span class="llr-nav-caret" aria-hidden="true"></span></button><div class="llr-nav-menu"><a href="join.html">Become a Member</a><a href="volunteer-employment.html">Volunteer / Employment</a><a href="sponsors.html">Become a Sponsor</a><a href="donate.html">Donate</a></div></div>
       <div class="llr-nav-group"><button class="llr-nav-group-button" type="button" aria-expanded="false">Community <span class="llr-nav-caret" aria-hidden="true"></span></button><div class="llr-nav-menu"><a href="events.html">Events</a><a href="media.html">Media</a><a href="community.html">Gallery</a><a href="community.html">Testimonials</a><a href="newsletter.html">Newsletter</a><a href="documentation.html">Resources</a><a href="compliance.html">ACE</a></div></div>
+      <a class="llr-nav-direct" href="shop.html">Shop</a>
       <a class="llr-nav-direct" href="tel:5158905765">Contact</a>
       <a class="llr-paypal-nav" id="llrPaypalNav" aria-label="Donate with PayPal"><img src="https://www.paypalobjects.com/webstatic/icon/pp258.png" alt="">Donate</a>
     </div>`;

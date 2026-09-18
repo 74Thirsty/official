@@ -1,3 +1,11 @@
+<!--
+  @file        index.html
+  @description Homepage — hero carousel, guestbook, newsletter signup, contact form
+  @project     Lost Limb Riders (lostlimbriders.org)
+  @author      C. Hirschauer
+  @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+  @license     Proprietary. No unauthorized reproduction or distribution.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1249,6 +1257,31 @@
           '</div>';
       }).catch(function () {
         spotlight.innerHTML = '<div class="event-empty">Unable to load events. <a href="events.html" style="color:var(--orange);">View all events</a></div>';
+      });
+
+      /* ── INTERACTION TRACKING ── */
+      function trackEvent(type, target, meta) {
+        fetch('/api/admin?action=track-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: type, target: target, meta: meta || {}, page: location.href }),
+          keepalive: true
+        }).catch(function () {});
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('a[href]').forEach(function (link) {
+          var href = link.getAttribute('href') || '';
+          if (href === 'donate.html' || href.includes('paypal.com') || href.includes('paypal.me')) {
+            link.addEventListener('click', function () { trackEvent('donate-click', href, { text: link.textContent.trim() }); });
+          }
+          if (href.includes('books.apple.com')) {
+            link.addEventListener('click', function () { trackEvent('retailer-click', 'apple-books', { url: href }); });
+          }
+          if (href.includes('barnesandnoble.com')) {
+            link.addEventListener('click', function () { trackEvent('retailer-click', 'barnes-noble', { url: href }); });
+          }
+        });
       });
 
       /* ── VISIT TRACKING ── */

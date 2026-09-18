@@ -1,3 +1,11 @@
+/**
+ * @file        media.js
+ * @description Media CRUD API — podcast, vlog, and Coffee Talk episode management
+ * @project     Lost Limb Riders (lostlimbriders.org)
+ * @author      C. Hirschauer
+ * @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+ * @license     Proprietary. No unauthorized reproduction or distribution.
+ */
 import { getList, setList, getDate, setDate, KEYS } from '../lib/storage.js';
 import { sendJson, sendEmpty, readBody, isAdmin, clean, getParam } from '../lib/http.js';
 import { seedMedia } from '../lib/seed.js';

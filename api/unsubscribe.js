@@ -1,3 +1,11 @@
+/**
+ * @file        unsubscribe.js
+ * @description Newsletter unsubscribe endpoint — tokenized opt-out
+ * @project     Lost Limb Riders (lostlimbriders.org)
+ * @author      C. Hirschauer
+ * @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+ * @license     Proprietary. No unauthorized reproduction or distribution.
+ */
 import { getList, setList, KEYS } from '../lib/storage.js';
 import { sendEmpty, sendHtml, getParam } from '../lib/http.js';
 import { addAudit } from '../lib/audit.js';

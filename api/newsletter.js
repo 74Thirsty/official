@@ -1,3 +1,11 @@
+/**
+ * @file        newsletter.js
+ * @description Newsletter builder — event list HTML, date ranges, template interpolation
+ * @project     Lost Limb Riders (lostlimbriders.org)
+ * @author      C. Hirschauer
+ * @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+ * @license     Proprietary. No unauthorized reproduction or distribution.
+ */
 import { randomBytes } from 'crypto';
 import { getList, setList, KEYS, LIMITS } from '../lib/storage.js';
 import { sendJson, sendEmpty, readBody, clean, getClientIp, parseCookies } from '../lib/http.js';

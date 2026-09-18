@@ -29,6 +29,8 @@ Use exactly: **## COMPLETED** (what/where/why), **## NOT CHANGED** (related area
 
 ## Project overview
 
+**Codebase ownership:** John Thompson is the founder of Lost Limb Riders. C. Hirschauer is the technical consultant who co-authored the book *I Can. I Will.*, created the Autobiography organizational documentation, and built this website. All source code is the intellectual property of C. Hirschauer under the proprietary license in `LICENSE.md`.
+
 Static vanilla HTML/CSS/JS frontend (no build step, no bundler, no framework) with **Vercel serverless functions** (Node.js 24.x ESM) serving JSON APIs. Deployed on **Vercel** (`lostlimbriders.org`); all data lives in **Vercel KV (Redis)** via `@upstash/redis`; community photo uploads use **Vercel Blob** (`@vercel/blob`). Email via **Resend**. Git remote is `official-llr` (`git@github.com:LostLimbRider/official.git`, branch `main`).
 
 ## Verification reality

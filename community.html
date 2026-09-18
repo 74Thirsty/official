@@ -1,3 +1,11 @@
+<!--
+  @file        community.html
+  @description Community hub — photo gallery, testimonials, comments
+  @project     Lost Limb Riders (lostlimbriders.org)
+  @author      C. Hirschauer
+  @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+  @license     Proprietary. No unauthorized reproduction or distribution.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1192,7 +1200,7 @@
       if (book.pos === 0) label = 'Front Cover';
       else if (book.pos === book.M - 1) label = 'Back Cover';
       else if (book.mode === 'spread') {
-        label = `Pages ${book.pos}\u2013${book.pos + 1} of ${book.M - 1}`;
+        label = `Pages ${book.pos}–${book.pos + 1} of ${book.M - 1}`;
       } else label = `Page ${book.pos} of ${book.M - 1}`;
       el('bookCounter').textContent = label;
       el('bookLive').textContent = label;
@@ -1301,7 +1309,7 @@
       if (img.name) bits.push('by ' + img.name);
       const when = fmtDate(img.approvedAt || img.submittedAt);
       if (when) bits.push(when);
-      meta.textContent = bits.join(' \u00B7 ');
+      meta.textContent = bits.join(' · ');
       meta.style.display = bits.length ? 'block' : 'none';
     }
 

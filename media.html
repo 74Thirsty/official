@@ -1,3 +1,11 @@
+<!--
+  @file        media.html
+  @description Podcast player, YouTube vlogs, Coffee Talk episodes, live stream, subscribe links
+  @project     Lost Limb Riders (lostlimbriders.org)
+  @author      C. Hirschauer
+  @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+  @license     Proprietary. No unauthorized reproduction or distribution.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1288,7 +1296,7 @@
       frame.innerHTML =
         '<div class="live-placeholder">' +
           '<div class="placeholder-icon">&#127911;</div>' +
-          '<h3>We\u2019re Not Live Right Now</h3>' +
+          '<h3>We’re Not Live Right Now</h3>' +
           '<p>' + escapeHtml(offlineText) + '</p>' +
           '<div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">' + actions.join('') + '</div>' +
         '</div>';
@@ -1342,7 +1350,7 @@
       document.getElementById('featuredBadge').className = 'featured-badge podcast';
       document.getElementById('featuredBadge').textContent = 'Podcast';
       document.getElementById('featuredTitle').textContent = ep.title;
-      document.getElementById('featuredMeta').textContent = `Episode ${ep.num} \u2022 Season ${ep.season} \u2022 ${ep.duration}`;
+      document.getElementById('featuredMeta').textContent = `Episode ${ep.num} • Season ${ep.season} • ${ep.duration}`;
       document.getElementById('featuredDesc').textContent = ep.desc;
       document.getElementById('totalTime').textContent = ep.duration;
       document.getElementById('currentTime').textContent = '0:00';
@@ -1372,9 +1380,9 @@
             <span class="ep-num">${escapeHtml(ep.num || '')}</span>
           </div>
           <div class="ep-info">
-            <div class="ep-type podcast">Podcast \u2022 S${escapeHtml(ep.season || '1')}</div>
+            <div class="ep-type podcast">Podcast • S${escapeHtml(ep.season || '1')}</div>
             <h3>${escapeHtml(ep.title)}</h3>
-            <div class="ep-meta">${escapeHtml(ep.date || '')} \u2022 ${escapeHtml(ep.duration || '')}</div>
+            <div class="ep-meta">${escapeHtml(ep.date || '')} • ${escapeHtml(ep.duration || '')}</div>
             <div class="ep-desc">${escapeHtml(ep.desc)}</div>
           </div>
           <span class="ep-play" aria-hidden="true">&#9654;</span>
@@ -1427,9 +1435,9 @@
             <span class="ep-num">${escapeHtml(ep.num || '')}</span>
           </div>
           <div class="ep-info">
-            <div class="ep-type coffeetalk">Coffee Talk \u2022 Episode ${escapeHtml(ep.num || '')}</div>
+            <div class="ep-type coffeetalk">Coffee Talk • Episode ${escapeHtml(ep.num || '')}</div>
             <h3>${escapeHtml(ep.title)}</h3>
-            <div class="ep-meta">${escapeHtml(ep.date || '')} \u2022 ${escapeHtml(ep.duration || '')}</div>
+            <div class="ep-meta">${escapeHtml(ep.date || '')} • ${escapeHtml(ep.duration || '')}</div>
             <div class="ep-desc">${escapeHtml(ep.desc)}</div>
           </div>
           <span class="ep-play" aria-hidden="true">${playable ? '&#9654;' : 'Coming soon'}</span>
@@ -1449,7 +1457,7 @@
         document.getElementById('featuredBadge').className = 'featured-badge coffeetalk';
         document.getElementById('featuredBadge').textContent = 'Coffee Talk';
         document.getElementById('featuredTitle').textContent = ep.title;
-        document.getElementById('featuredMeta').textContent = `Coffee Talk \u2022 Episode ${ep.num} \u2022 ${ep.duration}`;
+        document.getElementById('featuredMeta').textContent = `Coffee Talk • Episode ${ep.num} • ${ep.duration}`;
         document.getElementById('featuredDesc').textContent = ep.desc;
         document.getElementById('totalTime').textContent = ep.duration;
         document.getElementById('currentTime').textContent = '0:00';
@@ -1469,7 +1477,7 @@
       document.getElementById('featuredBadge').className = 'featured-badge podcast';
       document.getElementById('featuredBadge').textContent = 'Podcast';
       document.getElementById('featuredTitle').textContent = ep.title;
-      document.getElementById('featuredMeta').textContent = `Episode ${ep.num} \u2022 Season ${ep.season} \u2022 ${ep.duration}`;
+      document.getElementById('featuredMeta').textContent = `Episode ${ep.num} • Season ${ep.season} • ${ep.duration}`;
       document.getElementById('featuredDesc').textContent = ep.desc;
       document.getElementById('totalTime').textContent = ep.duration;
       document.getElementById('currentTime').textContent = '0:00';
@@ -1544,7 +1552,7 @@
       if (!validVideoId(videoId)) return;
       document.getElementById('modalVideo').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
       document.getElementById('modalTitle').textContent = title;
-      document.getElementById('modalMeta').textContent = `${type} \u2022 ${date} \u2022 ${duration}`;
+      document.getElementById('modalMeta').textContent = `${type} • ${date} • ${duration}`;
       document.getElementById('modalDesc').textContent = desc;
       document.getElementById('videoModal').classList.add('open');
       document.body.style.overflow = 'hidden';

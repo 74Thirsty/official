@@ -1,3 +1,11 @@
+/**
+ * @file        stream.js
+ * @description Live stream management — auto-archive, archive rotation, purge, public/admin views
+ * @project     Lost Limb Riders (lostlimbriders.org)
+ * @author      C. Hirschauer
+ * @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+ * @license     Proprietary. No unauthorized reproduction or distribution.
+ */
 import { getList, setList, KEYS, LIMITS } from '../lib/storage.js';
 import { sendJson, sendEmpty, readBody, isAdmin, clean, getParam, getClientIp } from '../lib/http.js';
 import { seedStream } from '../lib/seed.js';

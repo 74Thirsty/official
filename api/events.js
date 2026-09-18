@@ -1,3 +1,11 @@
+/**
+ * @file        events.js
+ * @description Calendar CRUD API — list (public), add/update/delete (admin key auth)
+ * @project     Lost Limb Riders (lostlimbriders.org)
+ * @author      C. Hirschauer
+ * @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+ * @license     Proprietary. No unauthorized reproduction or distribution.
+ */
 import { getList, setList, KEYS, LIMITS } from '../lib/storage.js';
 import { sendJson, sendEmpty, readBody, isAdmin, clean, getParam } from '../lib/http.js';
 import { addAudit } from '../lib/audit.js';

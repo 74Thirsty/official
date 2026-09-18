@@ -1,3 +1,11 @@
+<!--
+  @file        documentation-viewer.html
+  @description Document viewer — Markdown rendering with reference transclusion
+  @project     Lost Limb Riders (lostlimbriders.org)
+  @author      C. Hirschauer
+  @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+  @license     Proprietary. No unauthorized reproduction or distribution.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -253,17 +261,20 @@
 
     function renderComposite(content, references, basePath) {
       var host = document.createDocumentFragment();
-      var lines = content.split(/\r?\n/);
+      var lines = content.split(/?
+/);
       var grouped = {};
       (references || []).forEach(function(reference) { (grouped[reference.line] = grouped[reference.line] || []).push(reference); });
       var cursor = 0;
       Object.keys(grouped).map(Number).sort(function(a, b) { return a - b; }).forEach(function(line) {
-        var chunk = lines.slice(cursor, line + 1).join('\n');
+        var chunk = lines.slice(cursor, line + 1).join('
+');
         if (chunk.trim()) host.appendChild(tableWrap(renderDocument(chunk, { basePath: basePath }).html));
         grouped[line].forEach(function(reference) { host.appendChild(renderReference(reference)); });
         cursor = line + 1;
       });
-      var remainder = lines.slice(cursor).join('\n');
+      var remainder = lines.slice(cursor).join('
+');
       if (remainder.trim()) host.appendChild(tableWrap(renderDocument(remainder, { basePath: basePath }).html));
       return host;
     }

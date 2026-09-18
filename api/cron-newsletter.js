@@ -1,3 +1,11 @@
+/**
+ * @file        cron-newsletter.js
+ * @description Vercel Cron newsletter sender — builds and emails newsletter via Resend
+ * @project     Lost Limb Riders (lostlimbriders.org)
+ * @author      C. Hirschauer
+ * @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+ * @license     Proprietary. No unauthorized reproduction or distribution.
+ */
 import { getList, setList, getDate, setDate, KEYS, LIMITS } from '../lib/storage.js';
 import { sendJson, sendEmpty, getParam } from '../lib/http.js';
 import { buildNewsletter, getUpcomingEvents, getUpcomingStreams, buildUnsubscribeUrl } from '../lib/newsletter.js';

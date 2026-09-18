@@ -1,3 +1,11 @@
+<!--
+  @file        compliance.html
+  @description Compliance engine — workflow definitions, transaction management
+  @project     Lost Limb Riders (lostlimbriders.org)
+  @author      C. Hirschauer
+  @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+  @license     Proprietary. No unauthorized reproduction or distribution.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -219,7 +227,10 @@
       (scope||document).querySelectorAll('[data-derived-from]').forEach(function(output){
         var source=(output.closest('.form-grid')||scope||document).querySelector('[data-field="'+CSS.escape(output.dataset.derivedFrom)+'"]');
         var references=JSON.parse(output.dataset.references||'[]');
-        function update(){var reference=references.find(function(item){return source&&item.value===source.value;});output.value=reference?reference.description+'\n\nSource: '+reference.sourcePath+'\nVersion hash: '+reference.sourceHash:'';}
+        function update(){var reference=references.find(function(item){return source&&item.value===source.value;});output.value=reference?reference.description+'
+
+Source: '+reference.sourcePath+'
+Version hash: '+reference.sourceHash:'';}
         if(source)source.addEventListener('change',update);update();
       });
     }

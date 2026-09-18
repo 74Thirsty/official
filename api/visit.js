@@ -1,3 +1,11 @@
+/**
+ * @file        visit.js
+ * @description Visitor logging endpoint — captures IP, geolocation, browser, device on every page load
+ * @project     Lost Limb Riders (lostlimbriders.org)
+ * @author      C. Hirschauer
+ * @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+ * @license     Proprietary. No unauthorized reproduction or distribution.
+ */
 import { getList, setList, KEYS, LIMITS } from '../lib/storage.js';
 import { sendJson, sendEmpty, readBody, clean, getClientIp, parseCookies, setCors } from '../lib/http.js';
 import { geolocateIp } from '../lib/geo.js';

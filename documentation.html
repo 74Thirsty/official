@@ -1,3 +1,11 @@
+<!--
+  @file        documentation.html
+  @description Document library — canonical document browser
+  @project     Lost Limb Riders (lostlimbriders.org)
+  @author      C. Hirschauer
+  @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+  @license     Proprietary. No unauthorized reproduction or distribution.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -157,7 +165,7 @@
     }
 
     function cleanSegment(value) {
-      return String(value || '').replace(/^\d{2}-/, '').replace(/[-_]+/g, ' ').replace(/\b\w/g, function(letter) { return letter.toUpperCase(); });
+      return String(value || '').replace(/^\d{2}-/, '').replace(/[-_]+/g, ' ').replace(/\w/g, function(letter) { return letter.toUpperCase(); });
     }
 
     function documentPath(doc) {

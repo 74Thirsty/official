@@ -1,3 +1,11 @@
+/**
+ * @file        guestbook.js
+ * @description Guestbook CRUD — list, add, download (admin), clear (admin)
+ * @project     Lost Limb Riders (lostlimbriders.org)
+ * @author      C. Hirschauer
+ * @copyright   Copyright (c) 2026 C. Hirschauer. All rights reserved.
+ * @license     Proprietary. No unauthorized reproduction or distribution.
+ */
 import { getList, setList, KEYS, LIMITS } from '../lib/storage.js';
 import { sendJson, sendEmpty, sendDownload, readBody, isAdmin, clean, getParam } from '../lib/http.js';
 
