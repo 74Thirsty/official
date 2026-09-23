@@ -17,7 +17,7 @@ Prospective contacts for vehicle sponsorship arrangements with Lost Limb Riders.
 | Dealership | Contact | Role | Phone / Email |
 |---|---|---|---|
 | **Grinnell Motors** (Chevrolet/GMC) | Main line — ask for GM / community outreach | — | (641) 243-4668 · [grinnellmotors.com](https://grinnellmotors.com/contact) |
-| **Tiger Ford of Grinnell** | Contact to be confirmed | — | — |
+| **Steve Link Ford** (formerly Tiger Ford of Grinnell) | Main line — ask for General Manager / community sponsorship contact | — | (641) 236-3172 · [steve-link.com](https://www.steve-link.com/contact.htm) |
 | **Kemna Chevrolet Fort Dodge** | Carey Kemna (Owner) / Bob Snider (GM) | Owner / General Manager | carey@kemna.com · bob@kemna.com · (515) 206-8887 |
 | **Fort Dodge Ford Lincoln Toyota** | Matt / Casey / Deb Johnson (Dealers) / Trace Locke (GSM) | Dealer / General Sales Manager | matt@fdford.com · tracel@fdford.com · (515) 576-7505 |
 
@@ -54,5 +54,6 @@ Prospective contacts for vehicle sponsorship arrangements with Lost Limb Riders.
 - McGrath is the largest family-owned auto group in Iowa (HQ Cedar Rapids); McGrath Ford is in Hiawatha, not Cedar Rapids proper.
 - Cedar Rapids Toyota is independent (not McGrath), located in Hiawatha at 1190 Boyson Rd.
 - Grinnell Motors staff page does not publish individual names — call the main line and ask for the GM or marketing contact.
+- Tiger Ford of Grinnell is now Steve Link Ford; its public site does not publish a named sponsorship contact. Call the sales line and ask for the General Manager or community sponsorship contact.
 
 *Last verified: 2026-09-22*
