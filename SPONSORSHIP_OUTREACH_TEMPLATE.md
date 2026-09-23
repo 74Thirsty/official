@@ -2,10 +2,12 @@
 
 Quick-send template for contacts in [`SPONSORSHIP_CONTACTS.md`](SPONSORSHIP_CONTACTS.md).
 
-Proposal deck (in [`assets/`](assets/)) — **edit `{{DEALERSHIP}}` + customize slide 3 before sending:**
+Proposal deck (in [`assets/`](assets/)) — attach as-is, no per-dealer editing needed:
 `assets/LLR_Knoepfler_Vehicle_Partnership_Proposal.pptx`
 
 Other decks: `assets/LLR_Trinity_Peer_Support_Discussion.pptx`, `assets/Lost_Limb_Riders_Trinity_Healthcare_Partnership_REBUILT-2.pptx`
+
+Mission / org info for sponsors: **https://lostlimbriders.org/mission.html**
 
 ---
 
@@ -40,9 +42,11 @@ Other decks: `assets/LLR_Trinity_Peer_Support_Discussion.pptx`, `assets/Lost_Lim
 >
 > This isn't a one-day logo placement. It's a partnership people repeatedly see in use — at events, on the road, and in content we publish together.
 >
-> For context on the value: the average franchised dealership spends **~$586K a year on advertising** (NADA 2025). We're offering sustained, authentic community visibility attached to a story advertising can't manufacture — at a fraction of that, structured as a partnership rather than a media buy.
+> For context on the value: the average franchised dealership spends **~$586K a year on advertising** (NADA Data 2025 national average). We're offering sustained, authentic community visibility attached to a story advertising can't manufacture — at a fraction of that, structured as a partnership rather than a media buy.
 >
 > Structure is flexible: vehicle contribution, sponsorship arrangement, discounted transfer, demo/loaner — whatever works for **{{DEALERSHIP}}**.
+>
+> Want the full picture first? Our mission and organization info are at **https://lostlimbriders.org/mission.html**.
 >
 > **Next step:** a 20-minute conversation with you (or the right person on your team) to see if there's a fit. I've attached a short proposal deck with the full details.
 >
@@ -69,7 +73,7 @@ Other decks: `assets/LLR_Trinity_Peer_Support_Discussion.pptx`, `assets/Lost_Lim
 ## Send checklist
 
 - [ ] Personalize `{{FIRST_NAME}}` and `{{DEALERSHIP}}` (never send blank)
-- [ ] Fill `{{DEALERSHIP}}` + customize slide 3 in `assets/LLR_Knoepfler_Vehicle_Partnership_Proposal.pptx`, attach to send
+- [ ] Attach `assets/LLR_Knoepfler_Vehicle_Partnership_Proposal.pptx` (generic — same file for every dealer)
 - [ ] Send from `general_llr@outlook.com` or John's direct address
 - [ ] Log sent date in a tracking sheet / follow up in 5–7 days if no reply
 - [ ] BCC John on sends if using a different mailbox
