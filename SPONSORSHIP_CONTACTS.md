@@ -17,6 +17,7 @@ Prospective contacts for vehicle sponsorship arrangements with Lost Limb Riders.
 | Dealership | Contact | Role | Phone / Email |
 |---|---|---|---|
 | **Grinnell Motors** (Chevrolet/GMC) | Main line — ask for GM / community outreach | — | (641) 243-4668 · [grinnellmotors.com](https://grinnellmotors.com/contact) |
+| **Tiger Ford of Grinnell** | Contact to be confirmed | — | — |
 | **Kemna Chevrolet Fort Dodge** | Carey Kemna (Owner) / Bob Snider (GM) | Owner / General Manager | carey@kemna.com · bob@kemna.com · (515) 206-8887 |
 | **Fort Dodge Ford Lincoln Toyota** | Matt / Casey / Deb Johnson (Dealers) / Trace Locke (GSM) | Dealer / General Sales Manager | matt@fdford.com · tracel@fdford.com · (515) 576-7505 |
 
