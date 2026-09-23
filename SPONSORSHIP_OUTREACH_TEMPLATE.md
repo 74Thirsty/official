@@ -56,7 +56,9 @@ Mission / org info for sponsors: **https://lostlimbriders.org/mission.html**
 >
 > **John Thompson**
 > Founder / CEO, Lost Limb Riders
-> general_llr@outlook.com · lostlimbriders.org
+> general_llr@outlook.com · lostlimbriders.org/mission.html
+>
+> *[Paste LLR logo image here if sending HTML email — use `assets/logo-nobg.png`]*
 >
 > *No one is left behind. No one stands alone.*
 
@@ -73,8 +75,8 @@ Mission / org info for sponsors: **https://lostlimbriders.org/mission.html**
 ## Send checklist
 
 - [ ] Personalize `{{FIRST_NAME}}` and `{{DEALERSHIP}}` (never send blank)
-- [ ] Attach `assets/LLR_Knoepfler_Vehicle_Partnership_Proposal.pptx` (generic — same file for every dealer)
-- [ ] Send from `general_llr@outlook.com` or John's direct address
+- [ ] Attach `assets/LLR_Knoepfler_Vehicle_Partnership_Proposal.pptx` (branded, generic — same file for every dealer)
+- [ ] Send from `general_llr@outlook.com` or John's direct address with LLR signature/logo
 - [ ] Log sent date in a tracking sheet / follow up in 5–7 days if no reply
 - [ ] BCC John on sends if using a different mailbox
 
