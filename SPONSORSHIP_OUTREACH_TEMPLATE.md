@@ -1,7 +1,11 @@
 # Vehicle Sponsorship Outreach — Email Template
 
 Quick-send template for contacts in [`SPONSORSHIP_CONTACTS.md`](SPONSORSHIP_CONTACTS.md).
-Proposal deck: `LLR_Knoepfler_Vehicle_Partnership_Proposal.pptx` (attach to send).
+
+Proposal deck (in [`assets/`](assets/)) — **edit `{{DEALERSHIP}}` + customize slide 3 before sending:**
+`assets/LLR_Knoepfler_Vehicle_Partnership_Proposal.pptx`
+
+Other decks: `assets/LLR_Trinity_Peer_Support_Discussion.pptx`, `assets/Lost_Limb_Riders_Trinity_Healthcare_Partnership_REBUILT-2.pptx`
 
 ---
 
@@ -65,7 +69,7 @@ Proposal deck: `LLR_Knoepfler_Vehicle_Partnership_Proposal.pptx` (attach to send
 ## Send checklist
 
 - [ ] Personalize `{{FIRST_NAME}}` and `{{DEALERSHIP}}` (never send blank)
-- [ ] Attach `LLR_Knoepfler_Vehicle_Partnership_Proposal.pptx` (deck says "Knoepfler" on cover — re-title if sending to another dealer)
+- [ ] Fill `{{DEALERSHIP}}` + customize slide 3 in `assets/LLR_Knoepfler_Vehicle_Partnership_Proposal.pptx`, attach to send
 - [ ] Send from `general_llr@outlook.com` or John's direct address
 - [ ] Log sent date in a tracking sheet / follow up in 5–7 days if no reply
 - [ ] BCC John on sends if using a different mailbox
